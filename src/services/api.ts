@@ -910,6 +910,256 @@ export const api = {
     return { success: true, data: { expiredCount } };
   },
 
+  // ---------------- ADMIN MEMBER-TO-MEMBER SEND LINK BOX ----------------
+  async adminCreateMemberToMemberLink(params: {
+    adminActor: { id: string; name: string; role: string };
+    senderUserId: string;
+    receiverUserId: string;
+    amount: number;
+    timerHours?: number;
+    remarks?: string;
+  }): Promise<ApiResponse<{ helpRequest: HelpRequest; shareUrl: string; waMessageUrl: string }>> {
+    const state = db.getState();
+    const sender = state.users.find((u) => u.id === params.senderUserId);
+    if (!sender) return { success: false, error: 'Sender member not found.' };
+
+    const receiver = state.users.find((u) => u.id === params.receiverUserId);
+    if (!receiver && params.receiverUserId !== 'ADMIN_TREASURY') {
+      return { success: false, error: 'Receiver member not found.' };
+    }
+
+    if (params.senderUserId === params.receiverUserId) {
+      return { success: false, error: 'Sender and Receiver cannot be the same member.' };
+    }
+
+    const amount = Number(params.amount) || state.settings.helpAmountDefault || 150;
+    const timerHours = Number(params.timerHours) || state.settings.timerDurationHours || 12;
+    const now = new Date();
+    const nowISO = now.toISOString();
+    const expiryTime = now.getTime() + timerHours * 60 * 60 * 1000;
+    const expiryISO = new Date(expiryTime).toISOString();
+
+    // Receiver KYC details or fallback
+    const receiverKyc = state.kycRecords.find((k) => k.userId === params.receiverUserId);
+    const receiverUpi =
+      params.receiverUserId === 'ADMIN_TREASURY'
+        ? state.settings.adminUpiId || 'help150.treasury@icici'
+        : receiverKyc?.upiId || `${params.receiverUserId.toLowerCase()}@upi`;
+    const receiverName = params.receiverUserId === 'ADMIN_TREASURY' ? 'HELP150 Central Treasury' : receiver?.fullName || 'Community Peer';
+    const receiverMobile = params.receiverUserId === 'ADMIN_TREASURY' ? '9876543210' : receiver?.mobile || '';
+
+    const newRequestId = `HP-M2M-${Date.now().toString().slice(-6)}`;
+
+    const newRequest: HelpRequest = {
+      id: newRequestId,
+      userId: sender.id,
+      userName: sender.fullName,
+      userMobile: sender.mobile,
+      userEmail: sender.email,
+      userUpi: sender.id.toLowerCase() + '@upi',
+      amount,
+      type: 'give_help',
+      status: 'PAYMENT_PENDING',
+      matchedWithUserId: params.receiverUserId,
+      matchedWithUserName: receiverName,
+      matchedWithUpi: receiverUpi,
+      matchedWithMobile: receiverMobile,
+      matchedAt: nowISO,
+      timerExpiryTime: expiryTime,
+      timerExpiresAt: expiryISO,
+      timerDurationHours: timerHours,
+      timerStatus: 'active',
+      createdAt: nowISO,
+      adminNotes: params.remarks || `P2P Direct Member-to-Member link dispatched by Admin (${params.adminActor.name})`,
+      paymentSlipUploadedAt: undefined,
+      slipReviewStatus: 'pending',
+      adminApproved: false,
+    };
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://help150.org';
+    const shareUrl = `${origin}/?action=member_help_link&req=${newRequestId}&from=${sender.id}&to=${params.receiverUserId}&amt=${amount}`;
+
+    // Pre-formatted WhatsApp message for instant dispatch
+    const waText = `*HELP150 Member-to-Member Direct Help Link*\n\n` +
+      `Hello ${sender.fullName} (${sender.id}),\n` +
+      `You have been linked to provide ₹${amount} assistance to ${receiverName}.\n\n` +
+      `*Receiver Details:*\n` +
+      `👤 Name: ${receiverName}\n` +
+      `📱 Mobile: ${receiverMobile}\n` +
+      `💳 UPI ID: ${receiverUpi}\n` +
+      `⏳ Time Window: ${timerHours} Hours\n\n` +
+      `🔗 *Direct Link to Complete & Submit Slip:*\n` +
+      `${shareUrl}\n\n` +
+      `_Please complete payment within ${timerHours} hours to keep your HELP150 account active._`;
+
+    const cleanMobile = sender.mobile.replace(/\D/g, '');
+    const waMessageUrl = `https://wa.me/91${cleanMobile.length === 10 ? cleanMobile : cleanMobile.slice(-10)}?text=${encodeURIComponent(waText)}`;
+
+    db.updateState((draft) => {
+      draft.helpRequests.unshift(newRequest);
+
+      // Notification to Sender
+      draft.notifications.unshift({
+        id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-S`,
+        userId: sender.id,
+        title: `Member-to-Member Link Dispatched: Send ₹${amount}`,
+        message: `Admin matched you to send ₹${amount} help to ${receiverName} (${receiverUpi}). Please pay within ${timerHours} hours.`,
+        type: 'info',
+        isRead: false,
+        createdAt: nowISO,
+        linkTab: 'help',
+      });
+
+      // Notification to Receiver (if not treasury)
+      if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
+        draft.notifications.unshift({
+          id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-R`,
+          userId: receiver.id,
+          title: `Member-to-Member Link Dispatched: Receive ₹${amount}`,
+          message: `Admin linked member ${sender.fullName} (${sender.id}) to send you ₹${amount} help.`,
+          type: 'success',
+          isRead: false,
+          createdAt: nowISO,
+          linkTab: 'help',
+        });
+      }
+    });
+
+    logAudit(
+      params.adminActor,
+      'ADMIN_CREATE_M2M_LINK',
+      'HelpRequest',
+      newRequestId,
+      `Created P2P Link: ${sender.fullName} (${sender.id}) -> ${receiverName} (${params.receiverUserId}) for ₹${amount}`
+    );
+
+    // Sync to Firestore
+    firestoreSync.syncHelpRequest(newRequest);
+
+    return {
+      success: true,
+      data: {
+        helpRequest: newRequest,
+        shareUrl,
+        waMessageUrl,
+      },
+    };
+  },
+
+  // Re-assign active P2P link to a new receiver
+  async adminReassignMemberLink(params: {
+    adminActor: { id: string; name: string; role: string };
+    requestId: string;
+    newReceiverUserId: string;
+    reason?: string;
+  }): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === params.requestId);
+    if (!req) return { success: false, error: 'Help request link not found.' };
+
+    const newReceiver = state.users.find((u) => u.id === params.newReceiverUserId);
+    if (!newReceiver && params.newReceiverUserId !== 'ADMIN_TREASURY') {
+      return { success: false, error: 'New receiver member not found.' };
+    }
+
+    const receiverKyc = state.kycRecords.find((k) => k.userId === params.newReceiverUserId);
+    const receiverUpi =
+      params.newReceiverUserId === 'ADMIN_TREASURY'
+        ? state.settings.adminUpiId || 'help150.treasury@icici'
+        : receiverKyc?.upiId || `${params.newReceiverUserId.toLowerCase()}@upi`;
+    const receiverName = params.newReceiverUserId === 'ADMIN_TREASURY' ? 'HELP150 Central Treasury' : newReceiver?.fullName || 'Community Peer';
+    const receiverMobile = params.newReceiverUserId === 'ADMIN_TREASURY' ? '9876543210' : newReceiver?.mobile || '';
+
+    const nowISO = new Date().toISOString();
+    let updatedReq: HelpRequest | null = null;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === params.requestId);
+      if (r) {
+        r.matchedWithUserId = params.newReceiverUserId;
+        r.matchedWithUserName = receiverName;
+        r.matchedWithUpi = receiverUpi;
+        r.matchedWithMobile = receiverMobile;
+        r.adminNotes = (r.adminNotes ? r.adminNotes + ' | ' : '') + `Reassigned to ${receiverName} by Admin (${params.reason || 'Admin Update'})`;
+        updatedReq = r;
+      }
+
+      draft.notifications.unshift({
+        id: `NOTIF-REASSIGN-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        title: `P2P Help Receiver Updated (#${req.id})`,
+        message: `Your payment link receiver has been updated to ${receiverName} (${receiverUpi}).`,
+        type: 'info',
+        isRead: false,
+        createdAt: nowISO,
+        linkTab: 'help',
+      });
+    });
+
+    logAudit(
+      params.adminActor,
+      'ADMIN_REASSIGN_M2M_LINK',
+      'HelpRequest',
+      params.requestId,
+      `Reassigned link #${params.requestId} to ${receiverName} (${params.newReceiverUserId})`
+    );
+
+    if (updatedReq) {
+      firestoreSync.syncHelpRequest(updatedReq);
+    }
+
+    return { success: true, data: updatedReq! };
+  },
+
+  // Cancel or revoke an active P2P link
+  async adminCancelMemberLink(params: {
+    adminActor: { id: string; name: string; role: string };
+    requestId: string;
+    reason: string;
+  }): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === params.requestId);
+    if (!req) return { success: false, error: 'Help request link not found.' };
+
+    const nowISO = new Date().toISOString();
+    let updatedReq: HelpRequest | null = null;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === params.requestId);
+      if (r) {
+        r.status = 'cancelled';
+        r.timerStatus = 'completed';
+        r.adminNotes = (r.adminNotes ? r.adminNotes + ' | ' : '') + `Cancelled by Admin: ${params.reason}`;
+        updatedReq = r;
+      }
+
+      draft.notifications.unshift({
+        id: `NOTIF-CANCEL-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        title: `Help Link Cancelled (#${req.id})`,
+        message: `Admin cancelled help link #${req.id}. Reason: ${params.reason}`,
+        type: 'alert',
+        isRead: false,
+        createdAt: nowISO,
+        linkTab: 'help',
+      });
+    });
+
+    logAudit(
+      params.adminActor,
+      'ADMIN_CANCEL_M2M_LINK',
+      'HelpRequest',
+      params.requestId,
+      `Cancelled link #${params.requestId}. Reason: ${params.reason}`
+    );
+
+    if (updatedReq) {
+      firestoreSync.syncHelpRequest(updatedReq);
+    }
+
+    return { success: true, data: updatedReq! };
+  },
+
   // ---------------- WITHDRAWAL ENGINE ----------------
   async requestWithdrawal(params: {
     userId: string;

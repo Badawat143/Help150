@@ -582,6 +582,17 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
             </div>
           </div>
 
+          {/* COMPLIANCE & TRANSPARENCY NOTICE */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#0C1E4A] to-[#102B66] border border-blue-400/20 p-4 text-xs text-blue-100 flex items-start gap-3 shadow-sm">
+            <Info className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-relaxed">
+              <span className="font-bold text-amber-300">Community Transparency Notice: </span>
+              <span>
+                HELP150 is a peer-to-peer voluntary community assistance platform. There are no guaranteed profits, fixed returns, or automatic payouts. All payments are member-to-member direct transfers subject to verification, platform rules, and compliance.
+              </span>
+            </div>
+          </div>
+
           {/* ======================================================================= */}
           {/* 2. HELP LINK BOXES (BETWEEN USER NAME & ACCOUNT STATUS)                 */}
           {/*    Provide Help: LEFT SIDE | Receive Help: RIGHT SIDE                  */}

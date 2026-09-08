@@ -48,14 +48,27 @@ export const MemberLinkBox: React.FC<MemberLinkBoxProps> = ({ onNavigateTab }) =
 
   // Active outgoing link where current user must pay ₹150 to a peer member
   const outgoingRequest = state.helpRequests.find(
-    (r) => r.userId === currentUser.id && ['pending_match', 'matched', 'proof_submitted'].includes(r.status)
+    (r) =>
+      r.userId === currentUser.id &&
+      [
+        'pending_match',
+        'matched',
+        'proof_submitted',
+        'PENDING',
+        'ACCEPTED',
+        'PAYMENT_PENDING',
+        'SLIP_UPLOADED',
+        'VERIFICATION_PENDING',
+      ].includes(r.status)
   );
 
   // Incoming links where other members are assigned to pay ₹150 to current user
   const incomingRequests = state.helpRequests.filter(
     (r) => r.matchedWithUserId === currentUser.id
   );
-  const pendingIncomingRequests = incomingRequests.filter((r) => r.status !== 'completed');
+  const pendingIncomingRequests = incomingRequests.filter(
+    (r) => !['completed', 'COMPLETED', 'PAYMENT_VERIFIED', 'cancelled', 'EXPIRED'].includes(r.status)
+  );
 
   // Matched receiver user object if available
   const matchedReceiverUser: User | undefined = outgoingRequest?.matchedWithUserId

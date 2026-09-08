@@ -163,6 +163,9 @@ export interface HelpRequest {
   // Server-side 12-hour Timer
   timerStartTime?: number; // epoch ms
   timerExpiryTime?: number; // epoch ms (12 hours later)
+  timerExpiresAt?: string;
+  timerDurationHours?: number;
+  matchedAt?: string;
   timerStatus: TimerStatus;
   createdAt: string;
   completedAt?: string;

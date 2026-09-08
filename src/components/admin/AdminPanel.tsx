@@ -77,6 +77,7 @@ import { db } from '../../services/db';
 import { api } from '../../services/api';
 import { User, HelpRequest, WithdrawalRequest, KycRecord } from '../../types';
 import { PaymentVerificationDesk } from './PaymentVerificationDesk';
+import { MemberToMemberLinkBox } from './MemberToMemberLinkBox';
 
 export const AdminPanel: React.FC = () => {
   const { currentUser, refreshUserData, logout, setActiveTab } = useAuth();
@@ -137,6 +138,7 @@ export const AdminPanel: React.FC = () => {
   // Sidebar Menu Items matching the 22 items in image
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, hasArrow: false },
+    { id: 'member_link_box', label: 'Member-to-Member Link Box', icon: Send, hasArrow: true, badge: 'P2P' },
     { id: 'users', label: 'Users', icon: Users, hasArrow: true },
     { id: 'user_details', label: 'User Details', icon: UserCheck, hasArrow: true },
     { id: 'kyc', label: 'KYC', icon: ShieldCheck, hasArrow: true },
@@ -862,6 +864,15 @@ export const AdminPanel: React.FC = () => {
               </h3>
 
               <div className="grid grid-cols-2 gap-2.5 pt-3">
+                {/* 0. Member-to-Member Send Link Box (Vibrant Gold & Blue Gradient) */}
+                <button
+                  onClick={() => handleQuickAction('member_link_box')}
+                  className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition cursor-pointer"
+                >
+                  <Send className="h-4 w-4 shrink-0 text-slate-950" />
+                  <span className="truncate uppercase tracking-wide">Member to Member Send Link Box</span>
+                </button>
+
                 {/* 1. Manage Users (Royal Blue) */}
                 <button
                   onClick={() => handleQuickAction('users')}
@@ -1259,6 +1270,39 @@ export const AdminPanel: React.FC = () => {
       {/* ========================================================================= */}
       {/* 6. DYNAMIC SUB-MANAGEMENT MODALS (Full Operational Controls)              */}
       {/* ========================================================================= */}
+
+      {/* MODAL 0: MEMBER TO MEMBER SEND LINK BOX */}
+      {activeModal === 'member_link_box' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-6xl w-full shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 font-black shadow-md">
+                  <Send className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-heading flex items-center gap-2">
+                    <span>Member to Member Send Link Box</span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">Admin Dispatcher</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">P2P help linking, payment links, WhatsApp dispatch, and countdown management.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <MemberToMemberLinkBox
+              currentUser={currentUser || ({ id: 'ADMIN-1', fullName: 'Super Admin', role: 'admin' } as any)}
+              onRefresh={refreshUserData}
+            />
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: USER MANAGEMENT */}
       {activeModal === 'users' && (
