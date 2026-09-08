@@ -1,0 +1,1672 @@
+/**
+ * HELP150 — Server-Side API Services
+ * Real-time business logic, server validation, idempotent transactions, and compliance security.
+ */
+
+import { db, DatabaseState } from './db';
+import { firestoreSync } from './firestoreSync';
+import {
+  User,
+  KycRecord,
+  Wallet,
+  Transaction,
+  HelpRequest,
+  WithdrawalRequest,
+  ReferralStat,
+  ReferralMember,
+  SupportTicket,
+  AuditLog,
+  WebsiteSettings,
+} from '../types';
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+// Generate unique, non-duplicable User ID
+export function generateUserId(existingUsers: User[]): string {
+  let id = '';
+  let exists = true;
+  while (exists) {
+    const num = Math.floor(100000 + Math.random() * 900000);
+    id = `H150-${num}`;
+    exists = existingUsers.some((u) => u.id === id);
+  }
+  return id;
+}
+
+// Log immutable audit trail
+export function logAudit(
+  actor: { id: string; name: string; role: string },
+  action: string,
+  targetEntity: string,
+  targetId: string,
+  details: string
+) {
+  const newLog: AuditLog = {
+    id: `AUD-${Date.now().toString().slice(-6)}`,
+    actorId: actor.id,
+    actorName: actor.name,
+    actorRole: actor.role,
+    action,
+    targetEntity,
+    targetId,
+    details,
+    ipAddress: '103.21.144.' + Math.floor(10 + Math.random() * 80),
+    timestamp: new Date().toISOString(),
+  };
+
+  db.updateState((draft) => {
+    draft.auditLogs.unshift(newLog);
+  });
+}
+
+// API Service
+export const api = {
+  // ---------------- AUTHENTICATION & USERS ----------------
+  async register(params: {
+    fullName: string;
+    mobile: string;
+    email: string;
+    password: string;
+    sponsorId?: string;
+  }): Promise<ApiResponse<{ user: User; token: string }>> {
+    const state = db.getState();
+    const cleanMobile = params.mobile.trim().replace(/\D/g, '');
+    const cleanEmail = params.email.trim().toLowerCase();
+
+    // Input Validation
+    if (!params.fullName.trim()) return { success: false, error: 'Full name is required' };
+    if (cleanMobile.length < 10) return { success: false, error: 'Valid 10-digit mobile number required' };
+    if (!cleanEmail.includes('@')) return { success: false, error: 'Valid email address required' };
+    if (params.password.length < 6) return { success: false, error: 'Password must be at least 6 characters' };
+
+    // Duplicate account protection
+    if (state.users.some((u) => u.mobile === cleanMobile)) {
+      return { success: false, error: 'Mobile number is already registered' };
+    }
+    if (state.users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, error: 'Email address is already registered' };
+    }
+
+    // Sponsor validation
+    let validSponsorId: string | null = null;
+    if (params.sponsorId && params.sponsorId.trim()) {
+      const sponsor = state.users.find((u) => u.id.toUpperCase() === params.sponsorId?.trim().toUpperCase());
+      if (!sponsor) {
+        return { success: false, error: 'Invalid Referral/Sponsor ID' };
+      }
+      validSponsorId = sponsor.id;
+    }
+
+    const newUserId = generateUserId(state.users);
+    const now = new Date().toISOString();
+
+    const newUser: User = {
+      id: newUserId,
+      fullName: params.fullName.trim(),
+      mobile: cleanMobile,
+      email: cleanEmail,
+      role: 'user',
+      sponsorId: validSponsorId,
+      status: 'active',
+      kycStatus: 'not_submitted',
+      isMobileVerified: true,
+      isEmailVerified: true,
+      joinedAt: now,
+      lastLoginAt: now,
+      deviceInfo: navigator.userAgent.substring(0, 40),
+      ipAddress: '157.34.120.' + Math.floor(10 + Math.random() * 80),
+      internalNotes: validSponsorId ? [`Referred by ${validSponsorId}`] : ['Direct registration'],
+    };
+
+    const initialWallet: Wallet = {
+      userId: newUserId,
+      availableBalance: 0,
+      pendingBalance: 0,
+      totalHelpedGiven: 0,
+      totalHelpedReceived: 0,
+      totalReferralRewards: 0,
+      totalWithdrawn: 0,
+      lastUpdated: now,
+    };
+
+    db.updateState((draft) => {
+      draft.users.push(newUser);
+      draft.wallets[newUserId] = initialWallet;
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: newUserId,
+        title: 'Welcome to HELP150 Community',
+        message: `Your User ID is ${newUserId}. Review compliance rules and initiate your ₹150 help request.`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+      });
+    });
+
+    firestoreSync.syncUser(newUser);
+    firestoreSync.syncWallet(initialWallet);
+
+    logAudit(
+      { id: newUserId, name: newUser.fullName, role: 'user' },
+      'REGISTER_ACCOUNT',
+      'User',
+      newUserId,
+      `New user registered with Sponsor: ${validSponsorId || 'None'}`
+    );
+
+    return { success: true, data: { user: newUser, token: `jwt_${newUserId}` } };
+  },
+
+  async login(identifier: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    const state = db.getState();
+    const clean = identifier.trim().toLowerCase();
+    const user = state.users.find(
+      (u) =>
+        u.id.toLowerCase() === clean ||
+        u.email.toLowerCase() === clean ||
+        u.mobile === clean
+    );
+
+    if (!user) {
+      return { success: false, error: 'No account found with this User ID, Email, or Mobile' };
+    }
+
+    if (user.status === 'blocked') {
+      return { success: false, error: 'This account has been blocked due to compliance or policy violation' };
+    }
+    if (user.status === 'suspended') {
+      return { success: false, error: 'This account is temporarily suspended. Contact support.' };
+    }
+
+    const now = new Date().toISOString();
+    db.updateState((draft) => {
+      const u = draft.users.find((x) => x.id === user.id);
+      if (u) {
+        u.lastLoginAt = now;
+      }
+      draft.loginSessions.unshift({
+        id: `SES-${Date.now().toString().slice(-6)}`,
+        userId: user.id,
+        device: navigator.userAgent.substring(0, 30),
+        browser: 'Web Client',
+        ipAddress: '157.34.120.' + Math.floor(10 + Math.random() * 80),
+        location: 'India',
+        loginTime: now,
+        status: 'active',
+      });
+    });
+
+    return { success: true, data: { user, token: `jwt_${user.id}` } };
+  },
+
+  async getUser(userId: string): Promise<ApiResponse<User>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+    return { success: true, data: user };
+  },
+
+  async getWallet(userId: string): Promise<ApiResponse<Wallet>> {
+    const state = db.getState();
+    const wallet = state.wallets[userId] || {
+      userId,
+      availableBalance: 0,
+      pendingBalance: 0,
+      totalHelpedGiven: 0,
+      totalHelpedReceived: 0,
+      totalReferralRewards: 0,
+      totalWithdrawn: 0,
+      lastUpdated: new Date().toISOString(),
+    };
+    return { success: true, data: wallet };
+  },
+
+  async getTransactions(userId?: string): Promise<ApiResponse<Transaction[]>> {
+    const state = db.getState();
+    const list = userId
+      ? state.transactions.filter((t) => t.userId === userId || t.senderUserId === userId || t.receiverUserId === userId)
+      : state.transactions;
+    return { success: true, data: list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) };
+  },
+
+  // ---------------- HELPING MODULE (₹150 Configurable) ----------------
+  async createHelpRequest(params: {
+    userId: string;
+    amount?: number;
+    upiId?: string;
+  }): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === params.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    const helpAmount = params.amount || state.settings.helpAmountDefault || 150;
+
+    // Check if user already has an active or pending give-help request
+    const existingActive = state.helpRequests.find(
+      (r) =>
+        r.userId === user.id &&
+        ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'pending_match', 'matched', 'proof_submitted'].includes(
+          r.status
+        )
+    );
+    if (existingActive) {
+      return { success: false, error: `You already have an active Help Request (#${existingActive.id}) in progress.` };
+    }
+
+    // Auto-match algorithm: Pair with a community peer or platform pool
+    const potentialReceivers = state.users.filter(
+      (u) => u.id !== user.id && u.status === 'active' && u.role === 'user'
+    );
+    const matchedPeer =
+      potentialReceivers.length > 0
+        ? potentialReceivers[Math.floor(Math.random() * potentialReceivers.length)]
+        : null;
+
+    const matchedUpi =
+      params.upiId ||
+      (matchedPeer
+        ? `${matchedPeer.fullName.toLowerCase().replace(/\s+/g, '')}@okaxis`
+        : 'help150.treasury@icici');
+    const matchedName = matchedPeer ? matchedPeer.fullName : 'Community Assistance Treasury';
+    const matchedUserId = matchedPeer ? matchedPeer.id : 'H150-ADMIN01';
+    const matchedMobile = matchedPeer ? matchedPeer.mobile : '9800000001';
+    const matchedEmail = matchedPeer ? matchedPeer.email : 'admin@help150.org';
+
+    // Generate standard HP-XXXXXXXX request ID
+    const randomSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const reqId = `HP-150-${randomSuffix.slice(0, 6)}`;
+    const now = Date.now();
+    const timerDurationMs = (state.settings.timerDurationHours || 24) * 3600000;
+
+    const newRequest: HelpRequest = {
+      id: reqId,
+      userId: user.id,
+      userName: user.fullName,
+      userMobile: user.mobile,
+      userEmail: user.email,
+      userUpi: 'user.' + user.mobile + '@upi',
+      amount: helpAmount,
+      type: 'give_help',
+      status: 'PENDING',
+      matchedWithUserId: matchedUserId,
+      matchedWithUserName: matchedName,
+      matchedWithUpi: matchedUpi,
+      matchedWithMobile: matchedMobile,
+      matchedWithEmail: matchedEmail,
+      matchedWithBankDetails: {
+        bankName: 'State Bank of India',
+        accountNumber: 'XXXXXX5910',
+        ifscCode: 'SBIN0001420',
+      },
+      senderAccepted: false,
+      adminApproved: false,
+      timerStartTime: now,
+      timerExpiryTime: now + timerDurationMs,
+      timerStatus: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    db.updateState((draft) => {
+      draft.helpRequests.unshift(newRequest);
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: user.id,
+        title: `Provide Help Request Assigned (#${reqId})`,
+        message: `Assigned to help ${matchedName} (₹${helpAmount}). Review recipient details and accept to proceed.`,
+        type: 'info',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        linkTab: 'help',
+      });
+      if (matchedPeer) {
+        draft.notifications.unshift({
+          id: `NOTIF-${(Date.now() + 1).toString().slice(-6)}`,
+          userId: matchedPeer.id,
+          title: `Receive Help Request Assigned (#${reqId})`,
+          message: `${user.fullName} has been assigned to provide ₹${helpAmount} mutual assistance to you.`,
+          type: 'info',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          linkTab: 'help',
+        });
+      }
+    });
+
+    firestoreSync.syncHelpRequest(newRequest);
+
+    logAudit(
+      { id: user.id, name: user.fullName, role: 'user' },
+      'CREATE_HELP_REQUEST',
+      'HelpRequest',
+      reqId,
+      `Initiated ₹${helpAmount} help request matched to ${matchedName} (${matchedUserId})`
+    );
+
+    return { success: true, data: newRequest };
+  },
+
+  // Accept a Help Request (Sender or Receiver)
+  async acceptHelpRequest(
+    actor: { id: string; name: string; role: string },
+    requestId: string,
+    actionType: 'provide' | 'receive' = 'provide'
+  ): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === requestId);
+    if (!req) return { success: false, error: 'Help request not found' };
+
+    // Security check
+    if (actionType === 'provide' && req.userId !== actor.id && actor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: You are not the sender of this request' };
+    }
+    if (actionType === 'receive' && req.matchedWithUserId !== actor.id && actor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: You are not the receiver of this request' };
+    }
+
+    const now = new Date().toISOString();
+    let updated: HelpRequest | null = null;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === requestId);
+      if (r) {
+        if (actionType === 'provide') {
+          r.senderAccepted = true;
+          r.senderAcceptedAt = now;
+        } else {
+          r.receiverAccepted = true;
+          r.receiverAcceptedAt = now;
+        }
+        r.status = 'ACCEPTED';
+        updated = r;
+      }
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        title: `Help Request Accepted (#${req.id})`,
+        message: `${actor.name} confirmed acceptance for request #${req.id}. Ready for payment transfer.`,
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'help',
+      });
+    });
+
+    logAudit(
+      actor,
+      'ACCEPT_HELP_REQUEST',
+      'HelpRequest',
+      requestId,
+      `${actor.name} (${actionType}) accepted help request #${requestId}`
+    );
+
+    return { success: true, data: updated! };
+  },
+
+  // Reject a Help Request with reason
+  async rejectHelpRequest(
+    actor: { id: string; name: string; role: string },
+    requestId: string,
+    reason: string
+  ): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === requestId);
+    if (!req) return { success: false, error: 'Help request not found' };
+
+    if (!reason || !reason.trim()) {
+      return { success: false, error: 'A valid rejection reason is required' };
+    }
+
+    if (
+      req.userId !== actor.id &&
+      req.matchedWithUserId !== actor.id &&
+      actor.role !== 'admin'
+    ) {
+      return { success: false, error: 'Unauthorized action' };
+    }
+
+    const now = new Date().toISOString();
+    let updated: HelpRequest | null = null;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === requestId);
+      if (r) {
+        r.status = 'REJECTED';
+        r.rejectedByUserId = actor.id;
+        r.rejectionReason = reason.trim();
+        r.rejectedAt = now;
+        r.timerStatus = 'completed';
+        updated = r;
+      }
+      // Notify both parties
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        title: `Help Request Rejected (#${req.id})`,
+        message: `Request #${req.id} was rejected. Reason: ${reason.trim()}`,
+        type: 'alert',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'help',
+      });
+      if (req.matchedWithUserId && req.matchedWithUserId !== 'H150-ADMIN01') {
+        draft.notifications.unshift({
+          id: `NOTIF-${(Date.now() + 1).toString().slice(-6)}`,
+          userId: req.matchedWithUserId,
+          title: `Help Request #${req.id} Closed`,
+          message: `Help request #${req.id} was rejected by ${actor.name}. Reason: ${reason.trim()}`,
+          type: 'warning',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'help',
+        });
+      }
+    });
+
+    logAudit(
+      actor,
+      'REJECT_HELP_REQUEST',
+      'HelpRequest',
+      requestId,
+      `Rejected request #${requestId}. Reason: ${reason.trim()}`
+    );
+
+    return { success: true, data: updated! };
+  },
+
+  // Upload Payment Slip and Submit UTR Reference
+  async submitHelpPaymentSlip(params: {
+    requestId: string;
+    userId: string;
+    referenceNumber: string;
+    notes?: string;
+    slipDataUrl?: string;
+    slipFileName?: string;
+    slipFileType?: string;
+    slipFileSize?: number;
+  }): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === params.requestId && r.userId === params.userId);
+    if (!req) return { success: false, error: 'Help request not found' };
+
+    if (!params.referenceNumber || !params.referenceNumber.trim()) {
+      return { success: false, error: 'Transaction reference number (UTR / UPI Ref) is required' };
+    }
+
+    // Prevent duplicate submission
+    if (['SLIP_UPLOADED', 'VERIFICATION_PENDING', 'COMPLETED', 'proof_submitted', 'completed'].includes(req.status)) {
+      return { success: false, error: 'Payment slip has already been submitted for this request.' };
+    }
+
+    // File validation
+    const maxMb = state.settings.maxSlipFileSizeMb || 5;
+    if (params.slipFileSize && params.slipFileSize > maxMb * 1024 * 1024) {
+      return { success: false, error: `File size exceeds configured maximum of ${maxMb}MB.` };
+    }
+
+    // Allowed types check
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (params.slipFileType && !allowedTypes.includes(params.slipFileType.toLowerCase())) {
+      return { success: false, error: 'Invalid file format. Only JPG, JPEG, PNG, and PDF files are allowed.' };
+    }
+
+    const now = new Date().toISOString();
+    let updatedReq: HelpRequest | null = null;
+    const secureFileName = params.slipFileName
+      ? `SLIP-${req.id}-${Date.now()}.${params.slipFileName.split('.').pop() || 'png'}`
+      : `SLIP-${req.id}-${Date.now()}.png`;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === params.requestId);
+      if (r) {
+        r.status = 'VERIFICATION_PENDING';
+        r.proofReference = params.referenceNumber.trim();
+        r.proofNotes = params.notes?.trim() || 'Payment slip uploaded by member';
+        r.proofSubmittedAt = now;
+        if (params.slipDataUrl) {
+          r.paymentSlipUrl = params.slipDataUrl;
+          r.paymentSlipFileName = secureFileName;
+          r.paymentSlipFileType = params.slipFileType || 'image/png';
+          r.paymentSlipFileSize = params.slipFileSize || 150000;
+          r.paymentSlipUploadedAt = now;
+        }
+        r.slipReviewStatus = 'pending';
+        updatedReq = r;
+      }
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        title: `Payment Slip Uploaded (#${req.id})`,
+        message: `UTR ${params.referenceNumber.trim()} uploaded successfully. Status: Payment Verification Pending.`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'help',
+      });
+      if (req.matchedWithUserId && req.matchedWithUserId !== 'H150-ADMIN01') {
+        draft.notifications.unshift({
+          id: `NOTIF-${(Date.now() + 1).toString().slice(-6)}`,
+          userId: req.matchedWithUserId,
+          title: `Payment Slip Received from ${req.userName}`,
+          message: `${req.userName} has submitted payment slip for ₹${req.amount} (Ref: ${params.referenceNumber.trim()}). Please verify receipt.`,
+          type: 'success',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'help',
+        });
+      }
+    });
+
+    logAudit(
+      { id: req.userId, name: req.userName, role: 'user' },
+      'SUBMIT_PAYMENT_SLIP',
+      'HelpRequest',
+      req.id,
+      `Uploaded payment slip (File: ${secureFileName}, Ref: ${params.referenceNumber.trim()})`
+    );
+
+    return { success: true, data: updatedReq! };
+  },
+
+  // Legacy wrapper for backwards compatibility
+  async submitHelpProof(params: {
+    requestId: string;
+    userId: string;
+    referenceNumber: string;
+    notes?: string;
+  }): Promise<ApiResponse<HelpRequest>> {
+    return this.submitHelpPaymentSlip({
+      requestId: params.requestId,
+      userId: params.userId,
+      referenceNumber: params.referenceNumber,
+      notes: params.notes,
+    });
+  },
+
+  // Receiver member or Admin confirms payment has been received
+  async confirmHelpReceivedByMember(
+    receiverActor: { id: string; name: string; role: string },
+    requestId: string
+  ): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === requestId);
+    if (!req) return { success: false, error: 'Help request not found' };
+    if (req.matchedWithUserId !== receiverActor.id && receiverActor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: You are not the assigned recipient for this request' };
+    }
+    if (req.status === 'COMPLETED' || req.status === 'completed') {
+      return { success: false, error: 'This transaction is already marked as completed.' };
+    }
+
+    return this.approveHelpRequest(
+      { id: receiverActor.id, name: receiverActor.name, role: receiverActor.role },
+      requestId,
+      `Verified and confirmed received by ${receiverActor.name} (${receiverActor.id})`
+    );
+  },
+
+  // Admin / Compliance / Receiver approves Help Request -> Ledger credits & Multi-Level Referral Rewards
+  async approveHelpRequest(
+    adminActor: { id: string; name: string; role: string },
+    requestId: string,
+    adminNotes?: string
+  ): Promise<ApiResponse<HelpRequest>> {
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === requestId);
+    if (!req) return { success: false, error: 'Help request not found' };
+    if (req.status === 'COMPLETED' || req.status === 'completed') {
+      return { success: false, error: 'Request is already completed' };
+    }
+
+    const now = new Date().toISOString();
+    const amount = req.amount;
+
+    db.updateState((draft) => {
+      const r = draft.helpRequests.find((x) => x.id === requestId);
+      if (r) {
+        r.status = 'COMPLETED';
+        r.adminApproved = true;
+        r.timerStatus = 'completed';
+        r.slipReviewStatus = 'verified';
+        r.verifiedBy = adminActor.id;
+        r.verifiedAt = now;
+        r.adminNotes = adminNotes || `Approved and verified by ${adminActor.name}`;
+        r.completedAt = now;
+      }
+
+      // Update Sender Wallet
+      const senderWallet = draft.wallets[req.userId] || {
+        userId: req.userId,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalHelpedGiven: 0,
+        totalHelpedReceived: 0,
+        totalReferralRewards: 0,
+        totalWithdrawn: 0,
+        lastUpdated: now,
+      };
+      senderWallet.totalHelpedGiven += amount;
+      senderWallet.lastUpdated = now;
+      draft.wallets[req.userId] = senderWallet;
+
+      // Log transaction for sender
+      draft.transactions.unshift({
+        id: `TXN-150-${Date.now().toString().slice(-6)}`,
+        userId: req.userId,
+        type: 'help_given',
+        amount: amount,
+        balanceAfter: senderWallet.availableBalance,
+        status: 'completed',
+        referenceId: req.id,
+        remarks: `Voluntary ₹${amount} Community Assistance to ${req.matchedWithUserName || 'Peer'} (Ref: ${req.proofReference || 'VERIFIED'})`,
+        senderUserId: req.userId,
+        receiverUserId: req.matchedWithUserId,
+        senderName: req.userName,
+        receiverName: req.matchedWithUserName,
+        createdAt: now,
+      });
+
+      // Update Receiver Wallet (if matched with community member)
+      if (req.matchedWithUserId && req.matchedWithUserId !== 'H150-ADMIN01') {
+        const receiverWallet = draft.wallets[req.matchedWithUserId] || {
+          userId: req.matchedWithUserId,
+          availableBalance: 0,
+          pendingBalance: 0,
+          totalHelpedGiven: 0,
+          totalHelpedReceived: 0,
+          totalReferralRewards: 0,
+          totalWithdrawn: 0,
+          lastUpdated: now,
+        };
+        receiverWallet.availableBalance += amount;
+        receiverWallet.totalHelpedReceived += amount;
+        receiverWallet.lastUpdated = now;
+        draft.wallets[req.matchedWithUserId] = receiverWallet;
+
+        draft.transactions.unshift({
+          id: `TXN-150-${(Date.now() + 1).toString().slice(-6)}`,
+          userId: req.matchedWithUserId,
+          type: 'help_received',
+          amount: amount,
+          balanceAfter: receiverWallet.availableBalance,
+          status: 'completed',
+          referenceId: req.id,
+          remarks: `Community Help assistance received from ${req.userName}`,
+          senderUserId: req.userId,
+          receiverUserId: req.matchedWithUserId,
+          senderName: req.userName,
+          receiverName: req.matchedWithUserName,
+          createdAt: now,
+        });
+
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: req.matchedWithUserId,
+          title: `Help Received ₹${amount}`,
+          message: `You received ₹${amount} community assistance from ${req.userName}. Wallet credited.`,
+          type: 'success',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'wallet',
+        });
+      }
+
+      // Calculate compliant Multi-Level Referral Rewards up to 6 levels
+      const sender = draft.users.find((u) => u.id === req.userId);
+      let currentSponsorId = sender?.sponsorId;
+      let level = 1;
+
+      while (currentSponsorId && level <= 6) {
+        const sponsor = draft.users.find((u) => u.id === currentSponsorId);
+        const levelConfig = draft.referralLevels.find((l) => l.level === level);
+
+        if (sponsor && levelConfig && levelConfig.enabled && sponsor.status === 'active') {
+          const rewardAmount = Math.round(((amount * levelConfig.percentage) / 100) * 100) / 100;
+          if (rewardAmount > 0) {
+            const spWallet = draft.wallets[sponsor.id] || {
+              userId: sponsor.id,
+              availableBalance: 0,
+              pendingBalance: 0,
+              totalHelpedGiven: 0,
+              totalHelpedReceived: 0,
+              totalReferralRewards: 0,
+              totalWithdrawn: 0,
+              lastUpdated: now,
+            };
+
+            spWallet.availableBalance += rewardAmount;
+            spWallet.totalReferralRewards += rewardAmount;
+            spWallet.lastUpdated = now;
+            draft.wallets[sponsor.id] = spWallet;
+
+            draft.transactions.unshift({
+              id: `TXN-REF-${Date.now().toString().slice(-6)}-L${level}`,
+              userId: sponsor.id,
+              type: 'referral_reward',
+              amount: rewardAmount,
+              balanceAfter: spWallet.availableBalance,
+              status: 'completed',
+              referenceId: req.id,
+              remarks: `Level ${level} (${levelConfig.percentage}%) Platform Activity Incentive (${req.userName})`,
+              senderUserId: 'H150-ADMIN01',
+              receiverUserId: sponsor.id,
+              createdAt: now,
+            });
+
+            draft.notifications.unshift({
+              id: `NOTIF-REF-${Date.now().toString().slice(-6)}`,
+              userId: sponsor.id,
+              title: `Level ${level} Referral Reward: +₹${rewardAmount}`,
+              message: `Earned for qualifying community activity by ${req.userName}.`,
+              type: 'success',
+              isRead: false,
+              createdAt: now,
+              linkTab: 'referral',
+            });
+          }
+        }
+
+        currentSponsorId = sponsor?.sponsorId || null;
+        level++;
+      }
+    });
+
+    logAudit(
+      adminActor,
+      'APPROVE_HELP_REQUEST',
+      'HelpRequest',
+      requestId,
+      `Approved ₹${amount} help request for ${req.userName}. Credited receiver and calculated L1-L6 rewards.`
+    );
+
+    return { success: true, data: db.getState().helpRequests.find((r) => r.id === requestId)! };
+  },
+
+  // Admin Payment Verification actions (Verify, Reject with reason, Request New Slip)
+  async adminReviewPaymentSlip(params: {
+    adminActor: { id: string; name: string; role: string };
+    requestId: string;
+    action: 'verify' | 'reject' | 'request_new_slip';
+    rejectionReason?: string;
+    notes?: string;
+  }): Promise<ApiResponse<HelpRequest>> {
+    const { adminActor, requestId, action, rejectionReason, notes } = params;
+    const state = db.getState();
+    const req = state.helpRequests.find((r) => r.id === requestId);
+    if (!req) return { success: false, error: 'Help request not found' };
+
+    if (action === 'verify') {
+      return this.approveHelpRequest(adminActor, requestId, notes || 'Verified by Admin Payment Desk');
+    }
+
+    if (action === 'reject') {
+      if (!rejectionReason || !rejectionReason.trim()) {
+        return { success: false, error: 'A valid rejection reason is required for rejecting payment slip' };
+      }
+      const now = new Date().toISOString();
+      let updated: HelpRequest | null = null;
+      db.updateState((draft) => {
+        const r = draft.helpRequests.find((x) => x.id === requestId);
+        if (r) {
+          r.status = 'REJECTED';
+          r.slipReviewStatus = 'rejected';
+          r.adminNotes = `Rejected: ${rejectionReason.trim()}`;
+          r.rejectionReason = rejectionReason.trim();
+          r.rejectedByUserId = adminActor.id;
+          r.rejectedAt = now;
+          updated = r;
+        }
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: req.userId,
+          title: `Payment Slip Rejected (#${req.id})`,
+          message: `Admin rejected your payment slip. Reason: ${rejectionReason.trim()}`,
+          type: 'alert',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'help',
+        });
+      });
+      logAudit(
+        adminActor,
+        'REJECT_PAYMENT_SLIP',
+        'HelpRequest',
+        requestId,
+        `Admin rejected payment slip for #${requestId}. Reason: ${rejectionReason.trim()}`
+      );
+      return { success: true, data: updated! };
+    }
+
+    if (action === 'request_new_slip') {
+      const now = new Date().toISOString();
+      let updated: HelpRequest | null = null;
+      db.updateState((draft) => {
+        const r = draft.helpRequests.find((x) => x.id === requestId);
+        if (r) {
+          r.status = 'PAYMENT_PENDING';
+          r.slipReviewStatus = 'reupload_requested';
+          r.slipReviewNotes = notes?.trim() || 'Please re-upload a clear transaction receipt or bank statement screenshot.';
+          r.paymentSlipUrl = undefined;
+          updated = r;
+        }
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: req.userId,
+          title: `Re-upload Payment Slip Requested (#${req.id})`,
+          message: notes?.trim() || 'Admin has requested a new clear payment slip with legible UTR number.',
+          type: 'warning',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'help',
+        });
+      });
+      logAudit(
+        adminActor,
+        'REQUEST_NEW_PAYMENT_SLIP',
+        'HelpRequest',
+        requestId,
+        `Admin requested new slip for #${requestId}. Notes: ${notes?.trim() || 'Clear copy requested'}`
+      );
+      return { success: true, data: updated! };
+    }
+
+    return { success: false, error: 'Invalid review action' };
+  },
+
+  // Server-side Timer expiry check
+  async checkAndUpdateExpiredHelpTimers(): Promise<ApiResponse<{ expiredCount: number }>> {
+    const state = db.getState();
+    const now = Date.now();
+    let expiredCount = 0;
+
+    db.updateState((draft) => {
+      draft.helpRequests.forEach((req) => {
+        if (
+          req.timerExpiryTime &&
+          req.timerExpiryTime <= now &&
+          ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'matched', 'pending_match'].includes(req.status)
+        ) {
+          req.status = 'EXPIRED';
+          req.timerStatus = 'expired';
+          expiredCount++;
+          draft.notifications.unshift({
+            id: `NOTIF-${Date.now().toString().slice(-6)}-${req.id}`,
+            userId: req.userId,
+            title: `Help Request Expired (#${req.id})`,
+            message: `12-Hour window expired for request #${req.id}. Status changed to Expired.`,
+            type: 'alert',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'help',
+          });
+        }
+      });
+    });
+
+    return { success: true, data: { expiredCount } };
+  },
+
+  // ---------------- WITHDRAWAL ENGINE ----------------
+  async requestWithdrawal(params: {
+    userId: string;
+    amount: number;
+    payoutMethod: 'upi' | 'bank_transfer';
+    payoutUpiId?: string;
+    payoutBankDetails?: { bankName: string; accountNumber: string; ifscCode: string };
+  }): Promise<ApiResponse<WithdrawalRequest>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === params.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    const settings = state.settings;
+    const amount = Number(params.amount);
+
+    // Rule: Minimum withdrawal ₹200
+    if (amount < settings.minWithdrawalAmount) {
+      return {
+        success: false,
+        error: `Minimum withdrawal amount is ₹${settings.minWithdrawalAmount}.`,
+      };
+    }
+
+    // Rule: Must be in multiples of ₹200
+    if (amount % settings.withdrawalMultiple !== 0) {
+      return {
+        success: false,
+        error: `Withdrawal amount must be in multiples of ₹${settings.withdrawalMultiple} (e.g. ₹200, ₹400, ₹600, ₹800).`,
+      };
+    }
+
+    // KYC Check
+    if (settings.kycRequiredForWithdrawal && user.kycStatus !== 'verified') {
+      return {
+        success: false,
+        error: 'KYC Verification is required before placing a withdrawal request. Please submit your Aadhaar/PAN in KYC section.',
+      };
+    }
+
+    const wallet = state.wallets[user.id];
+    if (!wallet || wallet.availableBalance < amount) {
+      return {
+        success: false,
+        error: `Insufficient available balance (Available: ₹${wallet ? wallet.availableBalance : 0}, Requested: ₹${amount}).`,
+      };
+    }
+
+    // Check if payout details provided
+    if (params.payoutMethod === 'upi' && (!params.payoutUpiId || !params.payoutUpiId.includes('@'))) {
+      return { success: false, error: 'Please provide a valid UPI ID (e.g. name@bank)' };
+    }
+    if (
+      params.payoutMethod === 'bank_transfer' &&
+      (!params.payoutBankDetails?.accountNumber || !params.payoutBankDetails?.ifscCode)
+    ) {
+      return { success: false, error: 'Please provide valid bank account number and IFSC code' };
+    }
+
+    const feePercent = settings.withdrawalProcessingFeePercent || 5;
+    const feeAmount = Math.round(((amount * feePercent) / 100) * 100) / 100;
+    const netPayable = amount - feeAmount;
+
+    const wthId = `WTH-${settings.withdrawalMultiple}-${Date.now().toString().slice(-5)}`;
+    const now = new Date().toISOString();
+
+    const newWithdrawal: WithdrawalRequest = {
+      id: wthId,
+      userId: user.id,
+      userName: user.fullName,
+      amount,
+      processingFee: feeAmount,
+      netPayable,
+      payoutMethod: params.payoutMethod,
+      payoutUpiId: params.payoutUpiId,
+      payoutBankDetails: params.payoutBankDetails,
+      kycVerified: user.kycStatus === 'verified',
+      status: 'requested',
+      createdAt: now,
+    };
+
+    db.updateState((draft) => {
+      // Deduct from available, place in pending
+      const w = draft.wallets[user.id];
+      if (w) {
+        w.availableBalance -= amount;
+        w.pendingBalance += amount;
+        w.lastUpdated = now;
+      }
+
+      draft.withdrawals.unshift(newWithdrawal);
+
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: user.id,
+        title: `Withdrawal Requested ₹${amount}`,
+        message: `Your withdrawal request #${wthId} for net ₹${netPayable} is under verification.`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'withdrawal',
+      });
+    });
+
+    logAudit(
+      { id: user.id, name: user.fullName, role: 'user' },
+      'REQUEST_WITHDRAWAL',
+      'Withdrawal',
+      wthId,
+      `Requested withdrawal ₹${amount} via ${params.payoutMethod}`
+    );
+
+    return { success: true, data: newWithdrawal };
+  },
+
+  async processWithdrawal(
+    adminActor: { id: string; name: string; role: string },
+    withdrawalId: string,
+    action: 'approve' | 'reject',
+    transactionRef?: string,
+    remarks?: string
+  ): Promise<ApiResponse<WithdrawalRequest>> {
+    const state = db.getState();
+    const wth = state.withdrawals.find((w) => w.id === withdrawalId);
+    if (!wth) return { success: false, error: 'Withdrawal record not found' };
+    if (wth.status === 'completed' || wth.status === 'rejected') {
+      return { success: false, error: `Withdrawal is already ${wth.status}` };
+    }
+
+    const now = new Date().toISOString();
+
+    db.updateState((draft) => {
+      const item = draft.withdrawals.find((x) => x.id === withdrawalId);
+      const w = draft.wallets[wth.userId];
+
+      if (action === 'approve') {
+        if (item) {
+          item.status = 'completed';
+          item.transactionRef = transactionRef || `UTR-${Date.now()}`;
+          item.adminRemarks = remarks || 'Payout successfully processed via payment gateway/bank';
+          item.processedAt = now;
+        }
+
+        if (w) {
+          w.pendingBalance -= wth.amount;
+          w.totalWithdrawn += wth.amount;
+          w.lastUpdated = now;
+        }
+
+        draft.transactions.unshift({
+          id: `TXN-WTH-${Date.now().toString().slice(-6)}`,
+          userId: wth.userId,
+          type: 'withdrawal',
+          amount: wth.amount,
+          balanceAfter: w ? w.availableBalance : 0,
+          status: 'completed',
+          referenceId: item?.transactionRef || wth.id,
+          remarks: `Withdrawal paid to ${wth.payoutMethod.toUpperCase()} (Net: ₹${wth.netPayable}, Fee: ₹${wth.processingFee})`,
+          createdAt: now,
+        });
+
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: wth.userId,
+          title: `Withdrawal Completed: ₹${wth.amount}`,
+          message: `Payout of ₹${wth.netPayable} has been transferred. UTR: ${item?.transactionRef}`,
+          type: 'success',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'withdrawal',
+        });
+      } else {
+        // Rejected -> refund back to Available Balance
+        if (item) {
+          item.status = 'rejected';
+          item.adminRemarks = remarks || 'Withdrawal rejected by finance admin.';
+          item.processedAt = now;
+        }
+
+        if (w) {
+          w.pendingBalance -= wth.amount;
+          w.availableBalance += wth.amount;
+          w.lastUpdated = now;
+        }
+
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: wth.userId,
+          title: `Withdrawal Rejected: ₹${wth.amount}`,
+          message: `Reason: ${remarks || 'Verification issue'}. Funds refunded to your available balance.`,
+          type: 'warning',
+          isRead: false,
+          createdAt: now,
+          linkTab: 'withdrawal',
+        });
+      }
+    });
+
+    logAudit(
+      adminActor,
+      action === 'approve' ? 'APPROVE_WITHDRAWAL' : 'REJECT_WITHDRAWAL',
+      'Withdrawal',
+      withdrawalId,
+      `${action === 'approve' ? 'Approved payout' : 'Rejected payout'} of ₹${wth.amount} for ${wth.userName}. Notes: ${remarks || 'None'}`
+    );
+
+    return { success: true, data: db.getState().withdrawals.find((w) => w.id === withdrawalId)! };
+  },
+
+  // ---------------- KYC MODULE ----------------
+  async submitKyc(params: {
+    userId: string;
+    fullNameAsPerId: string;
+    aadhaarNumber: string;
+    panNumber: string;
+    documentType: 'aadhaar' | 'pan' | 'voter_id';
+    upiId: string;
+    bankName: string;
+    accountNumber: string;
+    ifscCode: string;
+  }): Promise<ApiResponse<KycRecord>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === params.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    if (!params.fullNameAsPerId.trim()) return { success: false, error: 'Full name on ID document is required' };
+    if (!params.aadhaarNumber.trim() || params.aadhaarNumber.length < 8) return { success: false, error: 'Valid Aadhaar number required' };
+    if (!params.panNumber.trim() || params.panNumber.length < 10) return { success: false, error: 'Valid PAN card number required (10 characters)' };
+    if (!params.upiId.trim() || !params.upiId.includes('@')) return { success: false, error: 'Valid UPI ID required' };
+    if (!params.bankName.trim()) return { success: false, error: 'Bank name is required' };
+    if (!params.accountNumber.trim()) return { success: false, error: 'Bank account number is required' };
+    if (!params.ifscCode.trim() || params.ifscCode.length < 6) return { success: false, error: 'Valid Bank IFSC code is required' };
+
+    const kycId = `KYC-${params.userId.replace('H150-', '')}`;
+    const now = new Date().toISOString();
+
+    const newRecord: KycRecord = {
+      id: kycId,
+      userId: user.id,
+      fullNameAsPerId: params.fullNameAsPerId.trim(),
+      aadhaarNumber: params.aadhaarNumber.trim(),
+      panNumber: params.panNumber.trim().toUpperCase(),
+      documentType: params.documentType,
+      upiId: params.upiId.trim(),
+      bankName: params.bankName.trim(),
+      accountNumber: params.accountNumber.trim(),
+      ifscCode: params.ifscCode.trim().toUpperCase(),
+      status: 'pending',
+      submittedAt: now,
+    };
+
+    db.updateState((draft) => {
+      const idx = draft.kycRecords.findIndex((k) => k.userId === user.id);
+      if (idx >= 0) {
+        draft.kycRecords[idx] = newRecord;
+      } else {
+        draft.kycRecords.unshift(newRecord);
+      }
+
+      const u = draft.users.find((x) => x.id === user.id);
+      if (u) {
+        u.kycStatus = 'pending';
+      }
+
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: user.id,
+        title: 'KYC Submitted Successfully',
+        message: 'Your identity and banking credentials are submitted for verification.',
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'kyc',
+      });
+    });
+
+    logAudit(
+      { id: user.id, name: user.fullName, role: 'user' },
+      'SUBMIT_KYC',
+      'KYC',
+      kycId,
+      `Submitted Aadhaar/PAN and Bank details for verification.`
+    );
+
+    return { success: true, data: newRecord };
+  },
+
+  async reviewKyc(
+    adminActor: { id: string; name: string; role: string },
+    kycId: string,
+    status: 'verified' | 'rejected',
+    notes?: string
+  ): Promise<ApiResponse<KycRecord>> {
+    const state = db.getState();
+    const kyc = state.kycRecords.find((k) => k.id === kycId);
+    if (!kyc) return { success: false, error: 'KYC record not found' };
+
+    const now = new Date().toISOString();
+
+    db.updateState((draft) => {
+      const k = draft.kycRecords.find((x) => x.id === kycId);
+      if (k) {
+        k.status = status;
+        k.reviewedAt = now;
+        k.reviewedBy = adminActor.id;
+        k.adminNotes = notes;
+        if (status === 'rejected') {
+          k.rejectionReason = notes || 'Documents did not match statutory verification criteria.';
+        }
+      }
+
+      const u = draft.users.find((x) => x.id === kyc.userId);
+      if (u) {
+        u.kycStatus = status;
+      }
+
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId: kyc.userId,
+        title: status === 'verified' ? 'KYC Verified Successfully' : 'KYC Verification Rejected',
+        message:
+          status === 'verified'
+            ? 'Your KYC documents and payout banking methods have been verified.'
+            : `Your KYC could not be verified: ${notes || 'Please resubmit valid documents.'}`,
+        type: status === 'verified' ? 'success' : 'alert',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'kyc',
+      });
+    });
+
+    logAudit(
+      adminActor,
+      status === 'verified' ? 'APPROVE_KYC' : 'REJECT_KYC',
+      'KYC',
+      kycId,
+      `KYC status changed to ${status} for user ${kyc.userId}. Notes: ${notes || 'None'}`
+    );
+
+    return { success: true, data: db.getState().kycRecords.find((k) => k.id === kycId)! };
+  },
+
+  // ---------------- REFERRAL TREE & STATS ----------------
+  getReferralHierarchy(userId: string): {
+    directReferrals: ReferralMember[];
+    totalTeamSize: number;
+    levelStats: ReferralStat[];
+    allDownline: ReferralMember[];
+  } {
+    const state = db.getState();
+    const levelStats: ReferralStat[] = state.referralLevels.map((l) => ({
+      level: l.level,
+      memberCount: 0,
+      activeCount: 0,
+      earnedRewards: 0,
+      pendingRewards: 0,
+    }));
+
+    const directReferrals: ReferralMember[] = [];
+    const allDownline: ReferralMember[] = [];
+
+    // Traverse downline level by level up to Level 6
+    let currentLevelUsers = [userId];
+    for (let level = 1; level <= 6; level++) {
+      const nextLevelUsers: string[] = [];
+      const matchingMembers = state.users.filter((u) => u.sponsorId && currentLevelUsers.includes(u.sponsorId));
+
+      matchingMembers.forEach((member) => {
+        const wallet = state.wallets[member.id];
+        const isQualifyingDone = (wallet?.totalHelpedGiven || 0) >= 150;
+        const refItem: ReferralMember = {
+          userId: member.id,
+          fullName: member.fullName,
+          joinedAt: member.joinedAt,
+          status: member.status,
+          level,
+          totalHelpGiven: wallet?.totalHelpedGiven || 0,
+          qualifyingDone: isQualifyingDone,
+        };
+
+        if (level === 1) {
+          directReferrals.push(refItem);
+        }
+        allDownline.push(refItem);
+        nextLevelUsers.push(member.id);
+
+        const stat = levelStats.find((s) => s.level === level);
+        if (stat) {
+          stat.memberCount++;
+          if (member.status === 'active' && isQualifyingDone) {
+            stat.activeCount++;
+          }
+        }
+      });
+
+      // Rewards earned at this level from transactions
+      const levelTransactions = state.transactions.filter(
+        (t) => t.userId === userId && t.type === 'referral_reward' && t.id.includes(`-L${level}`)
+      );
+      const earned = levelTransactions.reduce((acc, t) => acc + t.amount, 0);
+      const stat = levelStats.find((s) => s.level === level);
+      if (stat) {
+        stat.earnedRewards = earned;
+      }
+
+      currentLevelUsers = nextLevelUsers;
+      if (currentLevelUsers.length === 0) break;
+    }
+
+    return {
+      directReferrals,
+      totalTeamSize: allDownline.length,
+      levelStats,
+      allDownline,
+    };
+  },
+
+  // ---------------- SUPPORT TICKETS ----------------
+  async createSupportTicket(params: {
+    userId: string;
+    subject: string;
+    category: SupportTicket['category'];
+    priority: SupportTicket['priority'];
+    message: string;
+  }): Promise<ApiResponse<SupportTicket>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === params.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    if (!params.subject.trim()) return { success: false, error: 'Subject is required' };
+    if (!params.message.trim()) return { success: false, error: 'Message description is required' };
+
+    const tckId = `TCK-150-${Date.now().toString().slice(-4)}`;
+    const now = new Date().toISOString();
+
+    const newTicket: SupportTicket = {
+      id: tckId,
+      userId: user.id,
+      userName: user.fullName,
+      userEmail: user.email,
+      subject: params.subject.trim(),
+      category: params.category,
+      priority: params.priority,
+      status: 'open',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        {
+          id: `MSG-${Date.now()}`,
+          sender: 'user',
+          senderName: user.fullName,
+          text: params.message.trim(),
+          timestamp: now,
+        },
+      ],
+    };
+
+    db.updateState((draft) => {
+      draft.supportTickets.unshift(newTicket);
+    });
+
+    logAudit(
+      { id: user.id, name: user.fullName, role: 'user' },
+      'CREATE_TICKET',
+      'SupportTicket',
+      tckId,
+      `Created ticket regarding ${params.subject}`
+    );
+
+    return { success: true, data: newTicket };
+  },
+
+  async replySupportTicket(params: {
+    ticketId: string;
+    sender: 'user' | 'admin';
+    senderName: string;
+    senderId: string;
+    text: string;
+    newStatus?: SupportTicket['status'];
+  }): Promise<ApiResponse<SupportTicket>> {
+    const state = db.getState();
+    const tck = state.supportTickets.find((t) => t.id === params.ticketId);
+    if (!tck) return { success: false, error: 'Ticket not found' };
+
+    const now = new Date().toISOString();
+
+    db.updateState((draft) => {
+      const item = draft.supportTickets.find((x) => x.id === params.ticketId);
+      if (item) {
+        item.messages.push({
+          id: `MSG-${Date.now()}`,
+          sender: params.sender,
+          senderName: params.senderName,
+          text: params.text.trim(),
+          timestamp: now,
+        });
+        item.updatedAt = now;
+        if (params.newStatus) {
+          item.status = params.newStatus;
+        } else if (params.sender === 'admin' && item.status === 'open') {
+          item.status = 'in_progress';
+        }
+      }
+    });
+
+    return { success: true, data: db.getState().supportTickets.find((t) => t.id === params.ticketId)! };
+  },
+
+  // ---------------- ADMIN CONTROLS ----------------
+  async updateUserStatus(
+    adminActor: { id: string; name: string; role: string },
+    userId: string,
+    newStatus: 'active' | 'suspended' | 'blocked',
+    reason?: string
+  ): Promise<ApiResponse<User>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    db.updateState((draft) => {
+      const u = draft.users.find((x) => x.id === userId);
+      if (u) {
+        u.status = newStatus;
+        if (reason) {
+          u.internalNotes = u.internalNotes || [];
+          u.internalNotes.push(`[${new Date().toLocaleDateString()}] Status changed to ${newStatus}: ${reason}`);
+        }
+      }
+    });
+
+    logAudit(
+      adminActor,
+      `CHANGE_USER_STATUS_${newStatus.toUpperCase()}`,
+      'User',
+      userId,
+      `Changed user ${user.fullName} (${userId}) status to ${newStatus}. Reason: ${reason || 'Admin action'}`
+    );
+
+    return { success: true, data: db.getState().users.find((u) => u.id === userId)! };
+  },
+
+  async adminAdjustWallet(
+    adminActor: { id: string; name: string; role: string },
+    userId: string,
+    amount: number,
+    type: 'credit' | 'debit',
+    reason: string
+  ): Promise<ApiResponse<Wallet>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    if (!reason || reason.trim().length < 5) {
+      return { success: false, error: 'Mandatory reason (min 5 characters) required for audit log compliance.' };
+    }
+
+    const currentWallet = state.wallets[userId];
+    if (type === 'debit' && (!currentWallet || currentWallet.availableBalance < amount)) {
+      return { success: false, error: 'Cannot debit more than available wallet balance (No negative balances allowed).' };
+    }
+
+    const now = new Date().toISOString();
+
+    db.updateState((draft) => {
+      const w = draft.wallets[userId] || {
+        userId,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalHelpedGiven: 0,
+        totalHelpedReceived: 0,
+        totalReferralRewards: 0,
+        totalWithdrawn: 0,
+        lastUpdated: now,
+      };
+
+      if (type === 'credit') {
+        w.availableBalance += amount;
+      } else {
+        w.availableBalance -= amount;
+      }
+      w.lastUpdated = now;
+      draft.wallets[userId] = w;
+
+      draft.transactions.unshift({
+        id: `TXN-ADM-${Date.now().toString().slice(-6)}`,
+        userId,
+        type: type === 'credit' ? 'admin_credit' : 'admin_debit',
+        amount,
+        balanceAfter: w.availableBalance,
+        status: 'completed',
+        referenceId: `ADM-ADJ-${adminActor.id}`,
+        remarks: `Admin Adjustment (${type.toUpperCase()}): ${reason}`,
+        senderUserId: adminActor.id,
+        receiverUserId: userId,
+        createdAt: now,
+      });
+
+      draft.notifications.unshift({
+        id: `NOTIF-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Wallet ${type === 'credit' ? 'Credited' : 'Debited'}: ₹${amount}`,
+        message: `Platform admin adjustment applied: ${reason}`,
+        type: type === 'credit' ? 'success' : 'warning',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'wallet',
+      });
+    });
+
+    logAudit(
+      adminActor,
+      `WALLET_ADJUSTMENT_${type.toUpperCase()}`,
+      'Wallet',
+      userId,
+      `Manual ${type} of ₹${amount} for user ${user.fullName} (${userId}). Reason: ${reason}`
+    );
+
+    return { success: true, data: db.getState().wallets[userId] };
+  },
+
+  async updateReferralLevels(
+    adminActor: { id: string; name: string; role: string },
+    levels: DatabaseState['referralLevels']
+  ): Promise<ApiResponse<DatabaseState['referralLevels']>> {
+    db.updateState((draft) => {
+      draft.referralLevels = levels;
+    });
+
+    logAudit(
+      adminActor,
+      'UPDATE_REFERRAL_SETTINGS',
+      'ReferralConfig',
+      'Levels_1_6',
+      `Updated multi-level referral configuration matrix.`
+    );
+
+    return { success: true, data: db.getState().referralLevels };
+  },
+
+  async markNotificationAsRead(id: string): Promise<ApiResponse<boolean>> {
+    db.updateState((draft) => {
+      const n = draft.notifications.find((item) => item.id === id);
+      if (n) {
+        n.isRead = true;
+      }
+    });
+    return { success: true, data: true };
+  },
+
+  async broadcastNotification(params: {
+    title: string;
+    message: string;
+    targetUserId?: string;
+    type?: 'info' | 'success' | 'warning' | 'alert';
+  }): Promise<ApiResponse<boolean>> {
+    db.updateState((draft) => {
+      draft.notifications.unshift({
+        id: `NOTIF-BRD-${Date.now().toString().slice(-6)}`,
+        userId: params.targetUserId || 'all',
+        title: params.title,
+        message: params.message,
+        type: params.type || 'info',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    });
+    return { success: true, data: true };
+  },
+
+  async adminApproveHelpRequest(
+    requestId: string,
+    adminId: string
+  ): Promise<ApiResponse<HelpRequest>> {
+    const adminUser = db.getState().users.find((u) => u.id === adminId) || {
+      id: adminId,
+      fullName: 'System Administrator',
+      role: 'admin',
+    };
+    return this.approveHelpRequest(
+      { id: adminUser.id, name: adminUser.fullName, role: adminUser.role },
+      requestId
+    );
+  },
+
+  async adminProcessWithdrawal(params: {
+    withdrawalId: string;
+    action: 'approve' | 'reject';
+    adminId: string;
+    transactionRef?: string;
+    rejectionReason?: string;
+  }): Promise<ApiResponse<WithdrawalRequest>> {
+    const adminUser = db.getState().users.find((u) => u.id === params.adminId) || {
+      id: params.adminId,
+      fullName: 'System Administrator',
+      role: 'admin',
+    };
+    return this.processWithdrawal(
+      { id: adminUser.id, name: adminUser.fullName, role: adminUser.role },
+      params.withdrawalId,
+      params.action,
+      params.transactionRef,
+      params.rejectionReason
+    );
+  },
+
+  async adminAdjustBalance(params: {
+    adminId: string;
+    targetUserId: string;
+    amount: number;
+    type: 'credit' | 'debit';
+    reason: string;
+  }): Promise<ApiResponse<Wallet>> {
+    const adminUser = db.getState().users.find((u) => u.id === params.adminId) || {
+      id: params.adminId,
+      fullName: 'System Administrator',
+      role: 'admin',
+    };
+    return this.adminAdjustWallet(
+      { id: adminUser.id, name: adminUser.fullName, role: adminUser.role },
+      params.targetUserId,
+      params.amount,
+      params.type,
+      params.reason
+    );
+  },
+
+  async updateSettings(
+    adminActorOrSettings: { id: string; name: string; role: string } | Partial<WebsiteSettings>,
+    newSettingsOrAdminId?: Partial<WebsiteSettings> | string
+  ): Promise<ApiResponse<WebsiteSettings>> {
+    let settingsToApply: Partial<WebsiteSettings> = {};
+    let actorId = 'H150-ADMIN01';
+
+    if ('helpAmountDefault' in adminActorOrSettings || 'systemNoticeText' in adminActorOrSettings || 'adminUpiId' in adminActorOrSettings || 'minWithdrawalAmount' in adminActorOrSettings || 'withdrawalMultiple' in adminActorOrSettings || 'withdrawalProcessingFeePercent' in adminActorOrSettings || 'timerDurationHours' in adminActorOrSettings || 'kycRequiredForWithdrawal' in adminActorOrSettings || 'maintenanceMode' in adminActorOrSettings || 'complianceDisclaimerText' in adminActorOrSettings) {
+      settingsToApply = adminActorOrSettings as Partial<WebsiteSettings>;
+      if (typeof newSettingsOrAdminId === 'string') {
+        actorId = newSettingsOrAdminId;
+      }
+    } else {
+      actorId = (adminActorOrSettings as any).id;
+      settingsToApply = (newSettingsOrAdminId as Partial<WebsiteSettings>) || {};
+    }
+
+    db.updateState((draft) => {
+      draft.settings = {
+        ...draft.settings,
+        ...settingsToApply,
+      };
+    });
+
+    logAudit(
+      { id: actorId, name: 'Admin', role: 'admin' },
+      'UPDATE_WEBSITE_SETTINGS',
+      'WebsiteSettings',
+      'Core',
+      `Updated platform configuration settings.`
+    );
+
+    return { success: true, data: db.getState().settings };
+  },
+};

@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isEmailAdmin() {
+      return isSignedIn() && request.auth.token.email == 'ashuk2968@gmail.com';
+    }
+    function isAdmin() {
+      return isEmailAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // Entity Validators
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.fullName is string && data.fullName.size() <= 100 &&
+             data.email is string && data.email.size() <= 120 &&
+             data.role in ['user', 'admin', 'compliance_officer', 'finance_admin'] &&
+             data.status in ['active', 'suspended', 'blocked'];
+    }
+
+    function isValidWallet(data) {
+      return data.userId is string && data.userId.size() <= 64 &&
+             data.availableBalance is number && data.availableBalance >= 0 &&
+             data.pendingBalance is number && data.pendingBalance >= 0;
+    }
+
+    function isValidHelpRequest(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.amount is number && data.amount > 0 &&
+             data.type in ['give_help', 'receive_help'];
+    }
+
+    function isValidTransaction(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.amount is number &&
+             data.status in ['pending', 'completed', 'failed', 'rejected'];
+    }
+
+    function isValidKyc(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.fullNameAsPerId is string && data.fullNameAsPerId.size() <= 100;
+    }
+
+    function isValidWithdrawal(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.amount is number && data.amount >= 200;
+    }
+
+    function isValidTicket(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.subject is string && data.subject.size() <= 150;
+    }
+
+    // Connection Health Test Document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if (isOwner(userId) || isAdmin() || isSignedIn()) && isValidUser(incoming());
+      allow update: if isValidUser(incoming()) && (isAdmin() || isOwner(userId) || isSignedIn());
+      allow delete: if isAdmin();
+    }
+
+    // Wallets
+    match /wallets/{walletId} {
+      allow get, list: if true;
+      allow create, update: if isValidWallet(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Help Requests (Provide / Receive)
+    match /helpRequests/{helpRequestId} {
+      allow get, list: if true;
+      allow create, update: if isValidHelpRequest(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Transactions
+    match /transactions/{transactionId} {
+      allow get, list: if true;
+      allow create: if isValidTransaction(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // KYC Records
+    match /kycRecords/{kycRecordId} {
+      allow get, list: if true;
+      allow create, update: if isValidKyc(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Withdrawals
+    match /withdrawals/{withdrawalId} {
+      allow get, list: if true;
+      allow create: if isValidWithdrawal(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Support Tickets
+    match /supportTickets/{ticketId} {
+      allow get, list: if true;
+      allow create, update: if isValidTicket(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow get, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // Audit Logs (Immutable)
+    match /auditLogs/{auditLogId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    // Settings (Public Read)
+    match /settings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() || isSignedIn();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow get: if isSignedIn();
+      allow list, write: if isEmailAdmin();
+    }
+  }
+}

@@ -1,0 +1,580 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "Registered member or administrator account profile in HELP150",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique User identifier",
+          "maxLength": 64
+        },
+        "fullName": {
+          "type": "string",
+          "description": "User legal or registered display name",
+          "maxLength": 100
+        },
+        "mobile": {
+          "type": "string",
+          "description": "Verified 10-digit mobile number",
+          "maxLength": 15
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin", "compliance_officer", "finance_admin"],
+          "description": "Access control role"
+        },
+        "sponsorId": {
+          "type": "string",
+          "description": "ID of the referring sponsor",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended", "blocked"],
+          "description": "Account status"
+        },
+        "kycStatus": {
+          "type": "string",
+          "enum": ["not_submitted", "pending", "verified", "rejected"],
+          "description": "KYC verification status"
+        },
+        "isMobileVerified": {
+          "type": "boolean",
+          "description": "Mobile verification flag"
+        },
+        "isEmailVerified": {
+          "type": "boolean",
+          "description": "Email verification flag"
+        },
+        "joinedAt": {
+          "type": "string",
+          "description": "Timestamp ISO string when user joined"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp ISO string of latest login"
+        }
+      },
+      "required": ["id", "fullName", "mobile", "email", "role", "status", "kycStatus", "joinedAt"]
+    },
+    "wallet": {
+      "title": "Member Wallet",
+      "description": "User balance, earnings, and helping summary ledger",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Associated user account ID",
+          "maxLength": 64
+        },
+        "availableBalance": {
+          "type": "number",
+          "description": "Available withdrawable balance in INR"
+        },
+        "pendingBalance": {
+          "type": "number",
+          "description": "Pending balance in verification"
+        },
+        "totalHelpedGiven": {
+          "type": "number",
+          "description": "Cumulative amount of help given"
+        },
+        "totalHelpedReceived": {
+          "type": "number",
+          "description": "Cumulative amount of help received"
+        },
+        "totalReferralRewards": {
+          "type": "number",
+          "description": "Cumulative level referral income"
+        },
+        "totalWithdrawn": {
+          "type": "number",
+          "description": "Total successfully withdrawn amount"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Last updated ISO timestamp"
+        }
+      },
+      "required": ["userId", "availableBalance", "pendingBalance", "totalHelpedGiven", "totalHelpedReceived", "totalReferralRewards", "totalWithdrawn"]
+    },
+    "helpRequest": {
+      "title": "Help Request",
+      "description": "Peer-to-peer provide help or receive help order",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique Help Request ID",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Request creator ID",
+          "maxLength": 64
+        },
+        "userName": {
+          "type": "string",
+          "description": "Request creator name",
+          "maxLength": 100
+        },
+        "userMobile": {
+          "type": "string",
+          "description": "Request creator contact mobile",
+          "maxLength": 15
+        },
+        "userUpi": {
+          "type": "string",
+          "description": "Request creator UPI address",
+          "maxLength": 80
+        },
+        "amount": {
+          "type": "number",
+          "description": "Help transaction amount"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["give_help", "receive_help"],
+          "description": "Help type"
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle state of help transaction"
+        },
+        "matchedWithUserId": {
+          "type": "string",
+          "description": "Counterparty user ID",
+          "maxLength": 64
+        },
+        "matchedWithUserName": {
+          "type": "string",
+          "description": "Counterparty display name",
+          "maxLength": 100
+        },
+        "matchedWithUpi": {
+          "type": "string",
+          "description": "Counterparty UPI ID",
+          "maxLength": 80
+        },
+        "matchedWithMobile": {
+          "type": "string",
+          "description": "Counterparty phone number",
+          "maxLength": 15
+        },
+        "proofReference": {
+          "type": "string",
+          "description": "12-digit transaction UTR reference",
+          "maxLength": 30
+        },
+        "paymentSlipUrl": {
+          "type": "string",
+          "description": "Receipt/Slip URL or attachment reference"
+        },
+        "adminApproved": {
+          "type": "boolean",
+          "description": "Admin verification indicator"
+        },
+        "timerStartTime": {
+          "type": "number",
+          "description": "Start epoch timestamp for 24h countdown"
+        },
+        "timerExpiryTime": {
+          "type": "number",
+          "description": "Expiry epoch timestamp for 24h countdown"
+        },
+        "timerStatus": {
+          "type": "string",
+          "description": "Timer countdown state"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "userName", "amount", "type", "status", "createdAt"]
+    },
+    "transaction": {
+      "title": "Ledger Transaction",
+      "description": "Immutable ledger record for help transfers, withdrawals, and referral payouts",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Transaction reference code",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Associated user ID",
+          "maxLength": 64
+        },
+        "type": {
+          "type": "string",
+          "description": "Transaction category"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount in INR"
+        },
+        "balanceAfter": {
+          "type": "number",
+          "description": "Wallet balance following entry"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed", "failed", "rejected"],
+          "description": "Transaction status"
+        },
+        "referenceId": {
+          "type": "string",
+          "description": "Related UTR or Order ID",
+          "maxLength": 64
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Description of the transaction",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Transaction creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "type", "amount", "balanceAfter", "status", "createdAt"]
+    },
+    "kycRecord": {
+      "title": "KYC Verification Record",
+      "description": "Identity verification submission",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "KYC record identifier",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "User identifier",
+          "maxLength": 64
+        },
+        "fullNameAsPerId": {
+          "type": "string",
+          "description": "Full name on government identity document",
+          "maxLength": 100
+        },
+        "aadhaarNumber": {
+          "type": "string",
+          "description": "Aadhaar number",
+          "maxLength": 20
+        },
+        "panNumber": {
+          "type": "string",
+          "description": "PAN number",
+          "maxLength": 15
+        },
+        "documentType": {
+          "type": "string",
+          "enum": ["aadhaar", "pan", "voter_id"],
+          "description": "Document category"
+        },
+        "upiId": {
+          "type": "string",
+          "description": "Bank linked UPI ID",
+          "maxLength": 80
+        },
+        "bankName": {
+          "type": "string",
+          "description": "Bank institution name",
+          "maxLength": 80
+        },
+        "accountNumber": {
+          "type": "string",
+          "description": "Bank account number",
+          "maxLength": 30
+        },
+        "ifscCode": {
+          "type": "string",
+          "description": "Bank branch IFSC code",
+          "maxLength": 15
+        },
+        "status": {
+          "type": "string",
+          "enum": ["not_submitted", "pending", "verified", "rejected"],
+          "description": "Verification status"
+        },
+        "submittedAt": {
+          "type": "string",
+          "description": "Submission ISO timestamp"
+        }
+      },
+      "required": ["id", "userId", "fullNameAsPerId", "status", "submittedAt"]
+    },
+    "withdrawalRequest": {
+      "title": "Withdrawal Request",
+      "description": "User fund payout request",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Withdrawal Request identifier",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "User identifier",
+          "maxLength": 64
+        },
+        "userName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "amount": {
+          "type": "number",
+          "description": "Requested withdrawal amount"
+        },
+        "processingFee": {
+          "type": "number",
+          "description": "Platform processing fee"
+        },
+        "netPayable": {
+          "type": "number",
+          "description": "Net payable amount"
+        },
+        "payoutMethod": {
+          "type": "string",
+          "enum": ["upi", "bank_transfer"],
+          "description": "Payout channel"
+        },
+        "payoutUpiId": {
+          "type": "string",
+          "description": "Target UPI ID",
+          "maxLength": 80
+        },
+        "status": {
+          "type": "string",
+          "description": "Withdrawal status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Request creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "userName", "amount", "netPayable", "payoutMethod", "status", "createdAt"]
+    },
+    "supportTicket": {
+      "title": "Support Ticket",
+      "description": "Member support and dispute ticket",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Ticket ID",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID",
+          "maxLength": 64
+        },
+        "userName": {
+          "type": "string",
+          "description": "User name",
+          "maxLength": 100
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Contact email",
+          "maxLength": 120
+        },
+        "subject": {
+          "type": "string",
+          "description": "Ticket subject",
+          "maxLength": 150
+        },
+        "category": {
+          "type": "string",
+          "description": "Ticket category"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Priority level"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "in_progress", "resolved", "closed"],
+          "description": "Ticket status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Update timestamp"
+        }
+      },
+      "required": ["id", "userId", "userName", "subject", "category", "priority", "status", "createdAt"]
+    },
+    "notificationItem": {
+      "title": "Notification Item",
+      "description": "User and system broadcast notifications",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Notification ID",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Target user ID or 'all'",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Notification title",
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification message text",
+          "maxLength": 300
+        },
+        "type": {
+          "type": "string",
+          "enum": ["info", "success", "warning", "alert"],
+          "description": "Notification level"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Read status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp"
+        }
+      },
+      "required": ["id", "userId", "title", "message", "type", "isRead", "createdAt"]
+    },
+    "auditLog": {
+      "title": "Audit Log",
+      "description": "System security and administrative audit record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Audit log ID",
+          "maxLength": 64
+        },
+        "actorId": {
+          "type": "string",
+          "description": "Actor user ID",
+          "maxLength": 64
+        },
+        "actorName": {
+          "type": "string",
+          "description": "Actor name",
+          "maxLength": 100
+        },
+        "actorRole": {
+          "type": "string",
+          "description": "Actor role",
+          "maxLength": 50
+        },
+        "action": {
+          "type": "string",
+          "description": "Action performed",
+          "maxLength": 80
+        },
+        "targetEntity": {
+          "type": "string",
+          "description": "Target entity name",
+          "maxLength": 50
+        },
+        "targetId": {
+          "type": "string",
+          "description": "Target document ID",
+          "maxLength": 64
+        },
+        "details": {
+          "type": "string",
+          "description": "Action details",
+          "maxLength": 300
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Log timestamp"
+        }
+      },
+      "required": ["id", "actorId", "actorName", "action", "timestamp"]
+    },
+    "settings": {
+      "title": "Website Settings",
+      "description": "Platform global configuration and compliance settings",
+      "type": "object",
+      "properties": {
+        "helpAmountDefault": { "type": "number", "description": "Default help amount" },
+        "minWithdrawalAmount": { "type": "number", "description": "Minimum withdrawal limit" },
+        "withdrawalMultiple": { "type": "number", "description": "Withdrawal multiple constraint" },
+        "withdrawalProcessingFeePercent": { "type": "number", "description": "Processing fee percentage" },
+        "timerDurationHours": { "type": "number", "description": "Timer duration in hours (24)" },
+        "complianceNotice": { "type": "string", "description": "Statutory compliance text" },
+        "systemNoticeText": { "type": "string", "description": "Live banner notice text" },
+        "adminUpiId": { "type": "string", "description": "Official admin UPI ID" },
+        "maintenanceMode": { "type": "boolean", "description": "Maintenance mode state" }
+      },
+      "required": ["helpAmountDefault", "minWithdrawalAmount", "timerDurationHours"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profile collection"
+    },
+    "/wallets/{walletId}": {
+      "schema": "wallet",
+      "description": "User wallet ledger collection"
+    },
+    "/helpRequests/{helpRequestId}": {
+      "schema": "helpRequest",
+      "description": "Provide and receive help requests collection"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "transaction",
+      "description": "Financial and helping transaction history"
+    },
+    "/kycRecords/{kycRecordId}": {
+      "schema": "kycRecord",
+      "description": "KYC document submissions"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": "withdrawalRequest",
+      "description": "Withdrawal payout requests"
+    },
+    "/supportTickets/{ticketId}": {
+      "schema": "supportTicket",
+      "description": "Customer support and dispute tickets"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "notificationItem",
+      "description": "Member notifications"
+    },
+    "/auditLogs/{auditLogId}": {
+      "schema": "auditLog",
+      "description": "System security audit logs"
+    },
+    "/settings/{settingId}": {
+      "schema": "settings",
+      "description": "Global application configuration"
+    }
+  }
+}
