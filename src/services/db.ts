@@ -38,12 +38,12 @@ export interface DatabaseState {
 }
 
 const DEFAULT_REFERRAL_LEVELS: ReferralLevelConfig[] = [
-  { level: 1, name: 'Level 1 (Direct)', percentage: 10, minDirectRequirement: 0, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
-  { level: 2, name: 'Level 2', percentage: 5, minDirectRequirement: 2, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
-  { level: 3, name: 'Level 3', percentage: 3, minDirectRequirement: 3, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
-  { level: 4, name: 'Level 4', percentage: 2, minDirectRequirement: 5, qualifyingActivityRequirement: 'Completed 2 ₹150 Helps', enabled: true },
-  { level: 5, name: 'Level 5', percentage: 1, minDirectRequirement: 7, qualifyingActivityRequirement: 'Completed 2 ₹150 Helps', enabled: true },
-  { level: 6, name: 'Level 6', percentage: 1, minDirectRequirement: 10, qualifyingActivityRequirement: 'Completed 3 ₹150 Helps', enabled: true },
+  { level: 1, name: 'Level 1 (Direct)', percentage: 5, fixedRewardAmount: 5, minDirectRequirement: 0, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
+  { level: 2, name: 'Level 2', percentage: 4, fixedRewardAmount: 4, minDirectRequirement: 1, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
+  { level: 3, name: 'Level 3', percentage: 3, fixedRewardAmount: 3, minDirectRequirement: 2, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
+  { level: 4, name: 'Level 4', percentage: 2, fixedRewardAmount: 2, minDirectRequirement: 3, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
+  { level: 5, name: 'Level 5', percentage: 1, fixedRewardAmount: 1, minDirectRequirement: 4, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
+  { level: 6, name: 'Level 6', percentage: 0.5, fixedRewardAmount: 0.5, minDirectRequirement: 5, qualifyingActivityRequirement: 'Completed 1 ₹150 Help', enabled: true },
 ];
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -776,10 +776,19 @@ class DatabaseManager {
         const parsed = JSON.parse(serialized);
         // Ensure all required collections exist
         if (parsed && parsed.users && parsed.wallets && parsed.transactions) {
-          return {
+          const loadedState: DatabaseState = {
             ...getSeedDatabase(),
             ...parsed,
           };
+          // Automatically migrate referral levels if they still reflect older configuration
+          if (
+            !loadedState.referralLevels ||
+            loadedState.referralLevels.length === 0 ||
+            loadedState.referralLevels[0]?.percentage === 10
+          ) {
+            loadedState.referralLevels = DEFAULT_REFERRAL_LEVELS;
+          }
+          return loadedState;
         }
       }
     } catch (e) {

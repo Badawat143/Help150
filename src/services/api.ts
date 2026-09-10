@@ -725,7 +725,9 @@ export const api = {
         const levelConfig = draft.referralLevels.find((l) => l.level === level);
 
         if (sponsor && levelConfig && levelConfig.enabled && sponsor.status === 'active') {
-          const rewardAmount = Math.round(((amount * levelConfig.percentage) / 100) * 100) / 100;
+          const rewardAmount = levelConfig.fixedRewardAmount !== undefined 
+            ? levelConfig.fixedRewardAmount 
+            : Math.round(((amount * levelConfig.percentage) / 100) * 100) / 100;
           if (rewardAmount > 0) {
             const spWallet = draft.wallets[sponsor.id] || {
               userId: sponsor.id,
