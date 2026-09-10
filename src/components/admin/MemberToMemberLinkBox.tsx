@@ -43,6 +43,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
   const defaultHelpAmount = state.settings.helpAmountDefault || 150;
 
   // Form states for creating a new P2P link
+  const [matchingMode, setMatchingMode] = useState<'manual' | 'auto'>('manual');
   const [senderUserId, setSenderUserId] = useState<string>('');
   const [receiverUserId, setReceiverUserId] = useState<string>('');
   const [amount, setAmount] = useState<number>(defaultHelpAmount);
@@ -148,6 +149,43 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
       if (onRefresh) onRefresh();
     } else {
       showToast(res.error || 'Failed to dispatch member link.', 'error');
+    }
+  };
+
+  // 1-Click Auto Match Engine Handler
+  const handleExecuteAutoMatch = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await api.adminAutoMatchMembers({
+        adminActor: {
+          id: currentUser.id || 'ADMIN-1',
+          name: currentUser.fullName || currentUser.name || 'Super Admin',
+          role: currentUser.role || 'admin',
+        },
+        amount: Number(amount),
+        timerHours: Number(timerHours),
+      });
+
+      setIsProcessing(false);
+      if (res.success && res.data) {
+        showToast(`⚡ Auto-Match Engine executed! Paired ${res.data.matchedCount} member(s).`);
+        if (res.data.links && res.data.links.length > 0) {
+          const first = res.data.links[0];
+          setGeneratedLinkData({
+            helpRequest: first,
+            shareUrl: `${window.location.origin}/#pay-${first.id}`,
+            waMessageUrl: `https://wa.me/?text=${encodeURIComponent(
+              `*HELP150 Auto-Matched Community Help Request*\nRequest ID: ${first.id}\nAmount: ₹${first.amount}\nReceiver: ${first.matchedWithUserName}\nReceiver UPI: ${first.matchedWithUpi}\nTime Window: ${first.timerDurationHours} Hours\n\nPlease transfer help amount and upload transaction slip in your dashboard.`
+            )}`,
+          });
+        }
+        if (onRefresh) onRefresh();
+      } else {
+        showToast(res.error || 'Auto-match could not find matching members.', 'error');
+      }
+    } catch (err: any) {
+      setIsProcessing(false);
+      showToast(err.message || 'Auto-match error occurred.', 'error');
     }
   };
 
@@ -326,21 +364,142 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
         </div>
       </div>
 
-      {/* DISPATCH NEW LINK FORM */}
+      {/* DISPATCH NEW LINK FORM & AUTO MATCH BOX */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <Send className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900 font-heading">Generate & Dispatch Member-to-Member Link</h3>
-              <p className="text-xs text-slate-500">Select Provider and Beneficiary to create a direct peer help assignment.</p>
+              <h3 className="text-base font-black text-slate-900 font-heading">
+                {matchingMode === 'auto'
+                  ? '⚡ ऑटोमैटिक लिंक बॉक्स मैच व सेंड (Auto Match Engine)'
+                  : 'मैनुअल सेंड लिंक बॉक्स (Manual P2P Link Box)'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {matchingMode === 'auto'
+                  ? 'सिस्टम स्वचालित रूप से देने वाले और लेने वाले मेंबर्स को मैच करके लिंक जनरेट करता है।'
+                  : 'Select Provider and Beneficiary to create a direct peer help assignment.'}
+              </p>
             </div>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMatchingMode('manual')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                matchingMode === 'manual'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Send className="h-3.5 w-3.5" />
+              <span>मैनुअल लिंक (Manual)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMatchingMode('auto')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                matchingMode === 'auto'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>⚡ ऑटो मैच (Auto-Match)</span>
+            </button>
           </div>
         </div>
 
-        <form onSubmit={handleCreateLink} className="space-y-4">
+        {matchingMode === 'auto' ? (
+          /* AUTO MATCH ENGINE PANEL */
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 via-blue-500/10 to-indigo-500/10 border border-amber-400/30 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900">
+                  1-क्लिक ऑटोमैटिक मेंबर मैचिंग व लिंक सेंड इंजन
+                </h4>
+                <p className="text-xs text-slate-600">
+                  यह इंजन सिस्टम के सभी पेंडिंग मेंबर्स को ऑटो-पेयर करके लाइव P2P लिंक और व्हाट्सएप मैसेज जनरेट करता है।
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  सहायता राशि (Help Amount)
+                </label>
+                <div className="flex items-center gap-2">
+                  {[150, 300, 500].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setAmount(val)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold cursor-pointer transition ${
+                        amount === val
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      ₹{val}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-mono font-bold bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  पेमेंट टाइमर (Timer Window)
+                </label>
+                <div className="flex items-center gap-2">
+                  {[6, 12, 24].map((hr) => (
+                    <button
+                      key={hr}
+                      type="button"
+                      onClick={() => setTimerHours(hr)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${
+                        timerHours === hr
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      {hr} Hours
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={handleExecuteAutoMatch}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>
+                {isProcessing
+                  ? 'ऑटो मैचिंग प्रोसेस हो रही है...'
+                  : `⚡ अभी 1-क्लिक में ऑटो मैच करें और लिंक सेंड करें (₹${amount})`}
+              </span>
+            </button>
+          </div>
+        ) : (
+          /* MANUAL DISPATCH FORM */
+          <form onSubmit={handleCreateLink} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* SENDER SELECTION */}
             <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
@@ -528,6 +687,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* POPUP MODAL: DISPATCH SUCCESS & WHATSAPP SHARING */}

@@ -1,345 +1,421 @@
 /**
- * HELP150 — Bank & Identity KYC Verification Module
- * Compliant with Indian identity norms (Aadhaar / PAN / Bank verification) and audit logging.
+ * HELP150 — User Profile & Bank Payment Details Module
+ * No Aadhaar / PAN card required. Direct UPI and Bank Account configuration.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  ShieldCheck,
-  FileCheck,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
+  User as UserIcon,
   Building,
   Smartphone,
   CreditCard,
-  Send,
-  Lock,
-  RefreshCw,
-  UserCheck,
+  Phone,
+  Mail,
+  Save,
+  CheckCircle2,
+  Camera,
+  UploadCloud,
+  Trash2,
+  Sparkles,
+  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { db } from '../../services/db';
+import { useToast } from '../../context/ToastContext';
 
 export const KycModule: React.FC = () => {
-  const { currentUser, refreshUserData } = useAuth();
-  const state = db.getState();
+  const { currentUser, refreshUserData, setActiveTab } = useAuth();
+  const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const state = db.getState();
   const userKyc = state.kycRecords.find((k) => k.userId === currentUser?.id);
 
-  const [documentType, setDocumentType] = useState<'aadhaar' | 'pan' | 'voter_id'>(
-    userKyc?.documentType || 'aadhaar'
+  const [fullName, setFullName] = useState(currentUser?.fullName || '');
+  const [mobile, setMobile] = useState(currentUser?.mobile || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl || '');
+
+  // Banking & UPI
+  const [upiId, setUpiId] = useState(currentUser?.upiId || userKyc?.upiId || '');
+  const [bankName, setBankName] = useState(currentUser?.bankName || userKyc?.bankName || '');
+  const [accountHolderName, setAccountHolderName] = useState(
+    currentUser?.accountHolderName || userKyc?.accountHolderName || currentUser?.fullName || ''
   );
-  const [fullNameAsPerId, setFullNameAsPerId] = useState(userKyc?.fullNameAsPerId || currentUser.fullName);
-  const [aadhaarNumber, setAadhaarNumber] = useState(userKyc?.aadhaarNumber || '');
-  const [panNumber, setPanNumber] = useState(userKyc?.panNumber || '');
-  const [upiId, setUpiId] = useState(userKyc?.upiId || '');
-  const [bankName, setBankName] = useState(userKyc?.bankName || '');
-  const [accountNumber, setAccountNumber] = useState(userKyc?.accountNumber || '');
-  const [ifscCode, setIfscCode] = useState(userKyc?.ifscCode || '');
+  const [accountNumber, setAccountNumber] = useState(currentUser?.accountNumber || userKyc?.accountNumber || '');
+  const [ifscCode, setIfscCode] = useState(currentUser?.ifscCode || userKyc?.ifscCode || '');
+  const [gpayPhonePeNumber, setGpayPhonePeNumber] = useState(
+    currentUser?.gpayPhonePeNumber || userKyc?.gpayPhonePeNumber || currentUser?.mobile || ''
+  );
 
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      setFullName(currentUser.fullName || '');
+      setMobile(currentUser.mobile || '');
+      setEmail(currentUser.email || '');
+      if (currentUser.avatarUrl) setAvatarUrl(currentUser.avatarUrl);
+      if (currentUser.upiId) setUpiId(currentUser.upiId);
+      if (currentUser.bankName) setBankName(currentUser.bankName);
+      if (currentUser.accountHolderName) setAccountHolderName(currentUser.accountHolderName);
+      if (currentUser.accountNumber) setAccountNumber(currentUser.accountNumber);
+      if (currentUser.ifscCode) setIfscCode(currentUser.ifscCode);
+      if (currentUser.gpayPhonePeNumber) setGpayPhonePeNumber(currentUser.gpayPhonePeNumber);
+    }
+  }, [currentUser]);
 
   if (!currentUser) return null;
+
+  // Handle Photo Upload
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('कृपया केवल इमेज फाइल (JPG, PNG, WEBP) चुनें।', 'Invalid File');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('फोटो का आकार 5MB से कम होना चाहिए।', 'File Too Large');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setAvatarUrl(result);
+      toast.success('प्रोफाइल फोटो लोड हो गई है। सेव बटन दबाएं।', 'Photo Ready');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    if (!fullName.trim()) {
+      setErrorMsg('कृपया अपना पूरा नाम दर्ज करें।');
+      return;
+    }
+
+    if (!mobile.trim() || mobile.length < 10) {
+      setErrorMsg('कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await api.submitKyc({
+      const res = await api.updateUserProfile({
         userId: currentUser.id,
-        fullNameAsPerId: fullNameAsPerId.trim(),
-        aadhaarNumber: aadhaarNumber.trim(),
-        panNumber: panNumber.trim().toUpperCase(),
-        documentType,
-        upiId: upiId.trim(),
+        fullName: fullName.trim(),
+        mobile: mobile.trim(),
+        email: email.trim(),
+        avatarUrl,
         bankName: bankName.trim(),
+        accountHolderName: accountHolderName.trim(),
         accountNumber: accountNumber.trim(),
         ifscCode: ifscCode.trim().toUpperCase(),
+        upiId: upiId.trim(),
+        gpayPhonePeNumber: gpayPhonePeNumber.trim(),
       });
 
       if (res.success) {
-        setSuccessMsg('KYC documents submitted successfully! Admin verification takes up to 12 hours.');
+        setSuccessMsg('आपकी प्रोफाइल और बैंक विवरण सफलतापूर्वक सुरक्षित हो गए हैं!');
+        toast.success('प्रोफाइल और बैंक विवरण सुरक्षित कर दिए गए हैं।', 'Saved Successfully 🎉');
         refreshUserData();
       } else {
-        setErrorMsg(res.error || 'Failed to submit KYC details');
+        setErrorMsg(res.error || 'विवरण सेव करने में समस्या आई।');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Submission error');
+      setErrorMsg(err.message || 'त्रुटि हुई।');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = () => {
-    switch (currentUser.kycStatus) {
-      case 'verified':
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">
-            <CheckCircle2 className="h-4 w-4" />
-            <span>KYC Verified & Compliant</span>
-          </div>
-        );
-      case 'pending':
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs">
-            <Clock className="h-4 w-4 animate-spin" />
-            <span>Under Admin Verification</span>
-          </div>
-        );
-      case 'rejected':
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold text-xs">
-            <AlertCircle className="h-4 w-4" />
-            <span>KYC Rejected (Resubmission Required)</span>
-          </div>
-        );
-      case 'not_submitted':
-      default:
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-xs">
-            <FileCheck className="h-4 w-4 text-slate-400" />
-            <span>Not Submitted</span>
-          </div>
-        );
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
-      <div className="p-6 rounded-3xl bg-slate-900/90 border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header Banner */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-[#0A1633] via-[#0F265C] to-[#12317A] border border-blue-500/30 shadow-2xl relative overflow-hidden text-white">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/20">
+              <UserIcon className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-white font-heading">
-                  Statutory KYC & Identity Verification
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  यूजर प्रोफाइल और बैंक विवरण
                 </h1>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  No KYC Required
+                </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Aadhaar • PAN Card • Bank Account • Real-time Compliance Verification
+              <p className="text-xs text-blue-200 mt-0.5">
+                आधार और पैन कार्ड की आवश्यकता नहीं है। अपना नाम, फोटो और डायरेक्ट बैंक/UPI विवरण यहां सेट करें।
               </p>
             </div>
           </div>
 
-          <div>{getStatusBadge()}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs bg-black/40 text-amber-300 font-bold px-3 py-1.5 rounded-xl border border-amber-400/30">
+              User ID: {currentUser.id}
+            </span>
+          </div>
         </div>
       </div>
 
-      {userKyc?.rejectionReason && currentUser.kycStatus === 'rejected' && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0 text-rose-400" />
-          <div>
-            <strong className="block text-rose-200">Rejection Reason from Compliance Desk:</strong>
-            <span>{userKyc.rejectionReason}</span>
+      {/* Notice Banner */}
+      <div className="p-4 rounded-3xl bg-blue-50 border border-blue-200 text-xs text-slate-700 flex items-start gap-3 shadow-sm">
+        <Sparkles className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          <strong className="text-blue-900 font-bold block text-sm">डायरेक्ट पेमेंट्स और सहायता प्राप्ति:</strong>
+          <p className="mt-0.5 text-slate-600 leading-relaxed">
+            आपके द्वारा दर्ज किए गए UPI ID और बैंक खाते पर अन्य कम्युनिटी मेंबर्स ₹150 की सहायता राशि सीधे ट्रांसफर करेंगे। विवरण बिल्कुल सही भरें।
+          </p>
+        </div>
+      </div>
+
+      {/* Main Settings Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {errorMsg && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+            {errorMsg}
           </div>
-        </div>
-      )}
+        )}
 
-      {errorMsg && (
-        <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
+        {successMsg && (
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span>{successMsg}</span>
+          </div>
+        )}
 
-      {successMsg && (
-        <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {/* KYC Form Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Form */}
-        <div className="lg:col-span-8">
-          <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white font-heading">
-                {currentUser.kycStatus === 'verified'
-                  ? 'Your Verified KYC Record'
-                  : 'Submit / Update Identity Details'}
-              </h3>
-              <span className="text-[10px] text-slate-400 font-mono">User ID: {currentUser.id}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1: Personal Info & Photo */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-5">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <UserIcon className="h-5 w-5 text-blue-600" />
+              <h3 className="text-sm font-bold text-slate-900">1. पर्सनल प्रोफाइल व फोटो</h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Full Legal Name */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Legal Name (as per Govt ID) <span className="text-amber-400">*</span>
-                </label>
+            {/* Profile Photo Uploader */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center text-xl font-black shadow-md overflow-hidden border-2 border-white">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{fullName.charAt(0) || 'U'}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 p-1 rounded-full bg-amber-400 text-slate-950 shadow-md hover:bg-amber-300 transition cursor-pointer border-2 border-white"
+                  title="Upload Photo"
+                >
+                  <Camera className="h-3 w-3" />
+                </button>
+              </div>
+
+              <div className="flex-1">
+                <div className="text-xs font-bold text-slate-800">यूजर प्रोफाइल पिक्चर</div>
+                <div className="text-[11px] text-slate-500">JPG, PNG, WEBP (Max 5MB)</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow-sm"
+                  >
+                    <UploadCloud className="h-3.5 w-3.5" />
+                    <span>फोटो बदलें</span>
+                  </button>
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl('')}
+                      className="px-2 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs cursor-pointer transition"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
                 <input
-                  id="input-kyc-fullname"
-                  type="text"
-                  required
-                  disabled={currentUser.kycStatus === 'verified'}
-                  value={fullNameAsPerId}
-                  onChange={(e) => setFullNameAsPerId(e.target.value)}
-                  placeholder="e.g. Ashok Kumar"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-xs text-white placeholder-slate-500"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
                 />
               </div>
+            </div>
 
-              {/* Aadhaar and PAN */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Aadhaar Number (12 Digits) <span className="text-amber-400">*</span>
-                  </label>
-                  <input
-                    id="input-kyc-aadhaar"
-                    type="text"
-                    required
-                    disabled={currentUser.kycStatus === 'verified'}
-                    value={aadhaarNumber}
-                    onChange={(e) => setAadhaarNumber(e.target.value)}
-                    placeholder="XXXX-XXXX-XXXX"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-xs text-white placeholder-slate-500 font-mono"
-                  />
-                </div>
+            {/* Name */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                पूरा नाम (Full Name) *
+              </label>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="अपना पूरा नाम दर्ज करें"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    PAN Card Number (10 Chars) <span className="text-amber-400">*</span>
-                  </label>
-                  <input
-                    id="input-kyc-pan"
-                    type="text"
-                    required
-                    disabled={currentUser.kycStatus === 'verified'}
-                    value={panNumber}
-                    onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
-                    placeholder="ABCDE1234F"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-xs text-white placeholder-slate-500 font-mono uppercase"
-                  />
-                </div>
-              </div>
+            {/* Mobile */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                मोबाइल नंबर (Mobile Number) *
+              </label>
+              <input
+                type="tel"
+                required
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="10-अंकों का मोबाइल नंबर"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
 
-              {/* UPI & Bank Details for Withdrawal Payouts */}
-              <div className="pt-4 border-t border-slate-800 space-y-4">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Verified Payout Channels (Bank / UPI)
-                </h4>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Primary UPI ID (Optional)
-                  </label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-                    <input
-                      id="input-kyc-upi"
-                      type="text"
-                      disabled={currentUser.kycStatus === 'verified'}
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                      placeholder="e.g. yourname@oksbi"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-xs text-white placeholder-slate-500 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Bank Name</label>
-                    <input
-                      id="input-kyc-bank"
-                      type="text"
-                      disabled={currentUser.kycStatus === 'verified'}
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="e.g. HDFC Bank"
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Account No.</label>
-                    <input
-                      id="input-kyc-acc"
-                      type="text"
-                      disabled={currentUser.kycStatus === 'verified'}
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      placeholder="Account Number"
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">IFSC Code</label>
-                    <input
-                      id="input-kyc-ifsc"
-                      type="text"
-                      disabled={currentUser.kycStatus === 'verified'}
-                      value={ifscCode}
-                      onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
-                      placeholder="HDFC0001234"
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono uppercase"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {currentUser.kycStatus !== 'verified' && (
-                <button
-                  id="btn-kyc-submit"
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white font-bold text-xs transition shadow-lg shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  <span>{loading ? 'Submitting to Desk...' : 'Submit Documents for Verification'}</span>
-                </button>
-              )}
-            </form>
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                ईमेल (Email Address)
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Right Info Card */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Security & Verification Guidelines
-            </h3>
+          {/* Card 2: Bank & UPI Details */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Building className="h-5 w-5 text-emerald-600" />
+              <h3 className="text-sm font-bold text-slate-900">2. बैंक व UPI भुगतान विवरण</h3>
+            </div>
 
-            <ul className="space-y-3 text-xs text-slate-300">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Name Matching:</strong> Your bank account name must match your registration name ({currentUser.fullName}).
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>
-                  <strong>One KYC per User:</strong> Duplicate accounts using the same PAN/Aadhaar are strictly blocked by the system.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Encrypted Storage:</strong> Financial identifiers are hashed and securely stored for compliance audit logs.
-                </span>
-              </li>
-            </ul>
+            {/* UPI ID */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Smartphone className="h-3.5 w-3.5 text-blue-600" />
+                <span>UPI ID (Google Pay / PhonePe / Paytm / BHIM)</span>
+              </label>
+              <input
+                type="text"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                placeholder="उदा. name@okhdfcbank / 9876543210@paytm"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
 
-            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-[11px] text-slate-400">
-              <strong>Need quick verification?</strong> Contact our compliance support desk via the Support tab.
+            {/* GPay PhonePe Mobile */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Google Pay / PhonePe नंबर</span>
+              </label>
+              <input
+                type="tel"
+                value={gpayPhonePeNumber}
+                onChange={(e) => setGpayPhonePeNumber(e.target.value)}
+                placeholder="9876543210"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
+
+            {/* Bank Name */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                बैंक का नाम (Bank Name)
+              </label>
+              <input
+                type="text"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="उदा. State Bank of India / HDFC Bank"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
+
+            {/* Account Holder Name */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                खाताधारक का नाम (Account Holder Name)
+              </label>
+              <input
+                type="text"
+                value={accountHolderName}
+                onChange={(e) => setAccountHolderName(e.target.value)}
+                placeholder="खाताधारक का नाम"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+              />
+            </div>
+
+            {/* Account Number & IFSC */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  खाता संख्या (Account No.)
+                </label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder="384910294819"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  IFSC कोड (IFSC Code)
+                </label>
+                <input
+                  type="text"
+                  value={ifscCode}
+                  onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                  placeholder="SBIN0001234"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Submit Action Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-md">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <span>विवरण सुरक्षित हैं और केवल कम्युनिटी लेन-देन के लिए उपयोग किए जाते हैं।</span>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition cursor-pointer disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            <span>{loading ? 'सुरक्षित हो रहा है...' : 'सुरक्षित करें (Save Details)'}</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

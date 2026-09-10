@@ -30,14 +30,14 @@ export const WithdrawalModule: React.FC = () => {
 
   const minAmount = settings.minWithdrawalAmount || 200;
   const multiple = settings.withdrawalMultiple || 200;
-  const feePercent = settings.withdrawalProcessingFeePercent || 5;
+  const feePercent = 0; // 0% Fee as requested
 
   const [amount, setAmount] = useState<number>(multiple);
   const [payoutMethod, setPayoutMethod] = useState<'upi' | 'bank_transfer'>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [ifscCode, setIfscCode] = useState('');
+  const [upiId, setUpiId] = useState(currentUser.upiId || '');
+  const [bankName, setBankName] = useState(currentUser.bankName || '');
+  const [accountNumber, setAccountNumber] = useState(currentUser.accountNumber || '');
+  const [ifscCode, setIfscCode] = useState(currentUser.ifscCode || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -45,24 +45,26 @@ export const WithdrawalModule: React.FC = () => {
 
   if (!currentUser) return null;
 
-  // KYC check
-  const isKycVerified = currentUser.kycStatus === 'verified';
   const kycRecord = state.kycRecords.find((k) => k.userId === currentUser.id);
 
-  // Prefill banking details from KYC if verified
+  // Prefill banking details from User profile or KYC
   React.useEffect(() => {
-    if (kycRecord) {
+    if (currentUser.upiId) setUpiId(currentUser.upiId);
+    if (currentUser.bankName) setBankName(currentUser.bankName);
+    if (currentUser.accountNumber) setAccountNumber(currentUser.accountNumber);
+    if (currentUser.ifscCode) setIfscCode(currentUser.ifscCode);
+    else if (kycRecord) {
       if (kycRecord.upiId) setUpiId(kycRecord.upiId);
       if (kycRecord.bankName) setBankName(kycRecord.bankName);
       if (kycRecord.accountNumber) setAccountNumber(kycRecord.accountNumber);
       if (kycRecord.ifscCode) setIfscCode(kycRecord.ifscCode);
     }
-  }, [kycRecord]);
+  }, [currentUser, kycRecord]);
 
   const userWithdrawals = state.withdrawals.filter((w) => w.userId === currentUser.id);
 
-  const processingFee = Math.round(((amount * feePercent) / 100) * 100) / 100;
-  const netPayable = amount - processingFee;
+  const processingFee = 0;
+  const netPayable = amount;
 
   const handleWithdrawalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +84,14 @@ export const WithdrawalModule: React.FC = () => {
       setErrorMsg(`Insufficient available balance (Available: ₹${wallet?.availableBalance ?? 0})`);
       return;
     }
-    if (settings.kycRequiredForWithdrawal && !isKycVerified) {
-      setErrorMsg('Mandatory KYC verification required before initiating withdrawals.');
+
+    if (payoutMethod === 'upi' && (!upiId.trim() || !upiId.includes('@'))) {
+      setErrorMsg('कृपया वैध UPI ID दर्ज करें (e.g. name@okhdfcbank)');
+      return;
+    }
+
+    if (payoutMethod === 'bank_transfer' && (!accountNumber.trim() || !ifscCode.trim())) {
+      setErrorMsg('कृपया बैंक खाता संख्या और IFSC कोड दर्ज करें।');
       return;
     }
 
@@ -101,7 +109,7 @@ export const WithdrawalModule: React.FC = () => {
       });
 
       if (res.success && res.data) {
-        setSuccessMsg(`Withdrawal request #${res.data.id} submitted successfully for net ₹${res.data.netPayable}.`);
+        setSuccessMsg(`Withdrawal request #${res.data.id} submitted successfully for 100% payout of ₹${res.data.netPayable} (Zero Fee).`);
         refreshUserData();
       } else {
         setErrorMsg(res.error || 'Failed to submit withdrawal request');
@@ -180,35 +188,33 @@ export const WithdrawalModule: React.FC = () => {
               </div>
             </div>
             <div className="text-left px-2">
-              <div className="text-[10px] text-slate-400">KYC Status</div>
-              <div className={`text-xs font-bold uppercase ${isKycVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {currentUser.kycStatus}
+              <div className="text-[10px] text-slate-400">Withdrawal Fee</div>
+              <div className="text-xs font-bold text-emerald-400">
+                0% (₹0 Fee)
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* KYC Warning if not verified */}
-      {!isKycVerified && (
-        <div className="p-5 rounded-3xl bg-amber-950/30 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-amber-400 shrink-0" />
-            <div>
-              <strong className="text-amber-300 font-bold block text-sm">KYC Verification Required</strong>
-              <p className="text-slate-300">
-                To comply with Indian statutory standards, identity verification (Aadhaar/PAN) is mandatory before withdrawals can be initiated.
-              </p>
-            </div>
+      {/* 0% Fee & Instant Direct Payout Banner */}
+      <div className="p-4 rounded-3xl bg-emerald-950/40 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-6 w-6 text-emerald-400 shrink-0" />
+          <div>
+            <strong className="text-emerald-300 font-bold block text-sm">0% Withdrawal Fee • 100% Direct Payout</strong>
+            <p className="text-slate-300">
+              विड्रॉल पर कोई फीस या कटौती नहीं है। आपकी पूरी राशि सीधे आपके बैंक खाते / UPI ID में भेजी जाती है।
+            </p>
           </div>
-          <button
-            onClick={() => setActiveTab('kyc')}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition shrink-0 cursor-pointer"
-          >
-            Submit KYC Documents
-          </button>
         </div>
-      )}
+        <button
+          onClick={() => setActiveTab('profile')}
+          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition shrink-0 cursor-pointer"
+        >
+          अपडेट बैंक / UPI विवरण
+        </button>
+      </div>
 
       {/* 5-Step Process Indicator */}
       <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-3xl shadow-xl">
@@ -414,15 +420,15 @@ export const WithdrawalModule: React.FC = () => {
               <button
                 id="btn-withdraw-submit"
                 type="submit"
-                disabled={loading || !isKycVerified || (wallet?.availableBalance ?? 0) < amount}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 hover:from-blue-700 hover:to-indigo-900 text-white font-bold text-xs transition shadow-lg shadow-blue-500/25 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                disabled={loading || (wallet?.availableBalance ?? 0) < amount}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-700 hover:from-emerald-700 hover:to-blue-800 text-white font-bold text-xs transition shadow-lg shadow-emerald-500/25 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>
                   {loading
-                    ? 'Submitting to Backend...'
-                    : !isKycVerified
-                    ? 'KYC Verification Required'
-                    : `Submit Request for Net ₹${netPayable}`}
+                    ? 'Processing Payout Request...'
+                    : (wallet?.availableBalance ?? 0) < amount
+                    ? 'Insufficient Available Balance'
+                    : `Submit Request for 100% Payout (₹${netPayable})`}
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -434,7 +440,7 @@ export const WithdrawalModule: React.FC = () => {
         <div className="lg:col-span-5 space-y-4">
           <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Financial Breakdown & Fees
+              Financial Breakdown & Zero Fee Policy
             </h3>
 
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-xs">
@@ -444,12 +450,12 @@ export const WithdrawalModule: React.FC = () => {
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Platform & Processing Fee ({feePercent}%):</span>
-                <span className="font-bold text-rose-400 font-mono">-₹{processingFee}</span>
+                <span className="text-slate-400">Platform & Withdrawal Fee:</span>
+                <span className="font-bold text-emerald-400 font-mono">₹0 (0% Fee)</span>
               </div>
 
               <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-sm font-bold">
-                <span className="text-slate-200">Net Transfer to Account:</span>
+                <span className="text-slate-200">100% Net Transfer to Account:</span>
                 <span className="text-emerald-400 font-mono text-base">₹{netPayable}</span>
               </div>
             </div>

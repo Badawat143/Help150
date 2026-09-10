@@ -27,19 +27,29 @@ export interface User {
   ipAddress?: string;
   internalNotes?: string[];
   avatarUrl?: string;
+  
+  // Banking & Payment Details (Direct in Profile)
+  bankName?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  upiId?: string;
+  gpayPhonePeNumber?: string;
 }
 
 export interface KycRecord {
   id: string;
   userId: string;
   fullNameAsPerId: string;
-  aadhaarNumber: string;
-  panNumber: string;
-  documentType: 'aadhaar' | 'pan' | 'voter_id';
+  aadhaarNumber?: string;
+  panNumber?: string;
+  documentType?: 'aadhaar' | 'pan' | 'voter_id' | 'bank_passbook' | 'none';
   upiId: string;
   bankName: string;
+  accountHolderName?: string;
   accountNumber: string;
   ifscCode: string;
+  gpayPhonePeNumber?: string;
   status: KycStatus;
   submittedAt: string;
   reviewedAt?: string;
@@ -107,7 +117,7 @@ export type HelpRequestStatus =
   | 'cancelled'
   | 'expired';
 
-export type TimerStatus = 'pending' | 'active' | 'expired' | 'completed';
+export type TimerStatus = 'pending' | 'active' | 'running' | 'expired' | 'completed';
 
 export interface HelpRequest {
   id: string; // e.g. "HP-78492011"
@@ -115,7 +125,7 @@ export interface HelpRequest {
   userName: string;
   userMobile: string;
   userEmail?: string;
-  userUpi: string;
+  userUpi?: string;
   amount: number; // default 150
   type: HelpRequestType;
   status: HelpRequestStatus;

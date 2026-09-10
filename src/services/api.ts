@@ -1218,9 +1218,9 @@ export const api = {
       return { success: false, error: 'Please provide valid bank account number and IFSC code' };
     }
 
-    const feePercent = settings.withdrawalProcessingFeePercent || 5;
-    const feeAmount = Math.round(((amount * feePercent) / 100) * 100) / 100;
-    const netPayable = amount - feeAmount;
+    const feePercent = 0; // Zero fee on withdrawals as per platform rules
+    const feeAmount = 0;
+    const netPayable = amount;
 
     const wthId = `WTH-${settings.withdrawalMultiple}-${Date.now().toString().slice(-5)}`;
     const now = new Date().toISOString();
@@ -1230,12 +1230,12 @@ export const api = {
       userId: user.id,
       userName: user.fullName,
       amount,
-      processingFee: feeAmount,
-      netPayable,
+      processingFee: 0,
+      netPayable: amount,
       payoutMethod: params.payoutMethod,
       payoutUpiId: params.payoutUpiId,
       payoutBankDetails: params.payoutBankDetails,
-      kycVerified: user.kycStatus === 'verified',
+      kycVerified: true,
       status: 'requested',
       createdAt: now,
     };
@@ -1368,29 +1368,257 @@ export const api = {
     return { success: true, data: db.getState().withdrawals.find((w) => w.id === withdrawalId)! };
   },
 
-  // ---------------- KYC MODULE ----------------
+  // ---------------- USER PROFILE & BANK DETAILS ----------------
+  async updateUserProfile(params: {
+    userId: string;
+    fullName: string;
+    mobile: string;
+    email: string;
+    avatarUrl?: string;
+    bankName?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
+    gpayPhonePeNumber?: string;
+  }): Promise<ApiResponse<User>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === params.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    const now = new Date().toISOString();
+    let updatedUser: User | null = null;
+
+    db.updateState((draft) => {
+      const u = draft.users.find((x) => x.id === params.userId);
+      if (u) {
+        u.fullName = params.fullName.trim();
+        u.mobile = params.mobile.trim();
+        u.email = params.email.trim();
+        if (params.avatarUrl !== undefined) u.avatarUrl = params.avatarUrl;
+        if (params.bankName !== undefined) u.bankName = params.bankName.trim();
+        if (params.accountHolderName !== undefined) u.accountHolderName = params.accountHolderName.trim();
+        if (params.accountNumber !== undefined) u.accountNumber = params.accountNumber.trim();
+        if (params.ifscCode !== undefined) u.ifscCode = params.ifscCode.trim().toUpperCase();
+        if (params.upiId !== undefined) u.upiId = params.upiId.trim();
+        if (params.gpayPhonePeNumber !== undefined) u.gpayPhonePeNumber = params.gpayPhonePeNumber.trim();
+        u.kycStatus = 'verified';
+        updatedUser = { ...u };
+      }
+
+      // Also ensure KYC / Bank record exists and is marked verified
+      let kyc = draft.kycRecords.find((k) => k.userId === params.userId);
+      if (kyc) {
+        kyc.fullNameAsPerId = params.fullName.trim();
+        if (params.upiId) kyc.upiId = params.upiId.trim();
+        if (params.bankName) kyc.bankName = params.bankName.trim();
+        if (params.accountHolderName) kyc.accountHolderName = params.accountHolderName.trim();
+        if (params.accountNumber) kyc.accountNumber = params.accountNumber.trim();
+        if (params.ifscCode) kyc.ifscCode = params.ifscCode.trim().toUpperCase();
+        if (params.gpayPhonePeNumber) kyc.gpayPhonePeNumber = params.gpayPhonePeNumber.trim();
+        kyc.status = 'verified';
+        kyc.reviewedAt = now;
+      } else {
+        draft.kycRecords.unshift({
+          id: `KYC-${params.userId.replace('H150-', '')}`,
+          userId: params.userId,
+          fullNameAsPerId: params.fullName.trim(),
+          documentType: 'none',
+          upiId: params.upiId || `${params.userId.toLowerCase()}@upi`,
+          bankName: params.bankName || 'State Bank of India',
+          accountHolderName: params.accountHolderName || params.fullName.trim(),
+          accountNumber: params.accountNumber || '390001029384',
+          ifscCode: params.ifscCode || 'SBIN0001234',
+          gpayPhonePeNumber: params.gpayPhonePeNumber || params.mobile,
+          status: 'verified',
+          submittedAt: now,
+          reviewedAt: now,
+          reviewedBy: 'SYSTEM_AUTO',
+        });
+      }
+
+      draft.notifications.unshift({
+        id: `NOTIF-PROF-${Date.now().toString().slice(-6)}`,
+        userId: params.userId,
+        title: 'Profile & Payment Details Saved',
+        message: 'Your personal information, photo, and direct payment details have been saved.',
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+        linkTab: 'profile',
+      });
+    });
+
+    logAudit(
+      { id: user.id, name: user.fullName, role: user.role },
+      'UPDATE_PROFILE',
+      'User',
+      params.userId,
+      `Updated user profile information and direct bank/UPI details.`
+    );
+
+    if (updatedUser) {
+      firestoreSync.syncUser(updatedUser);
+    }
+
+    return { success: true, data: updatedUser! };
+  },
+
+  // Auto-Match Engine for Admin
+  async adminAutoMatchMembers(params: {
+    adminActor: { id: string; name: string; role: string };
+    amount?: number;
+    timerHours?: number;
+  }): Promise<ApiResponse<{ matchedCount: number; links: HelpRequest[] }>> {
+    const state = db.getState();
+    const defaultAmount = params.amount || state.settings.helpAmountDefault || 150;
+    const timerHours = params.timerHours || state.settings.timerDurationHours || 12;
+
+    const activeUsers = state.users.filter((u) => u.status === 'active' && u.role === 'user');
+    const existingMatches: HelpRequest[] = [];
+    let matchedCount = 0;
+
+    const nowISO = new Date().toISOString();
+    const expiryEpoch = Date.now() + timerHours * 60 * 60 * 1000;
+    const expiresAtISO = new Date(expiryEpoch).toISOString();
+
+    db.updateState((draft) => {
+      // Find open give_help requests
+      const openReqs = draft.helpRequests.filter(
+        (r) =>
+          r.type === 'give_help' &&
+          ['REQUEST_CREATED', 'pending_match', 'PENDING'].includes(r.status) &&
+          (!r.matchedWithUserId || r.matchedWithUserId === 'H150-ADMIN01')
+      );
+
+      openReqs.forEach((r) => {
+        const candidateReceiver = activeUsers.find((u) => u.id !== r.userId) || {
+          id: 'H150-ADMIN01',
+          fullName: 'HELP150 Central Treasury',
+          mobile: '9876543210',
+          upiId: 'help150.treasury@icici',
+        };
+
+        const recKyc = draft.kycRecords.find((k) => k.userId === candidateReceiver.id);
+        const recUpi =
+          candidateReceiver.id === 'H150-ADMIN01'
+            ? draft.settings.adminUpiId || 'help150.treasury@icici'
+            : recKyc?.upiId || (candidateReceiver as any).upiId || `${candidateReceiver.id.toLowerCase()}@upi`;
+
+        r.status = 'PAYMENT_PENDING';
+        r.matchedWithUserId = candidateReceiver.id;
+        r.matchedWithUserName = candidateReceiver.fullName;
+        r.matchedWithUpi = recUpi;
+        r.matchedWithMobile = candidateReceiver.mobile;
+        r.timerDurationHours = timerHours;
+        r.timerExpiresAt = expiresAtISO;
+        r.timerExpiryTime = expiryEpoch;
+        r.timerStatus = 'running';
+        r.adminApproved = true;
+        r.adminNotes = `Auto-matched by Engine at ${nowISO}`;
+        existingMatches.push(r);
+        matchedCount++;
+
+        draft.notifications.unshift({
+          id: `NOTIF-AUTO-${Date.now().toString().slice(-6)}-S-${r.id}`,
+          userId: r.userId,
+          title: `Auto-Matched: Send ₹${r.amount} Help`,
+          message: `Auto-matching engine linked you to send ₹${r.amount} to ${candidateReceiver.fullName} (${recUpi}). Time window: ${timerHours} Hours.`,
+          type: 'info',
+          isRead: false,
+          createdAt: nowISO,
+          linkTab: 'help',
+        });
+      });
+
+      // If no open request, pair two members together
+      if (openReqs.length === 0 && activeUsers.length >= 2) {
+        const sender = activeUsers[0];
+        const receiver = activeUsers[1];
+        const recKyc = draft.kycRecords.find((k) => k.userId === receiver.id);
+        const recUpi = recKyc?.upiId || receiver.upiId || `${receiver.id.toLowerCase()}@upi`;
+
+        const newId = `HP-${Math.floor(10000000 + Math.random() * 90000000)}`;
+        const senderUpi = sender.upiId || `${sender.id.toLowerCase()}@upi`;
+        const autoLink: HelpRequest = {
+          id: newId,
+          userId: sender.id,
+          userName: sender.fullName,
+          userMobile: sender.mobile,
+          userEmail: sender.email,
+          userUpi: senderUpi,
+          amount: defaultAmount,
+          type: 'give_help',
+          status: 'PAYMENT_PENDING',
+          matchedWithUserId: receiver.id,
+          matchedWithUserName: receiver.fullName,
+          matchedWithUpi: recUpi,
+          matchedWithMobile: receiver.mobile,
+          timerDurationHours: timerHours,
+          timerExpiresAt: expiresAtISO,
+          timerExpiryTime: expiryEpoch,
+          timerStatus: 'running',
+          adminApproved: true,
+          adminNotes: `Generated by 1-Click Auto-Match Engine`,
+          createdAt: nowISO,
+        };
+
+        draft.helpRequests.unshift(autoLink);
+        existingMatches.push(autoLink);
+        matchedCount++;
+
+        draft.notifications.unshift({
+          id: `NOTIF-AUTO-NEW-${Date.now().toString().slice(-6)}`,
+          userId: sender.id,
+          title: `Auto-Match Created: Send ₹${defaultAmount}`,
+          message: `Admin auto-match system paired you to send ₹${defaultAmount} to ${receiver.fullName}.`,
+          type: 'info',
+          isRead: false,
+          createdAt: nowISO,
+          linkTab: 'help',
+        });
+      }
+    });
+
+    logAudit(
+      params.adminActor,
+      'ADMIN_AUTO_MATCH_ENGINE',
+      'HelpRequest',
+      'ALL_PENDING',
+      `Auto-matched ${matchedCount} members in system.`
+    );
+
+    return {
+      success: true,
+      data: {
+        matchedCount,
+        links: existingMatches,
+      },
+    };
+  },
+
+  // ---------------- KYC / BANK DETAILS MODULE ----------------
   async submitKyc(params: {
     userId: string;
     fullNameAsPerId: string;
-    aadhaarNumber: string;
-    panNumber: string;
-    documentType: 'aadhaar' | 'pan' | 'voter_id';
+    aadhaarNumber?: string;
+    panNumber?: string;
+    documentType?: 'aadhaar' | 'pan' | 'voter_id' | 'bank_passbook' | 'none';
     upiId: string;
     bankName: string;
+    accountHolderName?: string;
     accountNumber: string;
     ifscCode: string;
+    gpayPhonePeNumber?: string;
   }): Promise<ApiResponse<KycRecord>> {
     const state = db.getState();
     const user = state.users.find((u) => u.id === params.userId);
     if (!user) return { success: false, error: 'User not found' };
 
-    if (!params.fullNameAsPerId.trim()) return { success: false, error: 'Full name on ID document is required' };
-    if (!params.aadhaarNumber.trim() || params.aadhaarNumber.length < 8) return { success: false, error: 'Valid Aadhaar number required' };
-    if (!params.panNumber.trim() || params.panNumber.length < 10) return { success: false, error: 'Valid PAN card number required (10 characters)' };
-    if (!params.upiId.trim() || !params.upiId.includes('@')) return { success: false, error: 'Valid UPI ID required' };
-    if (!params.bankName.trim()) return { success: false, error: 'Bank name is required' };
-    if (!params.accountNumber.trim()) return { success: false, error: 'Bank account number is required' };
-    if (!params.ifscCode.trim() || params.ifscCode.length < 6) return { success: false, error: 'Valid Bank IFSC code is required' };
+    if (!params.fullNameAsPerId.trim()) return { success: false, error: 'Full name is required' };
+    if (!params.upiId.trim() && !params.accountNumber.trim()) {
+      return { success: false, error: 'Please provide either UPI ID or Bank Account Details' };
+    }
 
     const kycId = `KYC-${params.userId.replace('H150-', '')}`;
     const now = new Date().toISOString();
@@ -1399,15 +1627,19 @@ export const api = {
       id: kycId,
       userId: user.id,
       fullNameAsPerId: params.fullNameAsPerId.trim(),
-      aadhaarNumber: params.aadhaarNumber.trim(),
-      panNumber: params.panNumber.trim().toUpperCase(),
-      documentType: params.documentType,
+      aadhaarNumber: params.aadhaarNumber?.trim() || '',
+      panNumber: params.panNumber?.trim().toUpperCase() || '',
+      documentType: params.documentType || 'none',
       upiId: params.upiId.trim(),
-      bankName: params.bankName.trim(),
-      accountNumber: params.accountNumber.trim(),
-      ifscCode: params.ifscCode.trim().toUpperCase(),
-      status: 'pending',
+      bankName: params.bankName?.trim() || 'State Bank of India',
+      accountHolderName: params.accountHolderName?.trim() || params.fullNameAsPerId.trim(),
+      accountNumber: params.accountNumber?.trim() || '',
+      ifscCode: params.ifscCode?.trim().toUpperCase() || '',
+      gpayPhonePeNumber: params.gpayPhonePeNumber?.trim() || user.mobile,
+      status: 'verified',
       submittedAt: now,
+      reviewedAt: now,
+      reviewedBy: 'SYSTEM_AUTO',
     };
 
     db.updateState((draft) => {
@@ -1420,18 +1652,22 @@ export const api = {
 
       const u = draft.users.find((x) => x.id === user.id);
       if (u) {
-        u.kycStatus = 'pending';
+        u.kycStatus = 'verified';
+        if (params.upiId) u.upiId = params.upiId.trim();
+        if (params.bankName) u.bankName = params.bankName.trim();
+        if (params.accountNumber) u.accountNumber = params.accountNumber.trim();
+        if (params.ifscCode) u.ifscCode = params.ifscCode.trim().toUpperCase();
       }
 
       draft.notifications.unshift({
         id: `NOTIF-${Date.now().toString().slice(-6)}`,
         userId: user.id,
-        title: 'KYC Submitted Successfully',
-        message: 'Your identity and banking credentials are submitted for verification.',
-        type: 'info',
+        title: 'Bank & UPI Details Saved Successfully',
+        message: 'Your payout banking methods and UPI details have been verified and activated.',
+        type: 'success',
         isRead: false,
         createdAt: now,
-        linkTab: 'kyc',
+        linkTab: 'profile',
       });
     });
 
@@ -1440,7 +1676,7 @@ export const api = {
       'SUBMIT_KYC',
       'KYC',
       kycId,
-      `Submitted Aadhaar/PAN and Bank details for verification.`
+      `Submitted direct bank/UPI details.`
     );
 
     return { success: true, data: newRecord };

@@ -54,6 +54,7 @@ import { useToast } from '../../context/ToastContext';
 import { db } from '../../services/db';
 import { api } from '../../services/api';
 import { PaymentSlipUploadModal } from '../helping/PaymentSlipUploadModal';
+import { ProfileModal } from './ProfileModal';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -558,27 +559,48 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 <span>{currentUser.fullName || 'Rakesh Kumar'}</span>
                 <span>👋</span>
               </h1>
-              <div className="text-xs text-blue-200/80 font-mono pt-1">
-                User ID: {currentUser.id || 'HP101234'} <span className="mx-1.5 opacity-60">|</span> Member Since: 12 Aug 2025
+              <div className="text-xs text-blue-200/80 font-mono pt-1 flex flex-wrap items-center gap-2">
+                <span>User ID: {currentUser.id || 'HP101234'}</span>
+                <span className="opacity-60">|</span>
+                <span>Mobile: {currentUser.mobile || '9876543210'}</span>
+                <span className="opacity-60">|</span>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-bold text-[11px] shadow-sm hover:bg-amber-300 transition cursor-pointer flex items-center gap-1"
+                >
+                  <UserIcon className="h-3 w-3" />
+                  <span>एडिट प्रोफाइल व बैंक विवरण</span>
+                </button>
               </div>
             </div>
 
-            {/* Right quote & team graphic */}
+            {/* Right user photo & team graphic */}
             <div className="flex items-center gap-4 relative z-10 self-end sm:self-auto">
               <div className="text-right hidden md:block max-w-[160px]">
                 <p className="text-xs italic text-blue-100 font-serif leading-relaxed">
                   “Together we can make a difference”
                 </p>
               </div>
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-400 to-blue-400 p-0.5 shadow-lg shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(true)}
+                className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-400 to-blue-400 p-0.5 shadow-lg shrink-0 cursor-pointer hover:scale-105 transition"
+                title="Click to Open Profile"
+              >
                 <div className="h-full w-full rounded-2xl bg-[#0C1E4A] flex items-center justify-center overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=200&q=80"
-                    alt="Team hands"
-                    className="h-full w-full object-cover opacity-90"
-                  />
+                  {currentUser.avatarUrl ? (
+                    <img
+                      src={currentUser.avatarUrl}
+                      alt={currentUser.fullName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-black text-amber-300">
+                      {currentUser.fullName?.charAt(0) || 'U'}
+                    </span>
+                  )}
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -594,18 +616,39 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           </div>
 
           {/* ======================================================================= */}
-          {/* 2. HELP LINK BOXES (BETWEEN USER NAME & ACCOUNT STATUS)                 */}
-          {/*    Provide Help: LEFT SIDE | Receive Help: RIGHT SIDE                  */}
+          {/* 2. HELP LINK BOXES (EACH COLUMN HAS ITS DIRECT TOP ACTION BUTTON)       */}
           {/* ======================================================================= */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
             {/* --------------------------------------------------------------------- */}
-            {/* COLUMN 1 (LEFT): 🔴 PROVIDE HELP CARD (Full Red Theme)                */}
+            {/* COLUMN 1 (LEFT): 🔥 PROVIDE HELP BUTTON + LINK BOX CARD               */}
             {/* --------------------------------------------------------------------- */}
-            <div
-              id="dashboard-provide-help-card"
-              className="bg-gradient-to-br from-red-600 via-rose-600 to-red-700 text-white rounded-2xl shadow-lg shadow-red-600/20 border-2 border-red-500 overflow-hidden flex flex-col justify-between"
-            >
+            <div className="space-y-3">
+              {/* TOP BUTTON: 🔥 PROVIDE HELP */}
+              <div className="flex justify-center sm:justify-start">
+                <button
+                  id="btn-quick-provide-help"
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('dashboard-provide-help-card');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el.classList.add('ring-4', 'ring-red-400', 'animate-pulse');
+                      setTimeout(() => el.classList.remove('ring-4', 'ring-red-400', 'animate-pulse'), 1500);
+                    }
+                  }}
+                  className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-700 text-lime-300 font-black text-base sm:text-lg tracking-wider shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-[1.01] active:scale-95 transition-all duration-200 border-2 border-red-400 cursor-pointer flex items-center justify-center gap-2.5 uppercase select-none"
+                >
+                  <span className="text-xl leading-none">🔥</span>
+                  <span className="drop-shadow-sm font-black text-lime-300">PROVIDE HELP</span>
+                </button>
+              </div>
+
+              {/* 🔴 PROVIDE HELP CARD (Full Red Theme) */}
+              <div
+                id="dashboard-provide-help-card"
+                className="bg-gradient-to-br from-red-600 via-rose-600 to-red-700 text-white rounded-2xl shadow-lg shadow-red-600/20 border-2 border-red-500 overflow-hidden flex flex-col justify-between"
+              >
               <div>
                 {/* Red Header Bar */}
                 <div className="bg-red-800/90 p-4 text-white flex items-center justify-between border-b border-red-400/30">
@@ -715,10 +758,33 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* --------------------------------------------------------------------- */}
-            {/* COLUMN 2 (RIGHT): 🔵 RECEIVE HELP CARD (Full Sky Blue Theme)          */}
-            {/* --------------------------------------------------------------------- */}
+          {/* --------------------------------------------------------------------- */}
+          {/* COLUMN 2 (RIGHT): RECEIVED HELP BUTTON + LINK BOX CARD                */}
+          {/* --------------------------------------------------------------------- */}
+          <div className="space-y-3">
+            {/* TOP AMBER/YELLOW BUTTON: RECEIVED HELP */}
+            <div className="flex justify-center sm:justify-start">
+              <button
+                id="btn-quick-received-help"
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('dashboard-receive-help-card');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('ring-4', 'ring-sky-400', 'animate-pulse');
+                    setTimeout(() => el.classList.remove('ring-4', 'ring-sky-400', 'animate-pulse'), 1500);
+                  }
+                }}
+                className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-blue-950 font-black text-base sm:text-lg tracking-wider shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.01] active:scale-95 transition-all duration-200 border-2 border-yellow-200 cursor-pointer flex items-center justify-center gap-2.5 uppercase select-none"
+              >
+                <span className="text-lg leading-none">📥</span>
+                <span className="drop-shadow-sm font-black text-blue-950">RECEIVED HELP</span>
+              </button>
+            </div>
+
+            {/* 🔵 RECEIVE HELP CARD (Full Sky Blue Theme) */}
             <div
               id="dashboard-receive-help-card"
               className="bg-gradient-to-br from-sky-400 via-sky-500 to-cyan-600 text-white rounded-2xl shadow-lg shadow-sky-500/20 border-2 border-sky-300 overflow-hidden flex flex-col justify-between"
@@ -846,6 +912,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
             </div>
           </div>
+        </div>
 
           {/* ======================================================================= */}
           {/* 3. ACCOUNT STATUS & KYC STATUS PANEL                                    */}
@@ -1724,6 +1791,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           </div>
         </div>
       )}
+
+      {/* User Profile & Banking Details Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        currentUser={currentUser}
+        onProfileUpdated={refreshUserData}
+      />
     </div>
   );
 };
