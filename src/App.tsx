@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ComplianceBanner } from './components/common/ComplianceBanner';
@@ -111,6 +112,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <AppContent />
+        <SpeedInsights />
       </ToastProvider>
     </AuthProvider>
   );
