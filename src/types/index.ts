@@ -322,6 +322,10 @@ export interface WebsiteSettings {
   systemNoticeText: string;
   complianceDisclaimerText: string;
   adminUpiId: string;
+  autoDispatchMode?: boolean;
+  autoDispatchOnRegistration?: boolean;
+  defaultLinkReceiverType?: 'admin_treasury' | 'fifo_queue';
+  maxLinksPerReceiver?: number;
   maintenanceMode: boolean;
   officialTelegramLink: string;
   officialWhatsappNumber: string;

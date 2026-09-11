@@ -134,14 +134,73 @@ export const api = {
       lastUpdated: now,
     };
 
+    const defaultAmount = state.settings.helpAmountDefault || 150;
+    const initialHelpRequestId = `HP-${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+    const initialProvideHelpRequest: HelpRequest = {
+      id: initialHelpRequestId,
+      userId: newUserId,
+      userName: newUser.fullName,
+      userMobile: cleanMobile,
+      userEmail: cleanEmail,
+      userUpi: `${newUserId.toLowerCase()}@upi`,
+      amount: defaultAmount,
+      type: 'give_help',
+      status: 'pending_match', // Unassigned: waiting for Admin Link Box dispatch (or auto-dispatch)
+      adminApproved: false,
+      timerStatus: 'pending',
+      createdAt: now,
+    };
+
     db.updateState((draft) => {
       draft.users.push(newUser);
       draft.wallets[newUserId] = initialWallet;
+
+      // Check if auto-dispatch is enabled
+      if (draft.settings.autoDispatchOnRegistration || draft.settings.autoDispatchMode) {
+        const timerHours = draft.settings.timerDurationHours || 24;
+        const expiryEpoch = Date.now() + timerHours * 60 * 60 * 1000;
+        const receiver =
+          draft.settings.defaultLinkReceiverType === 'fifo_queue'
+            ? draft.users.find((u) => u.id !== newUserId && u.status === 'active' && u.role === 'user') || {
+                id: 'H150-ADMIN01',
+                fullName: 'HELP150 Central Treasury',
+                mobile: '9876543210',
+                upiId: draft.settings.adminUpiId || 'help150.treasury@icici',
+              }
+            : {
+                id: 'H150-ADMIN01',
+                fullName: 'HELP150 Central Treasury',
+                mobile: '9876543210',
+                upiId: draft.settings.adminUpiId || 'help150.treasury@icici',
+              };
+
+        const recKyc = draft.kycRecords.find((k) => k.userId === receiver.id);
+        const recUpi =
+          receiver.id === 'H150-ADMIN01'
+            ? draft.settings.adminUpiId || 'help150.treasury@icici'
+            : recKyc?.upiId || (receiver as any).upiId || `${receiver.id.toLowerCase()}@upi`;
+
+        initialProvideHelpRequest.status = 'PAYMENT_PENDING';
+        initialProvideHelpRequest.matchedWithUserId = receiver.id;
+        initialProvideHelpRequest.matchedWithUserName = receiver.fullName;
+        initialProvideHelpRequest.matchedWithUpi = recUpi;
+        initialProvideHelpRequest.matchedWithMobile = receiver.mobile;
+        initialProvideHelpRequest.timerDurationHours = timerHours;
+        initialProvideHelpRequest.timerExpiresAt = new Date(expiryEpoch).toISOString();
+        initialProvideHelpRequest.timerExpiryTime = expiryEpoch;
+        initialProvideHelpRequest.timerStatus = 'running';
+        initialProvideHelpRequest.adminApproved = true;
+        initialProvideHelpRequest.adminNotes = 'Auto-dispatched on registration by Auto Mode';
+      }
+
+      draft.helpRequests.unshift(initialProvideHelpRequest);
+
       draft.notifications.unshift({
         id: `NOTIF-${Date.now().toString().slice(-6)}`,
         userId: newUserId,
         title: 'Welcome to HELP150 Community',
-        message: `Your User ID is ${newUserId}. Review compliance rules and initiate your ₹150 help request.`,
+        message: `Your User ID is ${newUserId}. Your ₹${defaultAmount} Provide Help status is queued. Link will activate once dispatched by Admin.`,
         type: 'info',
         isRead: false,
         createdAt: now,
@@ -935,7 +994,7 @@ export const api = {
     }
 
     const amount = Number(params.amount) || state.settings.helpAmountDefault || 150;
-    const timerHours = Number(params.timerHours) || state.settings.timerDurationHours || 12;
+    const timerHours = Number(params.timerHours) || state.settings.timerDurationHours || 24;
     const now = new Date();
     const nowISO = now.toISOString();
     const expiryTime = now.getTime() + timerHours * 60 * 60 * 1000;
@@ -950,38 +1009,107 @@ export const api = {
     const receiverName = params.receiverUserId === 'ADMIN_TREASURY' ? 'HELP150 Central Treasury' : receiver?.fullName || 'Community Peer';
     const receiverMobile = params.receiverUserId === 'ADMIN_TREASURY' ? '9876543210' : receiver?.mobile || '';
 
-    const newRequestId = `HP-M2M-${Date.now().toString().slice(-6)}`;
+    let matchedRequest: HelpRequest | null = null;
 
-    const newRequest: HelpRequest = {
-      id: newRequestId,
+    db.updateState((draft) => {
+      // Look for an existing pending_match give_help request for this sender
+      const pendingReq = draft.helpRequests.find(
+        (r) => r.userId === sender.id && r.type === 'give_help' && ['pending_match', 'REQUEST_CREATED'].includes(r.status)
+      );
+
+      if (pendingReq) {
+        pendingReq.amount = amount;
+        pendingReq.status = 'PAYMENT_PENDING';
+        pendingReq.matchedWithUserId = params.receiverUserId;
+        pendingReq.matchedWithUserName = receiverName;
+        pendingReq.matchedWithUpi = receiverUpi;
+        pendingReq.matchedWithMobile = receiverMobile;
+        pendingReq.matchedAt = nowISO;
+        pendingReq.timerExpiryTime = expiryTime;
+        pendingReq.timerExpiresAt = expiryISO;
+        pendingReq.timerDurationHours = timerHours;
+        pendingReq.timerStatus = 'active';
+        pendingReq.adminNotes = params.remarks || `P2P Direct Member-to-Member link dispatched by Admin (${params.adminActor.name})`;
+        pendingReq.adminApproved = true;
+        matchedRequest = pendingReq;
+      } else {
+        const newRequestId = `HP-M2M-${Date.now().toString().slice(-6)}`;
+        const newRequest: HelpRequest = {
+          id: newRequestId,
+          userId: sender.id,
+          userName: sender.fullName,
+          userMobile: sender.mobile,
+          userEmail: sender.email,
+          userUpi: sender.id.toLowerCase() + '@upi',
+          amount,
+          type: 'give_help',
+          status: 'PAYMENT_PENDING',
+          matchedWithUserId: params.receiverUserId,
+          matchedWithUserName: receiverName,
+          matchedWithUpi: receiverUpi,
+          matchedWithMobile: receiverMobile,
+          matchedAt: nowISO,
+          timerExpiryTime: expiryTime,
+          timerExpiresAt: expiryISO,
+          timerDurationHours: timerHours,
+          timerStatus: 'active',
+          createdAt: nowISO,
+          adminNotes: params.remarks || `P2P Direct Member-to-Member link dispatched by Admin (${params.adminActor.name})`,
+          paymentSlipUploadedAt: undefined,
+          slipReviewStatus: 'pending',
+          adminApproved: true,
+        };
+        draft.helpRequests.unshift(newRequest);
+        matchedRequest = newRequest;
+      }
+
+      // Notification to Sender
+      draft.notifications.unshift({
+        id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-S`,
+        userId: sender.id,
+        title: `Provide Help Link Dispatched: Send ₹${amount}`,
+        message: `Admin matched you to send ₹${amount} help to ${receiverName} (${receiverUpi}). Please pay within ${timerHours} hours.`,
+        type: 'info',
+        isRead: false,
+        createdAt: nowISO,
+        linkTab: 'help',
+      });
+
+      // Notification to Receiver (if not treasury)
+      if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
+        draft.notifications.unshift({
+          id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-R`,
+          userId: receiver.id,
+          title: `Receive Help Link Dispatched: Receive ₹${amount}`,
+          message: `Admin linked member ${sender.fullName} (${sender.id}) to send you ₹${amount} help.`,
+          type: 'success',
+          isRead: false,
+          createdAt: nowISO,
+          linkTab: 'help',
+        });
+      }
+    });
+
+    const activeReq: HelpRequest = matchedRequest || {
+      id: `HP-${Date.now().toString().slice(-6)}`,
       userId: sender.id,
       userName: sender.fullName,
       userMobile: sender.mobile,
-      userEmail: sender.email,
-      userUpi: sender.id.toLowerCase() + '@upi',
       amount,
-      type: 'give_help',
-      status: 'PAYMENT_PENDING',
+      type: 'give_help' as const,
+      status: 'PAYMENT_PENDING' as const,
       matchedWithUserId: params.receiverUserId,
       matchedWithUserName: receiverName,
       matchedWithUpi: receiverUpi,
       matchedWithMobile: receiverMobile,
-      matchedAt: nowISO,
-      timerExpiryTime: expiryTime,
-      timerExpiresAt: expiryISO,
-      timerDurationHours: timerHours,
+      adminApproved: true,
       timerStatus: 'active',
       createdAt: nowISO,
-      adminNotes: params.remarks || `P2P Direct Member-to-Member link dispatched by Admin (${params.adminActor.name})`,
-      paymentSlipUploadedAt: undefined,
-      slipReviewStatus: 'pending',
-      adminApproved: false,
     };
 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://help150.org';
-    const shareUrl = `${origin}/?action=member_help_link&req=${newRequestId}&from=${sender.id}&to=${params.receiverUserId}&amt=${amount}`;
+    const shareUrl = `${origin}/?action=member_help_link&req=${activeReq.id}&from=${sender.id}&to=${params.receiverUserId}&amt=${amount}`;
 
-    // Pre-formatted WhatsApp message for instant dispatch
     const waText = `*HELP150 Member-to-Member Direct Help Link*\n\n` +
       `Hello ${sender.fullName} (${sender.id}),\n` +
       `You have been linked to provide ₹${amount} assistance to ${receiverName}.\n\n` +
@@ -997,53 +1125,52 @@ export const api = {
     const cleanMobile = sender.mobile.replace(/\D/g, '');
     const waMessageUrl = `https://wa.me/91${cleanMobile.length === 10 ? cleanMobile : cleanMobile.slice(-10)}?text=${encodeURIComponent(waText)}`;
 
-    db.updateState((draft) => {
-      draft.helpRequests.unshift(newRequest);
-
-      // Notification to Sender
-      draft.notifications.unshift({
-        id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-S`,
-        userId: sender.id,
-        title: `Member-to-Member Link Dispatched: Send ₹${amount}`,
-        message: `Admin matched you to send ₹${amount} help to ${receiverName} (${receiverUpi}). Please pay within ${timerHours} hours.`,
-        type: 'info',
-        isRead: false,
-        createdAt: nowISO,
-        linkTab: 'help',
-      });
-
-      // Notification to Receiver (if not treasury)
-      if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
-        draft.notifications.unshift({
-          id: `NOTIF-M2M-${Date.now().toString().slice(-6)}-R`,
-          userId: receiver.id,
-          title: `Member-to-Member Link Dispatched: Receive ₹${amount}`,
-          message: `Admin linked member ${sender.fullName} (${sender.id}) to send you ₹${amount} help.`,
-          type: 'success',
-          isRead: false,
-          createdAt: nowISO,
-          linkTab: 'help',
-        });
-      }
-    });
-
     logAudit(
       params.adminActor,
-      'ADMIN_CREATE_M2M_LINK',
+      'DISPATCH_M2M_LINK',
       'HelpRequest',
-      newRequestId,
-      `Created P2P Link: ${sender.fullName} (${sender.id}) -> ${receiverName} (${params.receiverUserId}) for ₹${amount}`
+      activeReq.id,
+      `Dispatched P2P Link from ${sender.id} to ${params.receiverUserId} for ₹${amount}`
     );
-
-    // Sync to Firestore
-    firestoreSync.syncHelpRequest(newRequest);
 
     return {
       success: true,
       data: {
-        helpRequest: newRequest,
+        helpRequest: activeReq,
         shareUrl,
         waMessageUrl,
+      },
+    };
+  },
+
+  // Batch create multiple links with exact count control
+  async adminBatchCreateMemberLinks(params: {
+    adminActor: { id: string; name: string; role: string };
+    senderUserIds: string[];
+    receiverUserId: string;
+    amount: number;
+    timerHours?: number;
+    remarks?: string;
+  }): Promise<ApiResponse<{ createdCount: number; links: HelpRequest[] }>> {
+    const createdLinks: HelpRequest[] = [];
+    for (const sId of params.senderUserIds) {
+      const res = await api.adminCreateMemberToMemberLink({
+        adminActor: params.adminActor,
+        senderUserId: sId,
+        receiverUserId: params.receiverUserId,
+        amount: params.amount,
+        timerHours: params.timerHours,
+        remarks: params.remarks,
+      });
+      if (res.success && res.data) {
+        createdLinks.push(res.data.helpRequest);
+      }
+    }
+    return {
+      success: true,
+      data: {
+        createdCount: createdLinks.length,
+        links: createdLinks,
       },
     };
   },
@@ -1471,10 +1598,14 @@ export const api = {
     adminActor: { id: string; name: string; role: string };
     amount?: number;
     timerHours?: number;
+    maxLinks?: number;
+    targetReceiver?: string;
+    senderUserIds?: string[];
   }): Promise<ApiResponse<{ matchedCount: number; links: HelpRequest[] }>> {
     const state = db.getState();
     const defaultAmount = params.amount || state.settings.helpAmountDefault || 150;
-    const timerHours = params.timerHours || state.settings.timerDurationHours || 12;
+    const timerHours = params.timerHours || state.settings.timerDurationHours || 24;
+    const maxLinksToGenerate = params.maxLinks && params.maxLinks > 0 ? params.maxLinks : 9999;
 
     const activeUsers = state.users.filter((u) => u.status === 'active' && u.role === 'user');
     const existingMatches: HelpRequest[] = [];
@@ -1486,27 +1617,61 @@ export const api = {
 
     db.updateState((draft) => {
       // Find open give_help requests
-      const openReqs = draft.helpRequests.filter(
+      let openReqs = draft.helpRequests.filter(
         (r) =>
           r.type === 'give_help' &&
           ['REQUEST_CREATED', 'pending_match', 'PENDING'].includes(r.status) &&
           (!r.matchedWithUserId || r.matchedWithUserId === 'H150-ADMIN01')
       );
 
-      openReqs.forEach((r) => {
-        const candidateReceiver = activeUsers.find((u) => u.id !== r.userId) || {
-          id: 'H150-ADMIN01',
-          fullName: 'HELP150 Central Treasury',
-          mobile: '9876543210',
-          upiId: 'help150.treasury@icici',
-        };
+      // If specific senders were selected
+      if (params.senderUserIds && params.senderUserIds.length > 0) {
+        openReqs = openReqs.filter((r) => params.senderUserIds!.includes(r.userId));
+      }
+
+      // Limit to maxLinksToGenerate
+      const reqsToMatch = openReqs.slice(0, maxLinksToGenerate);
+
+      reqsToMatch.forEach((r) => {
+        let candidateReceiver: { id: string; fullName: string; mobile: string; upiId?: string };
+
+        if (params.targetReceiver === 'ADMIN_TREASURY' || (!params.targetReceiver && draft.settings.defaultLinkReceiverType === 'admin_treasury')) {
+          candidateReceiver = {
+            id: 'H150-ADMIN01',
+            fullName: 'HELP150 Central Treasury',
+            mobile: '9876543210',
+            upiId: draft.settings.adminUpiId || 'help150.treasury@icici',
+          };
+        } else if (params.targetReceiver && params.targetReceiver !== 'FIFO') {
+          const found = activeUsers.find((u) => u.id === params.targetReceiver);
+          candidateReceiver = found
+            ? { id: found.id, fullName: found.fullName, mobile: found.mobile, upiId: (found as any).upiId }
+            : {
+                id: 'H150-ADMIN01',
+                fullName: 'HELP150 Central Treasury',
+                mobile: '9876543210',
+                upiId: draft.settings.adminUpiId || 'help150.treasury@icici',
+              };
+        } else {
+          // FIFO matching: pick another active user
+          const found = activeUsers.find((u) => u.id !== r.userId);
+          candidateReceiver = found
+            ? { id: found.id, fullName: found.fullName, mobile: found.mobile, upiId: (found as any).upiId }
+            : {
+                id: 'H150-ADMIN01',
+                fullName: 'HELP150 Central Treasury',
+                mobile: '9876543210',
+                upiId: draft.settings.adminUpiId || 'help150.treasury@icici',
+              };
+        }
 
         const recKyc = draft.kycRecords.find((k) => k.userId === candidateReceiver.id);
         const recUpi =
           candidateReceiver.id === 'H150-ADMIN01'
             ? draft.settings.adminUpiId || 'help150.treasury@icici'
-            : recKyc?.upiId || (candidateReceiver as any).upiId || `${candidateReceiver.id.toLowerCase()}@upi`;
+            : recKyc?.upiId || candidateReceiver.upiId || `${candidateReceiver.id.toLowerCase()}@upi`;
 
+        r.amount = defaultAmount;
         r.status = 'PAYMENT_PENDING';
         r.matchedWithUserId = candidateReceiver.id;
         r.matchedWithUserName = candidateReceiver.fullName;
@@ -1533,8 +1698,8 @@ export const api = {
         });
       });
 
-      // If no open request, pair two members together
-      if (openReqs.length === 0 && activeUsers.length >= 2) {
+      // If no open requests were found but active members exist, pair if limit allows
+      if (matchedCount === 0 && openReqs.length === 0 && activeUsers.length >= 2 && maxLinksToGenerate > 0) {
         const sender = activeUsers[0];
         const receiver = activeUsers[1];
         const recKyc = draft.kycRecords.find((k) => k.userId === receiver.id);
@@ -1586,8 +1751,8 @@ export const api = {
       params.adminActor,
       'ADMIN_AUTO_MATCH_ENGINE',
       'HelpRequest',
-      'ALL_PENDING',
-      `Auto-matched ${matchedCount} members in system.`
+      'BATCH',
+      `Auto-matched ${matchedCount} member(s) with limit ${maxLinksToGenerate}.`
     );
 
     return {
@@ -1596,6 +1761,41 @@ export const api = {
         matchedCount,
         links: existingMatches,
       },
+    };
+  },
+
+  // Update Auto/Manual Matching Settings
+  async adminUpdateMatchingSettings(params: {
+    adminActor: { id: string; name: string; role: string };
+    autoDispatchMode?: boolean;
+    autoDispatchOnRegistration?: boolean;
+    defaultLinkReceiverType?: 'admin_treasury' | 'fifo_queue';
+    maxLinksPerReceiver?: number;
+    helpAmountDefault?: number;
+    timerDurationHours?: number;
+  }): Promise<ApiResponse<WebsiteSettings>> {
+    let updatedSettings: WebsiteSettings | null = null;
+    db.updateState((draft) => {
+      if (params.autoDispatchMode !== undefined) draft.settings.autoDispatchMode = params.autoDispatchMode;
+      if (params.autoDispatchOnRegistration !== undefined) draft.settings.autoDispatchOnRegistration = params.autoDispatchOnRegistration;
+      if (params.defaultLinkReceiverType !== undefined) draft.settings.defaultLinkReceiverType = params.defaultLinkReceiverType;
+      if (params.maxLinksPerReceiver !== undefined) draft.settings.maxLinksPerReceiver = params.maxLinksPerReceiver;
+      if (params.helpAmountDefault !== undefined) draft.settings.helpAmountDefault = params.helpAmountDefault;
+      if (params.timerDurationHours !== undefined) draft.settings.timerDurationHours = params.timerDurationHours;
+      updatedSettings = { ...draft.settings };
+    });
+
+    logAudit(
+      params.adminActor,
+      'UPDATE_MATCHING_SETTINGS',
+      'WebsiteSettings',
+      'SETTINGS',
+      `Updated auto/manual matching settings (AutoMode: ${params.autoDispatchMode}, AutoReg: ${params.autoDispatchOnRegistration})`
+    );
+
+    return {
+      success: true,
+      data: updatedSettings!,
     };
   },
 
