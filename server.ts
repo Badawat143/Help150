@@ -245,10 +245,16 @@ app.post('/api/register', (req, res) => {
     let validSponsorId: string | null = null;
     let sponsorName: string | null = null;
     if (sponsorId) {
-      const cleanSponsor = String(sponsorId).trim().toUpperCase();
-      const sponsorUser = dbData.users.find(
-        (u: any) => u.id?.toUpperCase() === cleanSponsor
-      );
+      const rawSponsor = String(sponsorId).trim();
+      const cleanSponsor = rawSponsor.toUpperCase();
+      const cleanDigits = rawSponsor.replace(/\D/g, '');
+      const sponsorUser = dbData.users.find((u: any) => {
+        if (u.id?.toUpperCase() === cleanSponsor) return true;
+        if (u.id?.toUpperCase() === `H150-${cleanSponsor}`) return true;
+        if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+        if (cleanDigits.length === 6 && u.id?.toUpperCase().endsWith(cleanDigits)) return true;
+        return false;
+      });
       if (sponsorUser) {
         validSponsorId = sponsorUser.id;
         sponsorName = sponsorUser.fullName;
@@ -406,8 +412,17 @@ app.post('/api/login', (req, res) => {
 // Sponsor lookup endpoint
 app.get('/api/sponsor/:id', (req, res) => {
   const dbData = readDb();
-  const searchId = req.params.id.trim().toUpperCase();
-  const user = dbData.users.find((u: any) => u.id?.toUpperCase() === searchId);
+  const raw = req.params.id.trim();
+  const searchId = raw.toUpperCase();
+  const cleanDigits = raw.replace(/\D/g, '');
+
+  const user = dbData.users.find((u: any) => {
+    if (u.id?.toUpperCase() === searchId) return true;
+    if (u.id?.toUpperCase() === `H150-${searchId}`) return true;
+    if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+    if (cleanDigits.length === 6 && u.id?.toUpperCase().endsWith(cleanDigits)) return true;
+    return false;
+  });
 
   if (user) {
     return res.json({

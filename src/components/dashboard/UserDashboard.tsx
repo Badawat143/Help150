@@ -1172,11 +1172,15 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-center">
                 <div>
                   <div className="text-[10px] text-slate-400 font-semibold">Direct Referrals</div>
-                  <div className="text-base font-black text-slate-900 font-heading">5</div>
+                  <div className="text-base font-black text-slate-900 font-heading">
+                    {hierarchy.directReferrals.length}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400 font-semibold">Team Members</div>
-                  <div className="text-base font-black text-slate-900 font-heading">18</div>
+                  <div className="text-base font-black text-slate-900 font-heading">
+                    {hierarchy.totalTeamSize}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1372,101 +1376,44 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 </div>
 
                 <div className="space-y-3.5 mt-3 text-xs">
-                  {/* Level 1 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 text-[10px]">
-                          1
-                        </span>
-                        <span>Level 1</span>
-                      </div>
-                      <span className="font-bold text-red-600 font-mono text-sm">₹5</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-red-500 h-full rounded-full w-[100%]" />
-                    </div>
-                  </div>
+                  {state.referralLevels.map((lvl) => {
+                    const stat = hierarchy.levelStats.find((s) => s.level === lvl.level);
+                    const count = stat ? stat.memberCount : 0;
+                    const earned = stat ? stat.earnedRewards : 0;
+                    const colors = [
+                      { text: 'text-red-600', bg: 'bg-red-100', bar: 'bg-red-500' },
+                      { text: 'text-blue-600', bg: 'bg-blue-100', bar: 'bg-blue-500' },
+                      { text: 'text-emerald-600', bg: 'bg-emerald-100', bar: 'bg-emerald-500' },
+                      { text: 'text-amber-600', bg: 'bg-amber-100', bar: 'bg-amber-500' },
+                      { text: 'text-purple-600', bg: 'bg-purple-100', bar: 'bg-purple-500' },
+                      { text: 'text-teal-600', bg: 'bg-teal-100', bar: 'bg-teal-500' },
+                    ];
+                    const color = colors[(lvl.level - 1) % colors.length];
+                    const barWidth = Math.min(100, count > 0 ? Math.max(15, count * 20) : 5);
 
-                  {/* Level 2 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-[10px]">
-                          2
-                        </span>
-                        <span>Level 2</span>
+                    return (
+                      <div key={lvl.level} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 font-bold text-slate-800">
+                            <span className={`flex h-5 w-5 items-center justify-center rounded-full ${color.bg} ${color.text} text-[10px]`}>
+                              {lvl.level}
+                            </span>
+                            <span>Level {lvl.level}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">({count} members)</span>
+                          </div>
+                          <span className={`font-bold ${color.text} font-mono text-sm`}>
+                            ₹{earned.toFixed(earned % 1 === 0 ? 0 : 2)}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`${color.bar} h-full rounded-full transition-all duration-500`}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
                       </div>
-                      <span className="font-bold text-blue-600 font-mono text-sm">₹4</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full w-[80%]" />
-                    </div>
-                  </div>
-
-                  {/* Level 3 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-[10px]">
-                          3
-                        </span>
-                        <span>Level 3</span>
-                      </div>
-                      <span className="font-bold text-emerald-600 font-mono text-sm">₹3</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full w-[60%]" />
-                    </div>
-                  </div>
-
-                  {/* Level 4 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-600 text-[10px]">
-                          4
-                        </span>
-                        <span>Level 4</span>
-                      </div>
-                      <span className="font-bold text-amber-600 font-mono text-sm">₹2</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-amber-500 h-full rounded-full w-[40%]" />
-                    </div>
-                  </div>
-
-                  {/* Level 5 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-purple-600 text-[10px]">
-                          5
-                        </span>
-                        <span>Level 5</span>
-                      </div>
-                      <span className="font-bold text-purple-600 font-mono text-sm">₹1</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-purple-500 h-full rounded-full w-[20%]" />
-                    </div>
-                  </div>
-
-                  {/* Level 6 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-teal-600 text-[10px]">
-                          6
-                        </span>
-                        <span>Level 6</span>
-                      </div>
-                      <span className="font-bold text-teal-600 font-mono text-sm">₹0.5</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-teal-500 h-full rounded-full w-[10%]" />
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

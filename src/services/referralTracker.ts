@@ -127,16 +127,22 @@ export class ReferralTrackerService {
    * Look up sponsor information in local state and Firestore database
    */
   public async lookupSponsor(sponsorId: string): Promise<SponsorLookupResult> {
-    const cleanId = sponsorId.trim().toUpperCase();
+    const raw = sponsorId.trim();
+    const cleanId = raw.toUpperCase();
+    const cleanDigits = raw.replace(/\D/g, '');
     if (!cleanId) {
       return { exists: false, id: '', fullName: '' };
     }
 
     // 1. Check local state
     const state = db.getState();
-    let sponsor: User | undefined = state.users.find(
-      (u) => u.id.toUpperCase() === cleanId
-    );
+    let sponsor: User | undefined = state.users.find((u) => {
+      if (u.id.toUpperCase() === cleanId) return true;
+      if (u.id.toUpperCase() === `H150-${cleanId}`) return true;
+      if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+      if (cleanDigits.length === 6 && u.id.toUpperCase().endsWith(cleanDigits)) return true;
+      return false;
+    });
 
     // 2. Cross-device lookup from central server
     if (!sponsor) {

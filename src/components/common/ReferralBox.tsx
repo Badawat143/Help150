@@ -21,6 +21,7 @@ import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { db } from '../../services/db';
 
 interface ReferralBoxProps {
   customUserId?: string;
@@ -34,9 +35,17 @@ export const ReferralBox: React.FC<ReferralBoxProps> = ({ customUserId, showStat
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [dbTick, setDbTick] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const referralUrl = `${window.location.origin}/?ref=${userId}`;
+  useEffect(() => {
+    const unsub = db.subscribe(() => {
+      setDbTick((t) => t + 1);
+    });
+    return () => unsub();
+  }, []);
+
+  const referralUrl = typeof window !== 'undefined' ? `${window.location.origin}/?ref=${userId}` : `https://help150.com/?ref=${userId}`;
   const shareText = `Join the HELP150 community mutual help platform. Transparent peer coordination & secure dashboard. Use Referral ID: ${userId} — ${referralUrl}`;
 
   // Fetch real statistics

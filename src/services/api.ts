@@ -155,8 +155,16 @@ export const api = {
     // Sponsor validation
     let validSponsorId: string | null = null;
     if (params.sponsorId && params.sponsorId.trim()) {
-      const cleanSponsor = params.sponsorId.trim().toUpperCase();
-      let sponsor = state.users.find((u) => u.id.toUpperCase() === cleanSponsor);
+      const rawSponsor = params.sponsorId.trim();
+      const cleanSponsor = rawSponsor.toUpperCase();
+      const cleanDigits = rawSponsor.replace(/\D/g, '');
+      let sponsor = state.users.find((u) => {
+        if (u.id.toUpperCase() === cleanSponsor) return true;
+        if (u.id.toUpperCase() === `H150-${cleanSponsor}`) return true;
+        if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+        if (cleanDigits.length === 6 && u.id.toUpperCase().endsWith(cleanDigits)) return true;
+        return false;
+      });
       if (!sponsor) {
         sponsor = (await firestoreSync.fetchUserDirect(cleanSponsor)) || undefined;
       }
@@ -923,7 +931,8 @@ export const api = {
       let level = 1;
 
       while (currentSponsorId && level <= 6) {
-        const sponsor = draft.users.find((u) => u.id === currentSponsorId);
+        const targetSponsorId = currentSponsorId.trim().toUpperCase();
+        const sponsor = draft.users.find((u) => u.id.trim().toUpperCase() === targetSponsorId);
         const levelConfig = draft.referralLevels.find((l) => l.level === level);
 
         if (sponsor && levelConfig && levelConfig.enabled && sponsor.status === 'active') {
