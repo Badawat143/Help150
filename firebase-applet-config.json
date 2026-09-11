@@ -1,9 +1,12 @@
 {
-  "projectId": "help2-dcc45",
-  "appId": "1:639512354686:web:73f4080d0654c84671dd2f",
-  "apiKey": "AIzaSyDAHYiOa1yN5lWE595Nsn412MAy0m43xVU",
-  "authDomain": "help2-dcc45.firebaseapp.com",
-  "databaseURL": "https://help2-dcc45-default-rtdb.firebaseio.com",
-  "storageBucket": "help2-dcc45.firebasestorage.app",
-  "messagingSenderId": "639512354686"
+  "projectId": "decisive-depth-mthgf",
+  "appId": "1:947864648388:web:d49358f03534f8f792e791",
+  "apiKey": "AIzaSyBvbMIwAaDhY1ZYxnNooIJDtCr8dz1TFTE",
+  "authDomain": "decisive-depth-mthgf.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-help150-adcd1c7c-1d9d-42c6-b584-13c66fa17224",
+  "storageBucket": "decisive-depth-mthgf.firebasestorage.app",
+  "messagingSenderId": "947864648388",
+  "measurementId": "",
+  "oAuthClientId": "947864648388-q4kvs1ah82aq7d37656u4gc441d90vog.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

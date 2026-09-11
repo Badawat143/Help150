@@ -49,11 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Initialize Firestore real-time sync on boot
+  // Multi-device server state synchronization
   useEffect(() => {
-    firestoreSync.initSync();
-
-    // Full-stack server multi-device synchronization
     let isMounted = true;
     const syncWithServer = async () => {
       try {
@@ -131,57 +128,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setFirebaseUser(user);
       setIsFirebaseLoading(false);
 
-      if (user && user.email) {
-        // If logged in via Firebase Google Auth, find or link account
-        const state = db.getState();
-        let existing = state.users.find(
-          (u) => u.email.toLowerCase() === user.email?.toLowerCase()
-        );
+      if (user) {
+        // Authenticated with Firebase: start role-aware real-time synchronization
+        firestoreSync.initSync(user);
 
-        if (!existing) {
-          // Register new Firebase Google user into HELP150 database
-          const newUserId = `H150-${Math.floor(100000 + Math.random() * 900000)}`;
-          const newUser: User = {
-            id: newUserId,
-            fullName: user.displayName || 'Google Member',
-            email: user.email,
-            mobile: user.phoneNumber || '9876500000',
-            role: user.email === 'ashuk2968@gmail.com' ? 'admin' : 'user',
-            sponsorId: 'H150-ADMIN01',
-            status: 'active',
-            kycStatus: 'verified',
-            isMobileVerified: true,
-            isEmailVerified: true,
-            joinedAt: new Date().toISOString(),
-            lastLoginAt: new Date().toISOString(),
-            avatarUrl: user.photoURL || undefined,
-          };
+        if (user.email) {
+          // If logged in via Firebase Google Auth, find or link account
+          const state = db.getState();
+          let existing = state.users.find(
+            (u) => u.email.toLowerCase() === user.email?.toLowerCase()
+          );
 
-          db.updateState((draft) => {
-            draft.users.push(newUser);
-            draft.wallets[newUserId] = {
-              userId: newUserId,
-              availableBalance: 300,
-              pendingBalance: 0,
-              totalHelpedGiven: 150,
-              totalHelpedReceived: 0,
-              totalReferralRewards: 0,
-              totalWithdrawn: 0,
-              lastUpdated: new Date().toISOString(),
+          if (!existing) {
+            // Register new Firebase Google user into HELP150 database
+            const newUserId = `H150-${Math.floor(100000 + Math.random() * 900000)}`;
+            const newUser: User = {
+              id: newUserId,
+              fullName: user.displayName || 'Google Member',
+              email: user.email,
+              mobile: user.phoneNumber || '9876500000',
+              role: user.email === 'ashuk2968@gmail.com' ? 'admin' : 'user',
+              sponsorId: 'H150-ADMIN01',
+              status: 'active',
+              kycStatus: 'verified',
+              isMobileVerified: true,
+              isEmailVerified: true,
+              joinedAt: new Date().toISOString(),
+              lastLoginAt: new Date().toISOString(),
+              avatarUrl: user.photoURL || undefined,
             };
-          });
 
-          firestoreSync.syncUser(newUser);
-          setCurrentUserId(newUserId);
-          localStorage.setItem('HELP150_AUTH_USER_ID', newUserId);
-        } else {
-          setCurrentUserId(existing.id);
-          localStorage.setItem('HELP150_AUTH_USER_ID', existing.id);
+            db.updateState((draft) => {
+              draft.users.push(newUser);
+              draft.wallets[newUserId] = {
+                userId: newUserId,
+                availableBalance: 300,
+                pendingBalance: 0,
+                totalHelpedGiven: 150,
+                totalHelpedReceived: 0,
+                totalReferralRewards: 0,
+                totalWithdrawn: 0,
+                lastUpdated: new Date().toISOString(),
+              };
+            });
+
+            firestoreSync.syncUser(newUser);
+            setCurrentUserId(newUserId);
+            localStorage.setItem('HELP150_AUTH_USER_ID', newUserId);
+          } else {
+            setCurrentUserId(existing.id);
+            localStorage.setItem('HELP150_AUTH_USER_ID', existing.id);
+          }
         }
+      } else {
+        // Unauthenticated: ensure no background Firestore listeners run
+        firestoreSync.cleanup();
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      firestoreSync.cleanup();
+    };
   }, []);
 
   const refreshUserData = useCallback(() => {
