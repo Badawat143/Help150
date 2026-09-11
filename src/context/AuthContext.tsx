@@ -141,6 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshUserData();
+    const unsubscribeDb = db.subscribe(() => {
+      refreshUserData();
+    });
+    return () => {
+      unsubscribeDb();
+    };
   }, [currentUserId, refreshUserData]);
 
   const loginAs = (userId: string) => {

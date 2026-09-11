@@ -13,6 +13,9 @@ import {
   Sparkles,
   ArrowRight,
   KeyRound,
+  Eye,
+  EyeOff,
+  Globe,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -31,6 +34,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const { loginAs } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +46,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await api.login(identifier);
+      const res = await api.login(identifier, password);
       if (res.success && res.data) {
         loginAs(res.data.user.id);
         onClose();
@@ -50,7 +54,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         setError(res.error || 'Invalid credentials or user not found');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Login failed. Please check your network connection.');
     } finally {
       setLoading(false);
     }
@@ -62,8 +66,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-6 sm:p-8 text-slate-200 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-5 sm:p-7 text-slate-200 shadow-2xl relative">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
@@ -72,7 +76,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-5">
           <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 shadow-md">
             <LogIn className="h-6 w-6" />
           </div>
@@ -81,7 +85,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               Member & Admin Login
             </h3>
             <p className="text-xs text-slate-400">
-              Access your secure community dashboard
+              Cross-browser & all-device secure access
             </p>
           </div>
         </div>
@@ -93,10 +97,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              User ID / Email / Mobile Number
+              User ID / Email / Mobile (यूजर आईडी, ईमेल या मोबाइल)
             </label>
             <div className="relative">
               <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -106,7 +110,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 required
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="e.g. H150-784920 or ashuk2968@gmail.com"
+                placeholder="e.g. H150-784920, 9876543210"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-white placeholder-slate-500 transition"
               />
             </div>
@@ -114,19 +118,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Account Password
+              Account Password (पासवर्ड)
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input
                 id="login-password"
-                type="password"
-                required
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-white placeholder-slate-500"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-white placeholder-slate-500"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
@@ -134,17 +144,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             id="btn-login-submit"
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
           >
-            <span>{loading ? 'Verifying Session...' : 'Sign In to Dashboard'}</span>
+            <span>{loading ? 'Verifying & Syncing Session...' : 'Sign In to Dashboard (लॉगिन करें)'}</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
 
         {/* Instant Role Persona Access for reviewer ease */}
-        <div className="mt-6 pt-4 border-t border-slate-800">
+        <div className="mt-5 pt-3.5 border-t border-slate-800">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">
-            One-Click Persona Sign-In (For Testing)
+            One-Click Quick Sign-In (For Testing)
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -171,7 +181,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             onClick={onSwitchToRegister}
             className="text-amber-400 hover:underline font-semibold cursor-pointer"
           >
-            Register account
+            Register account here
           </button>
         </div>
       </div>

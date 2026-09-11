@@ -73,7 +73,7 @@ export const api = {
     email: string;
     password: string;
     sponsorId?: string;
-  }): Promise<ApiResponse<{ user: User; token: string }>> {
+  }): Promise<ApiResponse<{ user: User; token: string; plainPassword?: string }>> {
     const state = db.getState();
     const cleanMobile = params.mobile.trim().replace(/\D/g, '');
     const cleanEmail = params.email.trim().toLowerCase();
@@ -110,6 +110,8 @@ export const api = {
       fullName: params.fullName.trim(),
       mobile: cleanMobile,
       email: cleanEmail,
+      password: params.password,
+      passwordHash: btoa(params.password),
       role: 'user',
       sponsorId: validSponsorId,
       status: 'active',
@@ -205,10 +207,25 @@ export const api = {
         isRead: false,
         createdAt: now,
       });
+
+      // If registered with sponsor, also notify sponsor
+      if (validSponsorId) {
+        draft.notifications.unshift({
+          id: `NOTIF-${Date.now().toString().slice(-6)}`,
+          userId: validSponsorId,
+          title: 'New Direct Referral Joined!',
+          message: `${newUser.fullName} (${newUser.id}) has joined your direct team (Level 1).`,
+          type: 'success',
+          isRead: false,
+          createdAt: now,
+        });
+      }
     });
 
+    // Sync in real-time to Firestore so all connected devices see this user instantly
     firestoreSync.syncUser(newUser);
     firestoreSync.syncWallet(initialWallet);
+    firestoreSync.syncHelpRequest(initialProvideHelpRequest);
 
     logAudit(
       { id: newUserId, name: newUser.fullName, role: 'user' },
@@ -218,21 +235,48 @@ export const api = {
       `New user registered with Sponsor: ${validSponsorId || 'None'}`
     );
 
-    return { success: true, data: { user: newUser, token: `jwt_${newUserId}` } };
+    return {
+      success: true,
+      data: {
+        user: newUser,
+        token: `jwt_${newUserId}`,
+        plainPassword: params.password,
+      },
+    };
   },
 
-  async login(identifier: string): Promise<ApiResponse<{ user: User; token: string }>> {
-    const state = db.getState();
+  async login(identifier: string, password?: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    let state = db.getState();
     const clean = identifier.trim().toLowerCase();
-    const user = state.users.find(
+
+    // 1. Check local users
+    let user = state.users.find(
       (u) =>
         u.id.toLowerCase() === clean ||
         u.email.toLowerCase() === clean ||
         u.mobile === clean
     );
 
+    // 2. Cross-device fallback: If user is not yet in local state, fetch directly from Firestore
     if (!user) {
-      return { success: false, error: 'No account found with this User ID, Email, or Mobile' };
+      const cloudUser = await firestoreSync.fetchUserDirect(identifier.trim().toUpperCase());
+      if (cloudUser) {
+        user = cloudUser;
+      } else {
+        // Try fetching all from cloud to ensure local state is completely up to date
+        await firestoreSync.fetchAllFromCloud();
+        state = db.getState();
+        user = state.users.find(
+          (u) =>
+            u.id.toLowerCase() === clean ||
+            u.email.toLowerCase() === clean ||
+            u.mobile === clean
+        );
+      }
+    }
+
+    if (!user) {
+      return { success: false, error: 'No account found with this User ID, Email, or Mobile. Please check your credentials.' };
     }
 
     if (user.status === 'blocked') {
@@ -242,15 +286,20 @@ export const api = {
       return { success: false, error: 'This account is temporarily suspended. Contact support.' };
     }
 
+    // Password validation (if user has a set password and password was entered)
+    if (password && user.password && user.password !== password) {
+      return { success: false, error: 'Incorrect password. Please try again.' };
+    }
+
     const now = new Date().toISOString();
     db.updateState((draft) => {
-      const u = draft.users.find((x) => x.id === user.id);
+      const u = draft.users.find((x) => x.id === user!.id);
       if (u) {
         u.lastLoginAt = now;
       }
       draft.loginSessions.unshift({
         id: `SES-${Date.now().toString().slice(-6)}`,
-        userId: user.id,
+        userId: user!.id,
         device: navigator.userAgent.substring(0, 30),
         browser: 'Web Client',
         ipAddress: '157.34.120.' + Math.floor(10 + Math.random() * 80),
@@ -259,6 +308,8 @@ export const api = {
         status: 'active',
       });
     });
+
+    firestoreSync.syncUser(user);
 
     return { success: true, data: { user, token: `jwt_${user.id}` } };
   },

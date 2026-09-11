@@ -811,6 +811,25 @@ class DatabaseManager {
     }
   }
 
+  private listeners: Set<() => void> = new Set();
+
+  public subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  public notifySubscribers(): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (err) {
+        console.error('Database subscriber error:', err);
+      }
+    });
+  }
+
   public getState(): DatabaseState {
     return this.state;
   }
@@ -818,12 +837,14 @@ class DatabaseManager {
   public updateState(updater: (draft: DatabaseState) => void): DatabaseState {
     updater(this.state);
     this.saveToStorage(this.state);
+    this.notifySubscribers();
     return this.state;
   }
 
   public resetDatabase(): DatabaseState {
     this.state = getSeedDatabase();
     this.saveToStorage(this.state);
+    this.notifySubscribers();
     return this.state;
   }
 

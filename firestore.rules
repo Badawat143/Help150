@@ -78,8 +78,7 @@ service cloud.firestore {
     // User Profiles
     match /users/{userId} {
       allow get, list: if true;
-      allow create: if (isOwner(userId) || isAdmin() || isSignedIn()) && isValidUser(incoming());
-      allow update: if isValidUser(incoming()) && (isAdmin() || isOwner(userId) || isSignedIn());
+      allow create, update: if isValidUser(incoming());
       allow delete: if isAdmin();
     }
 
@@ -100,8 +99,8 @@ service cloud.firestore {
     // Transactions
     match /transactions/{transactionId} {
       allow get, list: if true;
-      allow create: if isValidTransaction(incoming());
-      allow update, delete: if isAdmin();
+      allow create, update: if isValidTransaction(incoming());
+      allow delete: if isAdmin();
     }
 
     // KYC Records
@@ -114,8 +113,8 @@ service cloud.firestore {
     // Withdrawals
     match /withdrawals/{withdrawalId} {
       allow get, list: if true;
-      allow create: if isValidWithdrawal(incoming());
-      allow update, delete: if isAdmin();
+      allow create, update: if isValidWithdrawal(incoming());
+      allow delete: if isAdmin();
     }
 
     // Support Tickets
@@ -142,7 +141,7 @@ service cloud.firestore {
     // Settings (Public Read)
     match /settings/{settingId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin() || isSignedIn();
+      allow create, update, delete: if true;
     }
 
     // Admins Collection

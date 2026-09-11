@@ -3,7 +3,7 @@
  * Real-time downline tree viewer, qualifying reward ledger, and transparent compliance criteria.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Award,
@@ -17,6 +17,7 @@ import {
   UserCheck,
   Clock,
   Coins,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -25,11 +26,19 @@ import { db } from '../../services/db';
 
 export const ReferralModule: React.FC = () => {
   const { currentUser } = useAuth();
-  const state = db.getState();
+  const [dbTick, setDbTick] = useState<number>(0);
   const [selectedLevel, setSelectedLevel] = useState<number>(1);
+
+  useEffect(() => {
+    const unsub = db.subscribe(() => {
+      setDbTick((t) => t + 1);
+    });
+    return () => unsub();
+  }, []);
 
   if (!currentUser) return null;
 
+  const state = db.getState();
   const hierarchy = api.getReferralHierarchy(currentUser.id);
   const referralLevels = state.referralLevels;
 

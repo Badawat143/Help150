@@ -14,6 +14,7 @@ export interface User {
   fullName: string;
   mobile: string;
   email: string;
+  password?: string;
   passwordHash?: string;
   role: UserRole;
   sponsorId: string | null;

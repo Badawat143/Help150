@@ -1,5 +1,5 @@
 /**
- * HELP150 — User Registration Modal
+ * HELP150 — User Registration Modal with Instant Credentials Popup
  */
 
 import React, { useState } from 'react';
@@ -15,7 +15,17 @@ import {
   AlertCircle,
   Sparkles,
   ArrowRight,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  Share2,
+  Smartphone,
+  KeyRound,
+  ShieldAlert,
+  LogIn,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -38,22 +48,50 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [sponsorId, setSponsorId] = useState(initialSponsorId);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<{ id: string; fullName: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Success credentials state
+  const [successData, setSuccessData] = useState<{
+    id: string;
+    fullName: string;
+    mobile: string;
+    email: string;
+    password: string;
+    sponsorId: string | null;
+  } | null>(null);
 
   if (!isOpen) return null;
+
+  const triggerCelebration = () => {
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    } catch (e) {
+      // safe fallback
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match / पासवर्ड मेल नहीं खा रहे हैं');
       return;
     }
 
@@ -76,7 +114,12 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
         setSuccessData({
           id: res.data.user.id,
           fullName: res.data.user.fullName,
+          mobile: res.data.user.mobile,
+          email: res.data.user.email,
+          password: password,
+          sponsorId: res.data.user.sponsorId,
         });
+        triggerCelebration();
       } else {
         setError(res.error || 'Failed to complete registration');
       }
@@ -87,59 +130,243 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  const handleFinish = () => {
+  const handleCopyText = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2500);
+  };
+
+  const handleCopyAllCredentials = () => {
+    if (!successData) return;
+    const textToCopy = `🎉 HELP150 LOGIN CREDENTIALS / लॉगिन विवरण:\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 Name: ${successData.fullName}\n` +
+      `🆔 User ID: ${successData.id}\n` +
+      `🔒 Password: ${successData.password}\n` +
+      `📱 Mobile: ${successData.mobile}\n` +
+      `🤝 Sponsor: ${successData.sponsorId || 'Direct'}\n` +
+      `🌐 Portal: ${window.location.origin}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚠️ Note: Save this ID & Password safely for logging in across all browsers & devices.`;
+
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedField('all');
+    setTimeout(() => setCopiedField(null), 3000);
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!successData) return;
+    const message = `🎉 *HELP150 Account Registration Details*\n\n` +
+      `*Full Name:* ${successData.fullName}\n` +
+      `*User ID:* ${successData.id}\n` +
+      `*Password:* ${successData.password}\n` +
+      `*Mobile:* ${successData.mobile}\n` +
+      `*Website:* ${window.location.origin}\n\n` +
+      `_Save these credentials safely to login from any mobile or desktop browser._`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleDirectLogin = () => {
     if (successData) {
       loginAs(successData.id);
       onClose();
     }
   };
 
+  const handleGoToLogin = () => {
+    onClose();
+    onSwitchToLogin();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 text-slate-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-5 sm:p-7 text-slate-200 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+          className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition cursor-pointer z-10"
         >
           <X className="h-5 w-5" />
         </button>
 
         {successData ? (
-          <div className="text-center py-6 space-y-4 animate-in zoom-in-95">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-              <CheckCircle2 className="h-8 w-8" />
+          /* ========================================================================= */
+          /* POPUP: REGISTRATION SUCCESSFUL WITH USER ID & PASSWORD CREDENTIALS */
+          /* ========================================================================= */
+          <div className="py-2 space-y-4 animate-in zoom-in-95 text-center">
+            {/* Header Icon */}
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+              <CheckCircle2 className="h-9 w-9" />
             </div>
 
-            <h3 className="text-2xl font-black text-white font-heading">Registration Successful!</h3>
-            <p className="text-xs text-slate-300">
-              Welcome to the HELP150 Community, <strong>{successData.fullName}</strong>.
-            </p>
-
-            <div className="bg-slate-950 p-4 rounded-2xl border border-amber-500/30 my-4 text-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Your Auto-Generated User ID
-              </span>
-              <div className="text-2xl font-black text-amber-400 font-mono tracking-wider mt-1">
-                {successData.id}
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>पंजीकरण सफल / Registration Successful</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Please save this ID safely. You can use it to log in and invite community peers.
+              <h3 className="text-2xl font-black text-white font-heading">
+                Welcome, {successData.fullName}!
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">
+                आपका HELP150 कम्युनिटी अकाउंट सफलतापूर्वक बन गया है।
               </p>
             </div>
 
-            <button
-              id="btn-register-enter-dashboard"
-              onClick={handleFinish}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-sm transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Go to Your Dashboard</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {/* Main Credentials Box */}
+            <div className="bg-slate-950/90 rounded-2xl border-2 border-amber-500/50 p-4 sm:p-5 text-left space-y-3.5 shadow-xl relative overflow-hidden">
+              <div className="absolute -right-8 -top-8 w-24 h-24 bg-amber-500/10 rounded-full blur-xl pointer-events-none" />
+
+              {/* User ID Section */}
+              <div className="bg-slate-900/90 p-3.5 rounded-xl border border-amber-500/30 flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>User ID (यूजर आईडी)</span>
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono tracking-wide">
+                    {successData.id}
+                  </div>
+                </div>
+                <button
+                  id="btn-copy-user-id"
+                  onClick={() => handleCopyText(successData.id, 'userId')}
+                  className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  {copiedField === 'userId' ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy ID</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Password Section */}
+              <div className="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700 flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    <span>Password (पासवर्ड)</span>
+                  </div>
+                  <div className="text-lg font-bold text-white font-mono tracking-wider">
+                    {showPassword ? successData.password : '••••••••••••'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    id="btn-copy-password"
+                    onClick={() => handleCopyText(successData.password, 'password')}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {copiedField === 'password' ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Additional Account Details Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                <div className="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800">
+                  <div className="text-[10px] text-slate-400">Registered Mobile</div>
+                  <div className="font-semibold text-slate-200">{successData.mobile}</div>
+                </div>
+                <div className="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800">
+                  <div className="text-[10px] text-slate-400">Sponsor ID</div>
+                  <div className="font-semibold text-amber-300 font-mono">
+                    {successData.sponsorId || 'None (Direct)'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Important Caution Notice */}
+              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-left flex items-start gap-2.5 text-amber-200 text-xs">
+                <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                <div className="leading-snug">
+                  <strong className="text-amber-300">महत्वपूर्ण सूचना:</strong> कृपया अपना यूजर ID और पासवर्ड कहीं सुरक्षित लिख लें या इसका स्क्रीनशॉट ले लें। किसी भी डिवाइस या ब्राउज़र में लॉगिन करने के लिए इसका उपयोग करें।
+                </div>
+              </div>
+            </div>
+
+            {/* Copy All & WhatsApp Share Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                id="btn-copy-all-credentials"
+                onClick={handleCopyAllCredentials}
+                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-600 text-xs font-bold text-slate-200 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                {copiedField === 'all' ? (
+                  <>
+                    <Check className="h-4 w-4 text-emerald-400" />
+                    <span className="text-emerald-400">All Details Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 text-amber-400" />
+                    <span>Copy All Credentials</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                id="btn-share-whatsapp-credentials"
+                onClick={handleShareWhatsApp}
+                className="py-2.5 px-3 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Share2 className="h-4 w-4" />
+                <span>Save on WhatsApp</span>
+              </button>
+            </div>
+
+            {/* Action Buttons: Direct Login vs Go to Login */}
+            <div className="space-y-2 pt-2">
+              <button
+                id="btn-register-enter-dashboard"
+                onClick={handleDirectLogin}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-sm transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>डैशबोर्ड में लॉगिन करें / Enter Dashboard</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={handleGoToLogin}
+                className="w-full py-2.5 text-xs text-slate-400 hover:text-white transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                <span>लॉगिन स्क्रीन पर जाएं / Go to Login Screen</span>
+              </button>
+            </div>
           </div>
         ) : (
+          /* ========================================================================= */
+          /* REGISTRATION FORM */
+          /* ========================================================================= */
           <div>
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 shadow-md">
                 <UserPlus className="h-6 w-6" />
               </div>
@@ -148,7 +375,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   Join HELP150 Community
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Voluntary mutual helping • No guaranteed income promises
+                  Voluntary mutual helping • All devices & browsers supported
                 </p>
               </div>
             </div>
@@ -160,11 +387,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               {/* Full Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Name (As per Govt ID) <span className="text-amber-400">*</span>
+                  Full Name (पूरा नाम) <span className="text-amber-400">*</span>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -184,7 +411,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Mobile Number <span className="text-amber-400">*</span>
+                    Mobile Number (मोबाइल) <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -202,7 +429,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Email Address <span className="text-amber-400">*</span>
+                    Email Address (ईमेल) <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -223,19 +450,26 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Password <span className="text-amber-400">*</span>
+                    Password (पासवर्ड) <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
                       id="reg-password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min 6 chars"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-white placeholder-slate-500"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-white placeholder-slate-500"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -247,7 +481,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
                       id="reg-confirm-password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -261,7 +495,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               {/* Referral / Sponsor ID */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Referral / Sponsor ID (Optional)
+                  Referral / Sponsor ID (रेफरल स्पॉन्सर आईडी - वैकल्पिक)
                 </label>
                 <div className="relative">
                   <Sparkles className="absolute left-3.5 top-3 h-4 w-4 text-amber-400" />
@@ -275,7 +509,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 mt-1 block">
-                  Leave empty if you are registering directly.
+                  Leave empty if registering directly. Newly registered members sync across all devices in real-time.
                 </span>
               </div>
 
@@ -313,9 +547,10 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 id="btn-register-submit"
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
-                {loading ? 'Generating Unique User ID...' : 'Create My Account & Generate ID'}
+                <span>{loading ? 'Generating User ID & Credentials...' : 'Create Account & Generate User ID'}</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
             </form>
 
