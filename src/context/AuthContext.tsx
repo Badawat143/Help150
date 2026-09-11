@@ -52,7 +52,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize Firestore real-time sync on boot
   useEffect(() => {
     firestoreSync.initSync();
+
+    // Full-stack server multi-device synchronization
+    let isMounted = true;
+    const syncWithServer = async () => {
+      try {
+        const res = await fetch('/api/sync');
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          if (data && Array.isArray(data.users)) {
+            let hasAnyUpdate = false;
+            db.updateState((draft) => {
+              // 1. Merge users from all devices
+              data.users.forEach((sUser: User) => {
+                const idx = draft.users.findIndex(
+                  (u) => u.id.toUpperCase() === sUser.id.toUpperCase()
+                );
+                if (idx < 0) {
+                  draft.users.unshift(sUser);
+                  hasAnyUpdate = true;
+                } else {
+                  if (
+                    draft.users[idx].lastLoginAt !== sUser.lastLoginAt ||
+                    draft.users[idx].status !== sUser.status ||
+                    draft.users[idx].sponsorId !== sUser.sponsorId
+                  ) {
+                    draft.users[idx] = { ...draft.users[idx], ...sUser };
+                    hasAnyUpdate = true;
+                  }
+                }
+              });
+
+              // 2. Merge wallets
+              if (data.wallets) {
+                Object.keys(data.wallets).forEach((uid) => {
+                  if (!draft.wallets[uid]) {
+                    draft.wallets[uid] = data.wallets[uid];
+                    hasAnyUpdate = true;
+                  }
+                });
+              }
+
+              // 3. Merge helpRequests
+              if (Array.isArray(data.helpRequests)) {
+                data.helpRequests.forEach((hr: any) => {
+                  const hrIdx = draft.helpRequests.findIndex((x) => x.id === hr.id);
+                  if (hrIdx < 0) {
+                    draft.helpRequests.unshift(hr);
+                    hasAnyUpdate = true;
+                  }
+                });
+              }
+            });
+
+            if (hasAnyUpdate && isMounted) {
+              refreshUserData();
+            }
+          }
+        }
+      } catch (err) {
+        // network sync silent
+      }
+    };
+
+    syncWithServer();
+    const interval = setInterval(syncWithServer, 3000);
+
     return () => {
+      isMounted = false;
+      clearInterval(interval);
       firestoreSync.cleanup();
     };
   }, []);

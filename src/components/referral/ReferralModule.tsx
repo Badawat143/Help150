@@ -28,6 +28,7 @@ export const ReferralModule: React.FC = () => {
   const { currentUser } = useAuth();
   const [dbTick, setDbTick] = useState<number>(0);
   const [selectedLevel, setSelectedLevel] = useState<number>(1);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   useEffect(() => {
     const unsub = db.subscribe(() => {
@@ -35,6 +36,34 @@ export const ReferralModule: React.FC = () => {
     });
     return () => unsub();
   }, []);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/sync');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.users)) {
+          db.updateState((draft) => {
+            data.users.forEach((sUser: any) => {
+              const idx = draft.users.findIndex((u) => u.id.toUpperCase() === sUser.id.toUpperCase());
+              if (idx < 0) draft.users.unshift(sUser);
+              else draft.users[idx] = { ...draft.users[idx], ...sUser };
+            });
+            if (data.wallets) {
+              Object.keys(data.wallets).forEach((uid) => {
+                if (!draft.wallets[uid]) draft.wallets[uid] = data.wallets[uid];
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Sync error:', e);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 500);
+    }
+  };
 
   if (!currentUser) return null;
 
@@ -75,17 +104,29 @@ export const ReferralModule: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
-            <div className="text-left px-2 border-r border-slate-800">
-              <div className="text-[10px] text-slate-400">Total Rewards Paid</div>
-              <div className="text-xl font-bold text-emerald-400 font-mono">
-                ₹{totalPaidRewards.toFixed(2)}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
+              title="Click to sync direct referrals from all devices"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync All Devices'}</span>
+            </button>
+
+            <div className="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
+              <div className="text-left px-2 border-r border-slate-800">
+                <div className="text-[10px] text-slate-400">Total Rewards Paid</div>
+                <div className="text-xl font-bold text-emerald-400 font-mono">
+                  ₹{totalPaidRewards.toFixed(2)}
+                </div>
               </div>
-            </div>
-            <div className="text-left px-2">
-              <div className="text-[10px] text-slate-400">Total Team Size</div>
-              <div className="text-xl font-bold text-blue-400 font-mono">
-                {hierarchy.totalTeamSize} Members
+              <div className="text-left px-2">
+                <div className="text-[10px] text-slate-400">Total Team Size</div>
+                <div className="text-xl font-bold text-blue-400 font-mono">
+                  {hierarchy.totalTeamSize} Members
+                </div>
               </div>
             </div>
           </div>

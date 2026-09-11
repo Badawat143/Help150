@@ -65,6 +65,18 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const { currentUser, wallet, notifications, unreadCount, logout, setActiveTab, refreshUserData } = useAuth();
   const toast = useToast();
   const state = db.getState();
+  const [dbTick, setDbTick] = useState(0);
+
+  useEffect(() => {
+    const unsub = db.subscribe(() => {
+      setDbTick((t) => t + 1);
+    });
+    return () => unsub();
+  }, []);
+
+  const hierarchy = currentUser
+    ? api.getReferralHierarchy(currentUser.id)
+    : { directReferrals: [], allDownline: [], totalTeamSize: 0, levelStats: [] };
 
   // Active navigation inside the dashboard view
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');
@@ -1045,7 +1057,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
               <div className="flex-1 space-y-1">
                 <div className="text-xs font-semibold text-slate-500">Direct Referrals</div>
-                <div className="text-xl font-black text-slate-900 font-heading">5</div>
+                <div className="text-xl font-black text-slate-900 font-heading">
+                  {hierarchy.directReferrals.length}
+                </div>
                 <button
                   onClick={() => setActiveTab('referral')}
                   className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"
@@ -1062,7 +1076,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
               <div className="flex-1 space-y-1">
                 <div className="text-xs font-semibold text-slate-500">Total Team (All Levels)</div>
-                <div className="text-xl font-black text-slate-900 font-heading">18</div>
+                <div className="text-xl font-black text-slate-900 font-heading">
+                  {hierarchy.totalTeamSize}
+                </div>
                 <button
                   onClick={() => setActiveTab('referral')}
                   className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"

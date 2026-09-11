@@ -1,0 +1,152 @@
+{
+  "users": [
+    {
+      "id": "H150-ADMIN01",
+      "fullName": "System Superadmin",
+      "mobile": "9800000001",
+      "email": "admin@help150.org",
+      "password": "admin",
+      "passwordHash": "YWRtaW4=",
+      "role": "admin",
+      "sponsorId": null,
+      "status": "active",
+      "kycStatus": "verified",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    },
+    {
+      "id": "H150-784920",
+      "fullName": "Ashok Kumar",
+      "mobile": "9876543210",
+      "email": "ashuk2968@gmail.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-ADMIN01",
+      "status": "active",
+      "kycStatus": "verified",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    },
+    {
+      "id": "H150-918234",
+      "fullName": "Priya Sharma",
+      "mobile": "9876512345",
+      "email": "priya.sharma@example.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-784920",
+      "status": "active",
+      "kycStatus": "verified",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    },
+    {
+      "id": "H150-449102",
+      "fullName": "Rahul Verma",
+      "mobile": "9876523456",
+      "email": "rahul.verma@example.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-784920",
+      "status": "active",
+      "kycStatus": "verified",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    },
+    {
+      "id": "H150-610293",
+      "fullName": "Sunita Patel",
+      "mobile": "9876509988",
+      "email": "sunita.patel@example.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-918234",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    },
+    {
+      "id": "H150-338291",
+      "fullName": "Manoj Tiwari",
+      "mobile": "9876501122",
+      "email": "manoj.tiwari@example.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-610293",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T06:37:15.763Z",
+      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+    }
+  ],
+  "wallets": {
+    "H150-ADMIN01": {
+      "userId": "H150-ADMIN01",
+      "availableBalance": 50000,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-11T06:37:15.763Z"
+    },
+    "H150-784920": {
+      "userId": "H150-784920",
+      "availableBalance": 400,
+      "pendingBalance": 150,
+      "totalHelpedGiven": 150,
+      "totalHelpedReceived": 300,
+      "totalReferralRewards": 50,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-11T06:37:15.763Z"
+    },
+    "H150-918234": {
+      "userId": "H150-918234",
+      "availableBalance": 150,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 150,
+      "totalHelpedReceived": 300,
+      "totalReferralRewards": 50,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-11T06:37:15.763Z"
+    },
+    "H150-449102": {
+      "userId": "H150-449102",
+      "availableBalance": 0,
+      "pendingBalance": 150,
+      "totalHelpedGiven": 150,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-11T06:37:15.763Z"
+    }
+  },
+  "helpRequests": [],
+  "transactions": [],
+  "kycRecords": [],
+  "notifications": [],
+  "settings": {
+    "helpAmountDefault": 150,
+    "minWithdrawalAmount": 200,
+    "withdrawalMultiple": 200,
+    "timerDurationHours": 24
+  }
+}

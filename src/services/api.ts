@@ -74,8 +74,7 @@ export const api = {
     password: string;
     sponsorId?: string;
   }): Promise<ApiResponse<{ user: User; token: string; plainPassword?: string }>> {
-    const state = db.getState();
-    const cleanMobile = params.mobile.trim().replace(/\D/g, '');
+    const cleanMobile = params.mobile.trim().replace(/\D/g, '').slice(-10);
     const cleanEmail = params.email.trim().toLowerCase();
 
     // Input Validation
@@ -83,6 +82,67 @@ export const api = {
     if (cleanMobile.length < 10) return { success: false, error: 'Valid 10-digit mobile number required' };
     if (!cleanEmail.includes('@')) return { success: false, error: 'Valid email address required' };
     if (params.password.length < 6) return { success: false, error: 'Password must be at least 6 characters' };
+
+    // 1. First attempt registration on the central full-stack server for 100% multi-device sync
+    try {
+      const serverResp = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: params.fullName.trim(),
+          mobile: cleanMobile,
+          email: cleanEmail,
+          password: params.password,
+          sponsorId: params.sponsorId?.trim() || undefined,
+        }),
+      });
+
+      if (serverResp.ok) {
+        const result = await serverResp.json();
+        if (result.success && result.data && result.data.user) {
+          const registeredUser: User = result.data.user;
+
+          // Merge immediately into local db state
+          db.updateState((draft) => {
+            const idx = draft.users.findIndex((u) => u.id === registeredUser.id);
+            if (idx >= 0) draft.users[idx] = registeredUser;
+            else draft.users.unshift(registeredUser);
+
+            if (!draft.wallets[registeredUser.id]) {
+              draft.wallets[registeredUser.id] = {
+                userId: registeredUser.id,
+                availableBalance: 0,
+                pendingBalance: 0,
+                totalHelpedGiven: 0,
+                totalHelpedReceived: 0,
+                totalReferralRewards: 0,
+                totalWithdrawn: 0,
+                lastUpdated: registeredUser.joinedAt,
+              };
+            }
+          });
+
+          // Also sync to Firestore
+          firestoreSync.syncUser(registeredUser);
+
+          return {
+            success: true,
+            data: result.data,
+          };
+        } else if (result.message) {
+          return { success: false, error: result.message };
+        }
+      } else {
+        const errJson = await serverResp.json().catch(() => ({}));
+        if (errJson.message) {
+          return { success: false, error: errJson.message };
+        }
+      }
+    } catch (netErr) {
+      console.warn('Server registration network notice, using local engine:', netErr);
+    }
+
+    const state = db.getState();
 
     // Duplicate account protection
     if (state.users.some((u) => u.mobile === cleanMobile)) {
@@ -250,6 +310,34 @@ export const api = {
   },
 
   async login(identifier: string, password?: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    // 1. Try centralized server login first for instant multi-device recognition
+    try {
+      const serverResp = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      });
+      if (serverResp.ok) {
+        const result = await serverResp.json();
+        if (result.success && result.data?.user) {
+          const sUser: User = result.data.user;
+          db.updateState((draft) => {
+            const idx = draft.users.findIndex((u) => u.id === sUser.id);
+            if (idx >= 0) draft.users[idx] = { ...draft.users[idx], ...sUser };
+            else draft.users.unshift(sUser);
+          });
+          return {
+            success: true,
+            data: result.data,
+          };
+        } else if (result.message && !password) {
+          // If no password was required or credentials failed
+        }
+      }
+    } catch (netErr) {
+      console.warn('Server login note, falling back to local store:', netErr);
+    }
+
     let state = db.getState();
     const clean = identifier.trim().toLowerCase();
 
@@ -2014,10 +2102,13 @@ export const api = {
     const allDownline: ReferralMember[] = [];
 
     // Traverse downline level by level up to Level 6
-    let currentLevelUsers = [userId];
+    let currentLevelUsers = [userId.trim().toUpperCase()];
     for (let level = 1; level <= 6; level++) {
       const nextLevelUsers: string[] = [];
-      const matchingMembers = state.users.filter((u) => u.sponsorId && currentLevelUsers.includes(u.sponsorId));
+      const matchingMembers = state.users.filter((u) => {
+        if (!u.sponsorId) return false;
+        return currentLevelUsers.includes(u.sponsorId.trim().toUpperCase());
+      });
 
       matchingMembers.forEach((member) => {
         const wallet = state.wallets[member.id];
@@ -2036,7 +2127,7 @@ export const api = {
           directReferrals.push(refItem);
         }
         allDownline.push(refItem);
-        nextLevelUsers.push(member.id);
+        nextLevelUsers.push(member.id.trim().toUpperCase());
 
         const stat = levelStats.find((s) => s.level === level);
         if (stat) {

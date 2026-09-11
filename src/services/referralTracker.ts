@@ -138,7 +138,27 @@ export class ReferralTrackerService {
       (u) => u.id.toUpperCase() === cleanId
     );
 
-    // 2. Cross-device lookup from Firestore if not in memory
+    // 2. Cross-device lookup from central server
+    if (!sponsor) {
+      try {
+        const resp = await fetch(`/api/sponsor/${encodeURIComponent(cleanId)}`);
+        if (resp.ok) {
+          const sData = await resp.json();
+          if (sData && sData.exists) {
+            return {
+              exists: true,
+              id: sData.id,
+              fullName: sData.fullName,
+              status: sData.status,
+            };
+          }
+        }
+      } catch (err) {
+        // network fallback
+      }
+    }
+
+    // 3. Cross-device lookup from Firestore if not in memory
     if (!sponsor) {
       const cloudUser = await firestoreSync.fetchUserDirect(cleanId);
       if (cloudUser) {
