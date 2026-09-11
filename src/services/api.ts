@@ -2114,9 +2114,41 @@ export const api = {
     let currentLevelUsers = [userId.trim().toUpperCase()];
     for (let level = 1; level <= 6; level++) {
       const nextLevelUsers: string[] = [];
+
+      // Collect all valid tokens for the current level sponsors
+      const sponsorTokens = new Set<string>();
+      currentLevelUsers.forEach((uid) => {
+        const uClean = uid.toUpperCase();
+        sponsorTokens.add(uClean);
+        if (uClean.startsWith('H150-')) {
+          sponsorTokens.add(uClean.replace('H150-', ''));
+        } else {
+          sponsorTokens.add(`H150-${uClean}`);
+        }
+        // Also look up this sponsor in state.users to include mobile & email
+        const spObj = state.users.find(
+          (u) => u.id.toUpperCase() === uClean || `H150-${u.id.toUpperCase()}` === uClean
+        );
+        if (spObj) {
+          if (spObj.mobile) sponsorTokens.add(spObj.mobile.replace(/\D/g, '').slice(-10));
+          if (spObj.email) sponsorTokens.add(spObj.email.toLowerCase());
+        }
+      });
+
       const matchingMembers = state.users.filter((u) => {
         if (!u.sponsorId) return false;
-        return currentLevelUsers.includes(u.sponsorId.trim().toUpperCase());
+        const sRaw = String(u.sponsorId).trim();
+        const sClean = sRaw.toUpperCase();
+        const sDigits = sRaw.replace(/\D/g, '');
+        const sEmail = sRaw.toLowerCase();
+
+        return (
+          sponsorTokens.has(sClean) ||
+          (sClean.startsWith('H150-') && sponsorTokens.has(sClean.replace('H150-', ''))) ||
+          sponsorTokens.has(`H150-${sClean}`) ||
+          (sDigits.length >= 10 && sponsorTokens.has(sDigits.slice(-10))) ||
+          sponsorTokens.has(sEmail)
+        );
       });
 
       matchingMembers.forEach((member) => {

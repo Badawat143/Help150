@@ -56,6 +56,7 @@ export const ReferralModule: React.FC = () => {
               });
             }
           });
+          setDbTick((t) => t + 1);
         }
       }
     } catch (e) {

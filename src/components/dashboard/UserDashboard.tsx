@@ -48,6 +48,7 @@ import {
   Sparkles,
   Info,
   ChevronDown,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -77,6 +78,38 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const hierarchy = currentUser
     ? api.getReferralHierarchy(currentUser.id)
     : { directReferrals: [], allDownline: [], totalTeamSize: 0, levelStats: [] };
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const handleSyncReferrals = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/sync');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.users)) {
+          db.updateState((draft) => {
+            data.users.forEach((sUser: any) => {
+              const idx = draft.users.findIndex((u) => u.id.toUpperCase() === sUser.id.toUpperCase());
+              if (idx < 0) draft.users.unshift(sUser);
+              else draft.users[idx] = { ...draft.users[idx], ...sUser };
+            });
+            if (data.wallets) {
+              Object.keys(data.wallets).forEach((uid) => {
+                if (!draft.wallets[uid]) draft.wallets[uid] = data.wallets[uid];
+              });
+            }
+          });
+          refreshUserData();
+          setDbTick((t) => t + 1);
+          toast.success('डैशबोर्ड और रेफरल टीम डेटा सिंक हो गया!', 'Synced');
+        }
+      }
+    } catch (e) {
+      console.warn('Sync error:', e);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 500);
+    }
+  };
 
   // Active navigation inside the dashboard view
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');
@@ -1051,21 +1084,39 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
             </div>
 
             {/* Card 3: Direct Referrals */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex items-start gap-4 hover:shadow-md transition">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex items-start gap-4 hover:shadow-md transition relative group">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
                 <Users className="h-6 w-6" />
               </div>
               <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-slate-500">Direct Referrals</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500">Direct Referrals (लेवल 1)</span>
+                  <button
+                    onClick={handleSyncReferrals}
+                    title="रिफ्रेश करें / Sync now"
+                    className="text-slate-400 hover:text-blue-600 p-1 rounded-lg hover:bg-blue-50 transition cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-blue-600' : ''}`} />
+                  </button>
+                </div>
                 <div className="text-xl font-black text-slate-900 font-heading">
                   {hierarchy.directReferrals.length}
                 </div>
-                <button
-                  onClick={() => setActiveTab('referral')}
-                  className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"
-                >
-                  View Team
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setActiveTab('referral')}
+                    className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"
+                  >
+                    View Team
+                  </button>
+                  <button
+                    onClick={handleSyncReferrals}
+                    disabled={isSyncing}
+                    className="mt-1 text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline cursor-pointer"
+                  >
+                    {isSyncing ? 'सिंक हो रहा है...' : 'रिफ्रेश'}
+                  </button>
+                </div>
               </div>
             </div>
 

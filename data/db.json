@@ -1,6 +1,22 @@
 {
   "users": [
     {
+      "id": "H150-240211",
+      "fullName": "Test Referral User",
+      "mobile": "9899112233",
+      "email": "testreferral@gmail.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-784920",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-11T18:52:05.820Z",
+      "lastLoginAt": "2026-09-11T18:52:05.820Z"
+    },
+    {
       "id": "H150-ADMIN01",
       "fullName": "System Superadmin",
       "mobile": "9800000001",
@@ -137,12 +153,56 @@
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
       "lastUpdated": "2026-09-11T06:37:15.763Z"
+    },
+    "H150-240211": {
+      "userId": "H150-240211",
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-11T18:52:05.820Z"
     }
   },
-  "helpRequests": [],
+  "helpRequests": [
+    {
+      "id": "HP-38098864",
+      "userId": "H150-240211",
+      "userName": "Test Referral User",
+      "userMobile": "9899112233",
+      "userEmail": "testreferral@gmail.com",
+      "userUpi": "h150-240211@upi",
+      "amount": 150,
+      "type": "give_help",
+      "status": "pending_match",
+      "adminApproved": false,
+      "timerStatus": "pending",
+      "createdAt": "2026-09-11T18:52:05.820Z"
+    }
+  ],
   "transactions": [],
   "kycRecords": [],
-  "notifications": [],
+  "notifications": [
+    {
+      "id": "NOTIF-725821",
+      "userId": "H150-784920",
+      "title": "New Direct Referral Joined!",
+      "message": "Test Referral User (H150-240211) has joined your direct team (Level 1).",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-11T18:52:05.820Z"
+    },
+    {
+      "id": "NOTIF-725821",
+      "userId": "H150-240211",
+      "title": "Welcome to HELP150 Community",
+      "message": "Your User ID is H150-240211. Your registration is complete!",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-11T18:52:05.820Z"
+    }
+  ],
   "settings": {
     "helpAmountDefault": 150,
     "minWithdrawalAmount": 200,

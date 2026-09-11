@@ -251,13 +251,23 @@ app.post('/api/register', (req, res) => {
       const sponsorUser = dbData.users.find((u: any) => {
         if (u.id?.toUpperCase() === cleanSponsor) return true;
         if (u.id?.toUpperCase() === `H150-${cleanSponsor}`) return true;
-        if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+        if (cleanDigits.length >= 10 && u.mobile?.slice(-10) === cleanDigits.slice(-10)) return true;
         if (cleanDigits.length === 6 && u.id?.toUpperCase().endsWith(cleanDigits)) return true;
+        if (u.email && u.email.toLowerCase() === rawSponsor.toLowerCase()) return true;
         return false;
       });
       if (sponsorUser) {
         validSponsorId = sponsorUser.id;
         sponsorName = sponsorUser.fullName;
+      } else {
+        // Fallback: Never wipe user's sponsor! Normalize as H150-XXXXXX if 6 digits or preserve clean code
+        if (cleanSponsor.startsWith('H150-')) {
+          validSponsorId = cleanSponsor;
+        } else if (cleanDigits.length === 6) {
+          validSponsorId = `H150-${cleanDigits}`;
+        } else {
+          validSponsorId = cleanSponsor;
+        }
       }
     }
 
@@ -419,8 +429,10 @@ app.get('/api/sponsor/:id', (req, res) => {
   const user = dbData.users.find((u: any) => {
     if (u.id?.toUpperCase() === searchId) return true;
     if (u.id?.toUpperCase() === `H150-${searchId}`) return true;
-    if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+    if (`H150-${u.id?.toUpperCase()}` === searchId) return true;
+    if (cleanDigits.length >= 10 && u.mobile?.slice(-10) === cleanDigits.slice(-10)) return true;
     if (cleanDigits.length === 6 && u.id?.toUpperCase().endsWith(cleanDigits)) return true;
+    if (u.email && u.email.toLowerCase() === raw.toLowerCase()) return true;
     return false;
   });
 
@@ -498,9 +510,39 @@ app.get('/api/referrals/:userId', (req, res) => {
   let currentLevelUsers = [userId];
   for (let level = 1; level <= 6; level++) {
     const nextLevelUsers: string[] = [];
+
+    // Collect all valid tokens for the current level sponsors
+    const sponsorTokens = new Set<string>();
+    currentLevelUsers.forEach((uid) => {
+      const uClean = uid.toUpperCase();
+      sponsorTokens.add(uClean);
+      if (uClean.startsWith('H150-')) {
+        sponsorTokens.add(uClean.replace('H150-', ''));
+      } else {
+        sponsorTokens.add(`H150-${uClean}`);
+      }
+      // Also look up this sponsor in dbData to include mobile & email
+      const spObj = dbData.users.find((u: any) => u.id?.toUpperCase() === uClean || `H150-${u.id?.toUpperCase()}` === uClean);
+      if (spObj) {
+        if (spObj.mobile) sponsorTokens.add(spObj.mobile.replace(/\D/g, '').slice(-10));
+        if (spObj.email) sponsorTokens.add(spObj.email.toLowerCase());
+      }
+    });
+
     const matching = dbData.users.filter((u: any) => {
       if (!u.sponsorId) return false;
-      return currentLevelUsers.includes(u.sponsorId.trim().toUpperCase());
+      const sRaw = String(u.sponsorId).trim();
+      const sClean = sRaw.toUpperCase();
+      const sDigits = sRaw.replace(/\D/g, '');
+      const sEmail = sRaw.toLowerCase();
+
+      return (
+        sponsorTokens.has(sClean) ||
+        (sClean.startsWith('H150-') && sponsorTokens.has(sClean.replace('H150-', ''))) ||
+        sponsorTokens.has(`H150-${sClean}`) ||
+        (sDigits.length >= 10 && sponsorTokens.has(sDigits.slice(-10))) ||
+        sponsorTokens.has(sEmail)
+      );
     });
 
     matching.forEach((m: any) => {

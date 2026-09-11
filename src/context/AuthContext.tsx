@@ -15,6 +15,7 @@ import {
   FirebaseUser,
 } from '../services/firebase';
 import { firestoreSync } from '../services/firestoreSync';
+import { referralTracker } from '../services/referralTracker';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -113,11 +114,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     syncWithServer();
-    const interval = setInterval(syncWithServer, 3000);
+    const interval = setInterval(syncWithServer, 2000);
+
+    const handleFocusOrVisible = () => {
+      syncWithServer();
+    };
+    window.addEventListener('focus', handleFocusOrVisible);
+    document.addEventListener('visibilitychange', handleFocusOrVisible);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      window.removeEventListener('focus', handleFocusOrVisible);
+      document.removeEventListener('visibilitychange', handleFocusOrVisible);
       firestoreSync.cleanup();
     };
   }, []);
@@ -142,13 +151,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!existing) {
             // Register new Firebase Google user into HELP150 database
             const newUserId = `H150-${Math.floor(100000 + Math.random() * 900000)}`;
+            const trackedSponsor =
+              referralTracker.extractReferralFromUrl() ||
+              referralTracker.getStoredReferral() ||
+              'H150-784920';
+
             const newUser: User = {
               id: newUserId,
               fullName: user.displayName || 'Google Member',
               email: user.email,
               mobile: user.phoneNumber || '9876500000',
               role: user.email === 'ashuk2968@gmail.com' ? 'admin' : 'user',
-              sponsorId: 'H150-ADMIN01',
+              sponsorId: trackedSponsor,
               status: 'active',
               kycStatus: 'verified',
               isMobileVerified: true,
@@ -158,19 +172,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               avatarUrl: user.photoURL || undefined,
             };
 
+            const initialWallet = {
+              userId: newUserId,
+              availableBalance: 300,
+              pendingBalance: 0,
+              totalHelpedGiven: 150,
+              totalHelpedReceived: 0,
+              totalReferralRewards: 0,
+              totalWithdrawn: 0,
+              lastUpdated: new Date().toISOString(),
+            };
+
             db.updateState((draft) => {
               draft.users.push(newUser);
-              draft.wallets[newUserId] = {
-                userId: newUserId,
-                availableBalance: 300,
-                pendingBalance: 0,
-                totalHelpedGiven: 150,
-                totalHelpedReceived: 0,
-                totalReferralRewards: 0,
-                totalWithdrawn: 0,
-                lastUpdated: new Date().toISOString(),
-              };
+              draft.wallets[newUserId] = initialWallet;
             });
+
+            // Push to centralized server for instant cross-device recognition
+            fetch('/api/sync/push', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                users: [newUser],
+                wallets: { [newUserId]: initialWallet },
+              }),
+            }).catch(() => {});
 
             firestoreSync.syncUser(newUser);
             setCurrentUserId(newUserId);

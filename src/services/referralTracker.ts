@@ -139,8 +139,10 @@ export class ReferralTrackerService {
     let sponsor: User | undefined = state.users.find((u) => {
       if (u.id.toUpperCase() === cleanId) return true;
       if (u.id.toUpperCase() === `H150-${cleanId}`) return true;
-      if (cleanDigits.length === 10 && u.mobile?.slice(-10) === cleanDigits) return true;
+      if (`H150-${u.id.toUpperCase()}` === cleanId) return true;
+      if (cleanDigits.length >= 10 && u.mobile?.slice(-10) === cleanDigits.slice(-10)) return true;
       if (cleanDigits.length === 6 && u.id.toUpperCase().endsWith(cleanDigits)) return true;
+      if (u.email && u.email.toLowerCase() === raw.toLowerCase()) return true;
       return false;
     });
 

@@ -145,12 +145,13 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
     setLoading(true);
     try {
+      const canonicalSponsor = (sponsorLookup?.id || sponsorId).trim();
       const res = await api.register({
         fullName,
         mobile,
         email,
         password,
-        sponsorId: sponsorId.trim() || undefined,
+        sponsorId: canonicalSponsor || undefined,
       });
 
       if (res.success && res.data) {
