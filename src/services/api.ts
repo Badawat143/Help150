@@ -95,9 +95,13 @@ export const api = {
     // Sponsor validation
     let validSponsorId: string | null = null;
     if (params.sponsorId && params.sponsorId.trim()) {
-      const sponsor = state.users.find((u) => u.id.toUpperCase() === params.sponsorId?.trim().toUpperCase());
+      const cleanSponsor = params.sponsorId.trim().toUpperCase();
+      let sponsor = state.users.find((u) => u.id.toUpperCase() === cleanSponsor);
       if (!sponsor) {
-        return { success: false, error: 'Invalid Referral/Sponsor ID' };
+        sponsor = (await firestoreSync.fetchUserDirect(cleanSponsor)) || undefined;
+      }
+      if (!sponsor) {
+        return { success: false, error: 'Invalid Referral/Sponsor ID. Please check the ID or register directly.' };
       }
       validSponsorId = sponsor.id;
     }

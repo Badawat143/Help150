@@ -53,6 +53,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { db } from '../../services/db';
 import { api } from '../../services/api';
+import { referralTracker } from '../../services/referralTracker';
 import { PaymentSlipUploadModal } from '../helping/PaymentSlipUploadModal';
 import { ProfileModal } from './ProfileModal';
 
@@ -191,7 +192,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const receiveProofRef = activeReceive?.proofReference || 'UPI/428901849201';
 
   // Referral Link
-  const referralLink = `https://help150.com/register?ref=${currentUser.id}`;
+  const referralLink = referralTracker.generateReferralLink(currentUser.id);
 
   const handleCopyReferral = () => {
     navigator.clipboard.writeText(referralLink);

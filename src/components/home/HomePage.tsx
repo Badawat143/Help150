@@ -3,7 +3,7 @@
  * Transparent, mobile-first, and strictly compliant.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   HeartHandshake,
@@ -22,10 +22,13 @@ import {
   FileCheck,
   Lock,
   ExternalLink,
+  UserCheck,
+  Zap,
 } from 'lucide-react';
 import { ReferralBox } from '../common/ReferralBox';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
+import { referralTracker, SponsorLookupResult } from '../../services/referralTracker';
 
 interface HomePageProps {
   onOpenLogin: () => void;
@@ -36,6 +39,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   const { currentUser, setActiveTab } = useAuth();
   const state = db.getState();
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const [trackedSponsor, setTrackedSponsor] = useState<SponsorLookupResult | null>(null);
+
+  useEffect(() => {
+    const code = referralTracker.extractReferralFromUrl();
+    if (code) {
+      referralTracker.lookupSponsor(code).then((res) => {
+        if (res.exists) {
+          setTrackedSponsor(res);
+        }
+      });
+    }
+  }, []);
 
   const stats = {
     totalUsers: state.users.length,
@@ -94,6 +109,32 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">
             Experience voluntary community mutual assistance engineered with real-time peer matching, 12-hour server-controlled timer windows, 6-level referral analytics, and bank-grade KYC security.
           </p>
+
+          {/* Auto-Tracked Referral Invitation Banner */}
+          {!currentUser && trackedSponsor && (
+            <div className="mb-6 mx-auto max-w-lg p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-blue-500/20 border border-amber-500/40 shadow-xl backdrop-blur-md flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold shrink-0 border border-amber-500/30">
+                  <UserCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-black tracking-wider text-amber-300 flex items-center gap-1">
+                    <Zap className="h-3 w-3" />
+                    <span>Special Referral Invitation</span>
+                  </div>
+                  <div className="text-xs font-bold text-white">
+                    Invited by: {trackedSponsor.fullName} <span className="text-amber-400 font-mono">({trackedSponsor.id})</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={onOpenRegister}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 transition cursor-pointer shadow"
+              >
+                Join Under Team
+              </button>
+            </div>
+          )}
 
           {/* 4 Action Buttons as requested */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">

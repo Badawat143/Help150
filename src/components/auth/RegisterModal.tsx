@@ -2,7 +2,7 @@
  * HELP150 — User Registration Modal with Instant Credentials Popup
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UserPlus,
   X,
@@ -24,10 +24,13 @@ import {
   KeyRound,
   ShieldAlert,
   LogIn,
+  UserCheck,
+  Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { referralTracker, SponsorLookupResult } from '../../services/referralTracker';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -49,13 +52,53 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [sponsorId, setSponsorId] = useState(initialSponsorId);
+  const [sponsorId, setSponsorId] = useState('');
+  const [isAutoTracked, setIsAutoTracked] = useState(false);
+  const [sponsorLookup, setSponsorLookup] = useState<SponsorLookupResult | null>(null);
+  const [isLookingUpSponsor, setIsLookingUpSponsor] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Sync sponsor ID on open or prop change
+  useEffect(() => {
+    if (isOpen) {
+      const tracked = initialSponsorId || referralTracker.extractReferralFromUrl() || '';
+      if (tracked) {
+        setSponsorId(tracked.toUpperCase());
+        setIsAutoTracked(true);
+      }
+    }
+  }, [isOpen, initialSponsorId]);
+
+  // Live lookup sponsor details when sponsorId changes
+  useEffect(() => {
+    const clean = sponsorId.trim().toUpperCase();
+    if (!clean) {
+      setSponsorLookup(null);
+      setIsLookingUpSponsor(false);
+      return;
+    }
+
+    let active = true;
+    setIsLookingUpSponsor(true);
+
+    const timer = setTimeout(async () => {
+      const result = await referralTracker.lookupSponsor(clean);
+      if (active) {
+        setSponsorLookup(result);
+        setIsLookingUpSponsor(false);
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [sponsorId]);
 
   // Success credentials state
   const [successData, setSuccessData] = useState<{
@@ -111,6 +154,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
       });
 
       if (res.success && res.data) {
+        referralTracker.clearTrackedReferral();
         setSuccessData({
           id: res.data.user.id,
           fullName: res.data.user.fullName,
@@ -494,23 +538,75 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
               {/* Referral / Sponsor ID */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Referral / Sponsor ID (रेफरल स्पॉन्सर आईडी - वैकल्पिक)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Referral / Sponsor ID (रेफरल स्पॉन्सर आईडी)
+                  </label>
+                  {isAutoTracked && sponsorId && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <Zap className="h-3 w-3 text-amber-400" />
+                      <span>Auto-Tracked via Link</span>
+                    </span>
+                  )}
+                </div>
+
                 <div className="relative">
                   <Sparkles className="absolute left-3.5 top-3 h-4 w-4 text-amber-400" />
                   <input
                     id="reg-sponsor-id"
                     type="text"
                     value={sponsorId}
-                    onChange={(e) => setSponsorId(e.target.value.toUpperCase())}
-                    placeholder="e.g. H150-784920"
+                    onChange={(e) => {
+                      setSponsorId(e.target.value.toUpperCase());
+                      setIsAutoTracked(false);
+                    }}
+                    placeholder="e.g. H150-784920 (Leave blank for direct)"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-500 text-xs text-amber-300 font-mono uppercase"
                   />
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  Leave empty if registering directly. Newly registered members sync across all devices in real-time.
-                </span>
+
+                {/* Live Sponsor Feedback Status */}
+                {isLookingUpSponsor ? (
+                  <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5 px-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>Verifying sponsor credentials...</span>
+                  </div>
+                ) : sponsorLookup && sponsorLookup.exists ? (
+                  <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                        <UserCheck className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                          {isAutoTracked ? (
+                            <>
+                              <Sparkles className="h-3 w-3 text-amber-400" />
+                              <span>Referral Link Sponsor</span>
+                            </>
+                          ) : (
+                            <span>Verified Community Sponsor</span>
+                          )}
+                        </div>
+                        <div className="font-semibold text-white">
+                          {sponsorLookup.fullName} <span className="text-amber-400 font-mono">({sponsorLookup.id})</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
+                      Level 1 Team
+                    </span>
+                  </div>
+                ) : sponsorId.trim() ? (
+                  <div className="mt-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-300">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                    <span>User ID "{sponsorId}" not found. Verify the ID or leave empty for direct registration.</span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-slate-500 mt-1 block px-1">
+                    Leave blank for direct joining. Newly joined peers automatically connect in real-time.
+                  </span>
+                )}
               </div>
 
               {/* Checkboxes */}

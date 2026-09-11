@@ -21,6 +21,7 @@ import { AdminPanel } from './components/admin/AdminPanel';
 import { BottomNav } from './components/common/BottomNav';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
+import { referralTracker } from './services/referralTracker';
 
 const AppContent: React.FC = () => {
   const { activeTab, setActiveTab, currentUser } = useAuth();
@@ -28,15 +29,17 @@ const AppContent: React.FC = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [sponsorParam, setSponsorParam] = useState('');
 
-  // Check URL params for ?ref=H150-XXXXXX or ?sponsor=
+  // Automatically track referral ID from URL, query parameters, hash, or saved session
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref') || params.get('sponsor');
-    if (ref) {
-      setSponsorParam(ref.toUpperCase());
-      setIsRegisterOpen(true);
+    const trackedRef = referralTracker.extractReferralFromUrl();
+    if (trackedRef) {
+      setSponsorParam(trackedRef.toUpperCase());
+      // If user arrives via referral link and is not logged in, auto-open register modal
+      if (!currentUser) {
+        setIsRegisterOpen(true);
+      }
     }
-  }, []);
+  }, [currentUser]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
