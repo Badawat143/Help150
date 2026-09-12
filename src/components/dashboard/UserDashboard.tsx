@@ -828,36 +828,57 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           {/* 4. REFERRAL LINK & QUICK LINKS ROW                                      */}
           {/* ======================================================================= */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* Widget 1: My Referral Link */}
-            <div className="lg:col-span-7 bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-3.5">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                <Share2 className="h-4 w-4 text-blue-600" />
-                <span>My Referral Link</span>
+            {/* Widget 1: My Referral Link (Signature Red-Blue Link Box) */}
+            <div
+              id="dashboard-referral-link-box"
+              className="lg:col-span-7 relative overflow-hidden rounded-2xl p-5 shadow-xl border border-red-500/30 space-y-3.5 text-white"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.20) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(59, 130, 246, 0.22) 100%)',
+              }}
+            >
+              {/* Decorative corner ambient glow */}
+              <div className="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 rounded-full bg-blue-500/20 blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 rounded-full bg-red-500/20 blur-2xl pointer-events-none" />
+
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-black text-white">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-red-500 to-blue-600 flex items-center justify-center text-white shadow-sm">
+                    <Share2 className="h-4 w-4" />
+                  </div>
+                  <span>My Referral Link</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 uppercase tracking-wider">
+                  Red-Blue Link Box
+                </span>
               </div>
 
               {/* Input box with copy */}
-              <div className="flex items-center rounded-xl bg-slate-50 border border-slate-200 p-1 pl-3">
-                <span className="text-xs font-mono text-slate-600 truncate flex-1">{referralLink}</span>
+              <div className="relative z-10 flex items-center rounded-xl bg-slate-950/90 border border-slate-700/80 p-1 pl-3 shadow-inner">
+                <span className="text-xs font-mono text-slate-200 truncate flex-1 selection:bg-red-500/40">{referralLink}</span>
                 <button
                   onClick={handleCopyReferral}
-                  className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer shrink-0"
+                  className={`p-2 rounded-lg text-white font-bold transition cursor-pointer shrink-0 shadow-md ${
+                    copiedReferral
+                      ? 'bg-emerald-500 text-slate-950'
+                      : 'bg-gradient-to-r from-red-500 to-blue-600 hover:from-red-600 hover:to-blue-700'
+                  }`}
                   title="Copy Referral Link"
                 >
                   {copiedReferral ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
               </div>
 
-              {/* Gradient Red Share Button */}
+              {/* Gradient Red-Rose-Blue Share Button */}
               <button
                 onClick={() => setShowShareModal(true)}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                className="relative z-10 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 via-rose-600 to-blue-600 hover:opacity-95 text-white font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-500/20"
               >
                 <Share2 className="h-3.5 w-3.5" />
                 <span>Share Link</span>
               </button>
 
               {/* Social Share Icons Row */}
-              <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+              <div className="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
                 <button
                   onClick={() =>
                     window.open(
@@ -867,9 +888,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                       '_blank'
                     )
                   }
-                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
+                  className="p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
                     <MessageCircle className="h-4 w-4" />
                   </div>
                   <span>WhatsApp</span>
@@ -884,9 +905,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                       '_blank'
                     )
                   }
-                  className="p-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
+                  className="p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
                     <Send className="h-4 w-4" />
                   </div>
                   <span>Telegram</span>
@@ -894,9 +915,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
                 <button
                   onClick={() => setShowQrModal(true)}
-                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
+                  className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-750 border border-slate-700 text-slate-200 text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-white shadow-sm">
                     <QrCode className="h-4 w-4" />
                   </div>
                   <span>QR Code</span>
@@ -904,16 +925,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
 
               {/* Mini Stats Divider */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-center">
+              <div className="relative z-10 grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-center">
                 <div>
                   <div className="text-[10px] text-slate-400 font-semibold">Direct Referrals</div>
-                  <div className="text-base font-black text-slate-900 font-heading">
+                  <div className="text-base font-black text-amber-400 font-heading">
                     {hierarchy.directReferrals.length}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400 font-semibold">Team Members</div>
-                  <div className="text-base font-black text-slate-900 font-heading">
+                  <div className="text-base font-black text-sky-400 font-heading">
                     {hierarchy.totalTeamSize}
                   </div>
                 </div>

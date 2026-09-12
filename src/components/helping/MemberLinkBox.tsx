@@ -196,27 +196,27 @@ export const MemberLinkBox: React.FC<MemberLinkBoxProps> = ({ onNavigateTab }) =
               onClick={() => setActiveTab('send_link')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'send_link'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  ? 'bg-red-600 text-white shadow-md shadow-red-950'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Send className="h-3.5 w-3.5" />
-              <span>Send Help Link</span>
-              {outgoingRequest && <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />}
+              <span>🔴 Provide Help Link (लाल)</span>
+              {outgoingRequest && <span className="h-2 w-2 rounded-full bg-white animate-pulse" />}
             </button>
 
             <button
               onClick={() => setActiveTab('receive_link')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer relative ${
                 activeTab === 'receive_link'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md'
+                  ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-950 font-black'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <UserCheck className="h-3.5 w-3.5" />
-              <span>Receive Help Box</span>
+              <span>🔵 Receive Help Box (आसमानी)</span>
               {pendingIncomingRequests.length > 0 && (
-                <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-400 text-slate-950 font-black">
+                <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-950 text-sky-300 font-black">
                   {pendingIncomingRequests.length}
                 </span>
               )}

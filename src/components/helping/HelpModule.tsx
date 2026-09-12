@@ -151,16 +151,20 @@ export const HelpModule: React.FC = () => {
 
       {/* Two Highly Visible Primary Transaction Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 1. PROVIDE HELP LINK BOX */}
+        {/* 1. PROVIDE HELP LINK BOX (लाल रंग / RED THEMED LINK BOX) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
               <span>🔴</span>
-              <span>1. PROVIDE HELP LINK BOX</span>
+              <span>1. प्रोवाइड हेल्प लिंक बॉक्स (Provide Help Link Box)</span>
             </span>
-            {activeProvideRequest && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            {activeProvideRequest ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
                 Active Assignment
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                लाल रंग लिंक बॉक्स
               </span>
             )}
           </div>
@@ -172,38 +176,42 @@ export const HelpModule: React.FC = () => {
               onRefresh={refreshUserData}
             />
           ) : (
-            <div className="p-8 rounded-3xl bg-slate-900/60 border-2 border-dashed border-rose-500/30 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-red-950/40 via-slate-950 to-red-950/40 border-2 border-dashed border-red-500/50 flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 border border-red-500/30 shadow-md">
                 <ArrowUpRight className="h-7 w-7" />
               </div>
               <div className="max-w-sm">
                 <h3 className="text-sm font-bold text-white">No Active Provide Help Request</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-red-200/80 mt-1">
                   Click below to generate a ₹{defaultAmount} Provide Help link matched with an active community recipient.
                 </p>
               </div>
               <button
                 onClick={handleCreateProvideRequest}
                 disabled={isCreating}
-                className="py-2.5 px-5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="py-2.5 px-5 rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-600 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs shadow-lg shadow-red-950/50 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <Sparkles className="h-4 w-4" />
-                <span>Initiate ₹{defaultAmount} Provide Help</span>
+                <Sparkles className="h-4 w-4 text-amber-300" />
+                <span>Initiate ₹{defaultAmount} Provide Help (लाल लिंक बॉक्स)</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* 2. RECEIVE HELP LINK BOX */}
+        {/* 2. RECEIVE HELP LINK BOX (आसमानी रंग / SKY BLUE THEMED LINK BOX) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <span className="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
               <span>🔵</span>
-              <span>2. RECEIVE HELP LINK BOX</span>
+              <span>2. रिसीव हेल्प लिंक बॉक्स (Receive Help Link Box)</span>
             </span>
-            {activeReceiveRequest && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+            {activeReceiveRequest ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
                 Incoming Assistance
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-400/20">
+                आसमानी रंग लिंक बॉक्स
               </span>
             )}
           </div>
@@ -215,18 +223,18 @@ export const HelpModule: React.FC = () => {
               onRefresh={refreshUserData}
             />
           ) : (
-            <div className="p-8 rounded-3xl bg-slate-900/60 border-2 border-dashed border-blue-500/30 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-sky-950/40 via-slate-950 to-sky-950/40 border-2 border-dashed border-sky-400/50 flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-400/30 shadow-md">
                 <ArrowDownLeft className="h-7 w-7" />
               </div>
               <div className="max-w-sm">
                 <h3 className="text-sm font-bold text-white">No Active Receive Help Request</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-sky-200/80 mt-1">
                   When a community peer is matched to provide assistance to your account, the Receive Help card with 12-hour timer and verification controls will activate here automatically.
                 </p>
               </div>
-              <span className="text-[11px] font-medium text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-                Standing by in Community Queue
+              <span className="text-[11px] font-medium text-sky-300 bg-sky-500/15 px-3 py-1 rounded-full border border-sky-400/30">
+                Standing by in Community Queue (आसमानी बॉक्स)
               </span>
             </div>
           )}

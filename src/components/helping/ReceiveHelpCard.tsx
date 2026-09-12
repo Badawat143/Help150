@@ -201,25 +201,25 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
     : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
 
   return (
-    <div className="relative rounded-3xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950 border-2 border-sky-500/50 shadow-2xl shadow-sky-950/30 overflow-hidden transition-all duration-300 hover:border-sky-400">
-      {/* 🔵 RECEIVE HELP Header with Sky Blue Gradient */}
-      <div className="p-5 sm:p-6 bg-gradient-to-r from-sky-950 via-slate-900 to-cyan-950 border-b border-sky-500/30">
+    <div className="relative rounded-3xl bg-gradient-to-b from-sky-950 via-slate-900 to-sky-950 border-2 border-sky-400 shadow-2xl shadow-sky-950/50 overflow-hidden transition-all duration-300 hover:border-sky-300">
+      {/* 🔵 RECEIVE HELP Header with Sky Blue Theme (आसमानी रंग) */}
+      <div className="p-5 sm:p-6 bg-gradient-to-r from-sky-950 via-sky-900 to-sky-950 border-b border-sky-400/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-600 text-white shadow-lg shadow-sky-500/30 font-black text-lg">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-lg shadow-sky-500/40 font-black text-lg">
               🔵
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-black text-sky-400 tracking-wide font-heading">
+                <h2 className="text-lg sm:text-xl font-black text-sky-300 tracking-wide font-heading">
                   RECEIVE HELP
                 </h2>
-                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white text-sky-800 font-black border border-sky-200">
                   {request.id}
                 </span>
               </div>
-              <p className="text-xs text-sky-200/80 mt-0.5 font-medium">
-                RECEIVE HELP ASSIGNMENT • Peer Mutual Inflow
+              <p className="text-xs text-sky-200 mt-0.5 font-medium">
+                RECEIVE HELP ASSIGNMENT • Peer Mutual Inflow (सहायता प्राप्त करें)
               </p>
             </div>
           </div>
@@ -247,62 +247,62 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
         )}
 
         {/* 1. Sender Details Grid */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3.5">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Sender Details
+        <div className="p-4 sm:p-5 rounded-2xl bg-sky-950/80 border border-sky-400/40 space-y-3.5 shadow-inner">
+          <div className="flex items-center justify-between border-b border-sky-900/60 pb-2.5">
+            <span className="text-xs font-bold text-sky-200 uppercase tracking-wider">
+              Sender Details (सहायता भेजने वाला)
             </span>
-            <span className="text-xs font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+            <span className="text-xs font-mono font-bold text-sky-100 bg-sky-800/80 px-2 py-0.5 rounded-full border border-sky-400/40">
               Assigned Giver
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-sky-100">
               <span className="text-base">👤</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Sender Name</p>
+                <p className="text-[10px] text-sky-300 font-medium">Sender Name</p>
                 <p className="font-bold text-white truncate">{senderName}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-sky-100">
               <span className="text-base">🆔</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Sender User ID</p>
-                <p className="font-mono font-bold text-rose-400">{senderId}</p>
+                <p className="text-[10px] text-sky-300 font-medium">Sender User ID</p>
+                <p className="font-mono font-bold text-amber-300">{senderId}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-sky-100">
               <span className="text-base">📱</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Mobile Number</p>
+                <p className="text-[10px] text-sky-300 font-medium">Mobile Number</p>
                 <a
                   href={`tel:${senderMobile}`}
-                  className="font-bold text-slate-200 hover:text-blue-400 transition"
+                  className="font-bold text-white hover:text-sky-300 transition"
                 >
                   {senderMobile}
                 </a>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-sky-100">
               <span className="text-base">📧</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Email Address</p>
-                <p className="font-medium text-slate-300 truncate">{senderEmail}</p>
+                <p className="text-[10px] text-sky-300 font-medium">Email Address</p>
+                <p className="font-medium text-sky-200 truncate">{senderEmail}</p>
               </div>
             </div>
           </div>
 
           {/* Amount & Large Timer Display */}
-          <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-950/30 to-rose-950/30 p-3 rounded-xl">
+          <div className="pt-3 border-t border-sky-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-sky-950/90 p-3 rounded-xl border border-sky-400/30">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-bold text-sky-200 uppercase tracking-wider">
                 💰 Help Amount Incoming
               </p>
-              <p className="text-2xl font-black text-blue-400 font-heading">
+              <p className="text-2xl font-black text-sky-300 font-heading">
                 ₹{amount}
               </p>
             </div>
@@ -310,7 +310,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
             <div className="flex items-center gap-2.5">
               <span className="text-base">🕐</span>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-sky-200 uppercase tracking-wider">
                   12-Hour Remaining Window
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -332,7 +332,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <button
               onClick={() => setShowAcceptModal(true)}
-              className="py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
+              className="py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 text-slate-950 font-black text-xs shadow-lg shadow-sky-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>🟢 ACCEPT</span>
@@ -350,13 +350,13 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
 
         {/* 3. PAYMENT STATUS & RECEIPT VERIFICATION (Shows after acceptance) */}
         {isAccepted && !isCompleted && !isRejected && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-blue-500/30 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-sky-950/90 via-slate-950 to-sky-950/90 border border-sky-400/40 space-y-4">
+            <div className="flex items-center justify-between border-b border-sky-900/60 pb-2.5">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Clock className="h-4 w-4 text-cyan-400" />
+                <Clock className="h-4 w-4 text-sky-400" />
                 <span>Payment Status Flow</span>
               </h4>
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+              <span className="text-[10px] font-mono text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded-full border border-sky-400/30">
                 24-Hour Sync
               </span>
             </div>
@@ -366,7 +366,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
               <div
                 className={`p-2 rounded-xl border ${
                   isAccepted
-                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/40'
                     : 'bg-slate-900 text-slate-500 border-slate-800'
                 }`}
               >
@@ -375,7 +375,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
               <div
                 className={`p-2 rounded-xl border ${
                   isSlipUploaded
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
                     : 'bg-slate-900 text-slate-500 border-slate-800'
                 }`}
               >
@@ -405,24 +405,24 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
 
             {/* Submitted Payment Information */}
             {request.proofReference ? (
-              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+              <div className="p-3.5 rounded-xl bg-sky-950/70 border border-sky-900/60 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Transaction UTR / Ref:</span>
-                  <span className="font-mono font-bold text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-700">
+                  <span className="text-sky-200">Transaction UTR / Ref:</span>
+                  <span className="font-mono font-bold text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-sky-800">
                     {request.proofReference}
                   </span>
                 </div>
                 {request.proofNotes && (
-                  <p className="text-[11px] text-slate-400">Notes: {request.proofNotes}</p>
+                  <p className="text-[11px] text-sky-200">Notes: {request.proofNotes}</p>
                 )}
                 {request.proofSubmittedAt && (
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[10px] text-sky-300/70">
                     Uploaded: {new Date(request.proofSubmittedAt).toLocaleString()}
                   </p>
                 )}
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400">
+              <div className="p-3 rounded-xl bg-sky-950/50 border border-sky-900/60 text-xs text-sky-200/80">
                 Awaiting sender member ({senderName}) to transfer payment and upload payment slip.
               </div>
             )}
@@ -433,9 +433,9 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowSlipModal(true)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 border border-sky-400/40 text-sky-300 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
                 >
-                  <Eye className="h-4 w-4 text-cyan-400" />
+                  <Eye className="h-4 w-4 text-sky-400" />
                   <span>📎 VIEW PAYMENT SLIP DOCUMENT</span>
                 </button>
               )}
@@ -443,10 +443,10 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
               <button
                 type="button"
                 onClick={() => setShowConfirmReceivedModal(true)}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-500 to-sky-600 hover:from-sky-400 hover:to-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-sky-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                <span>🟢 CONFIRM PAYMENT RECEIVED (₹{amount})</span>
+                <span>🔵 CONFIRM PAYMENT RECEIVED (₹{amount})</span>
               </button>
             </div>
           </div>

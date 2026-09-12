@@ -259,12 +259,12 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
     : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
 
   return (
-    <div className="relative rounded-3xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950 border-2 border-rose-500/40 shadow-2xl shadow-rose-950/20 overflow-hidden transition-all duration-300 hover:border-rose-500/60">
-      {/* 🔴 PROVIDE HELP Header with Red + Blue Gradient */}
-      <div className="p-5 sm:p-6 bg-gradient-to-r from-rose-950 via-slate-900 to-blue-950 border-b border-slate-800/80">
+    <div className="relative rounded-3xl bg-gradient-to-b from-red-950 via-slate-900 to-red-950 border-2 border-red-500 shadow-2xl shadow-red-950/50 overflow-hidden transition-all duration-300 hover:border-red-400">
+      {/* 🔴 PROVIDE HELP Header with Deep Red Theme (लाल रंग) */}
+      <div className="p-5 sm:p-6 bg-gradient-to-r from-red-950 via-red-900 to-red-950 border-b border-red-500/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 text-white shadow-lg shadow-rose-600/30 font-black text-lg">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg shadow-red-600/40 font-black text-lg">
               🔴
             </div>
             <div>
@@ -272,12 +272,12 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-white tracking-wide font-heading">
                   PROVIDE HELP
                 </h2>
-                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white text-red-700 font-black border border-red-200">
                   {request.id}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5 font-medium">
-                PROVIDE HELP REQUEST • Peer Mutual Assistance
+              <p className="text-xs text-red-200 mt-0.5 font-medium">
+                PROVIDE HELP REQUEST • Peer Mutual Assistance (सहायता भेजें)
               </p>
             </div>
           </div>
@@ -305,62 +305,62 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
         )}
 
         {/* 1. Recipient Details Grid */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3.5">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Recipient Details
+        <div className="p-4 sm:p-5 rounded-2xl bg-red-950/80 border border-red-500/40 space-y-3.5 shadow-inner">
+          <div className="flex items-center justify-between border-b border-red-900/60 pb-2.5">
+            <span className="text-xs font-bold text-red-200 uppercase tracking-wider">
+              Recipient Details (प्राप्तकर्ता)
             </span>
-            <span className="text-xs font-mono font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+            <span className="text-xs font-mono font-bold text-red-100 bg-red-800/80 px-2 py-0.5 rounded-full border border-red-400/40">
               Matched Member
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-red-100">
               <span className="text-base">👤</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Recipient Name</p>
+                <p className="text-[10px] text-red-300 font-medium">Recipient Name</p>
                 <p className="font-bold text-white truncate">{recipientName}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-red-100">
               <span className="text-base">🆔</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">User ID</p>
-                <p className="font-mono font-bold text-blue-400">{recipientId}</p>
+                <p className="text-[10px] text-red-300 font-medium">User ID</p>
+                <p className="font-mono font-bold text-amber-300">{recipientId}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-red-100">
               <span className="text-base">📱</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Mobile</p>
+                <p className="text-[10px] text-red-300 font-medium">Mobile</p>
                 <a
                   href={`tel:${recipientMobile}`}
-                  className="font-bold text-slate-200 hover:text-rose-400 transition"
+                  className="font-bold text-white hover:text-amber-300 transition"
                 >
                   {recipientMobile}
                 </a>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="flex items-center gap-2.5 text-red-100">
               <span className="text-base">📧</span>
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-500 font-medium">Email</p>
-                <p className="font-medium text-slate-300 truncate">{recipientEmail}</p>
+                <p className="text-[10px] text-red-300 font-medium">Email</p>
+                <p className="font-medium text-red-200 truncate">{recipientEmail}</p>
               </div>
             </div>
           </div>
 
           {/* Amount & 24-Hour Server-Synchronized Timer Highlight */}
-          <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-rose-950/30 to-blue-950/30 p-3 rounded-xl">
+          <div className="pt-3 border-t border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-950/90 p-3 rounded-xl border border-red-500/30">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-bold text-red-200 uppercase tracking-wider">
                 💰 Help Amount
               </p>
-              <p className="text-2xl font-black text-rose-400 font-heading">
+              <p className="text-2xl font-black text-amber-300 font-heading">
                 ₹{amount}
               </p>
             </div>
@@ -368,7 +368,7 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
             <div className="flex items-center gap-2.5">
               <span className="text-base">🕐</span>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-red-200 uppercase tracking-wider">
                   Remaining 24-Hour Timer
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -390,40 +390,40 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
           <div className="pt-1">
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="w-full py-3 px-4 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              className="w-full py-3 px-4 rounded-2xl bg-red-900/60 hover:bg-red-900/80 border border-red-500/50 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
             >
-              <Eye className="h-4 w-4 text-blue-400" />
-              <span>🔵 VIEW DETAILS</span>
+              <Eye className="h-4 w-4 text-amber-300" />
+              <span>🔴 VIEW DETAILS</span>
             </button>
           </div>
         )}
 
         {/* 3. PAYMENT DETAILS & UPLOAD SLIP */}
         {!isCompleted && !isRejected && !isExpired && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-blue-500/30 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-red-950/90 via-slate-950 to-red-950/90 border border-red-500/40 space-y-4">
+            <div className="flex items-center justify-between border-b border-red-900/60 pb-2.5">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-blue-400" />
+                <CreditCard className="h-4 w-4 text-amber-300" />
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                   Payment Details
                 </h4>
               </div>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-200 border border-red-500/40">
                 Ready to Pay
               </span>
             </div>
 
             {/* Recipient UPI Handle & Bank Details */}
-            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-red-950/70 border border-red-900/60 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Recipient UPI ID:</span>
+                <span className="text-[11px] text-red-200">Recipient UPI ID:</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-mono font-bold text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-700">
+                  <span className="text-xs font-mono font-bold text-amber-300 bg-slate-950 px-2 py-0.5 rounded border border-red-800">
                     {recipientUpi}
                   </span>
                   <button
                     onClick={() => handleCopy(recipientUpi)}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    className="p-1.5 rounded-lg bg-red-900/80 hover:bg-red-800 text-white transition cursor-pointer"
                     title="Copy UPI ID"
                   >
                     {copiedUpi ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
@@ -432,20 +432,20 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
               </div>
 
               {request.matchedWithBankDetails && (
-                <div className="text-[11px] text-slate-400 border-t border-slate-800 pt-2 flex flex-wrap justify-between gap-1">
-                  <span>Bank: <strong className="text-slate-200">{request.matchedWithBankDetails.bankName}</strong></span>
-                  <span>A/C: <strong className="text-slate-200">{request.matchedWithBankDetails.accountNumber}</strong></span>
-                  <span>IFSC: <strong className="text-slate-200">{request.matchedWithBankDetails.ifscCode}</strong></span>
+                <div className="text-[11px] text-red-200 border-t border-red-900/60 pt-2 flex flex-wrap justify-between gap-1">
+                  <span>Bank: <strong className="text-white">{request.matchedWithBankDetails.bankName}</strong></span>
+                  <span>A/C: <strong className="text-white">{request.matchedWithBankDetails.accountNumber}</strong></span>
+                  <span>IFSC: <strong className="text-white">{request.matchedWithBankDetails.ifscCode}</strong></span>
                 </div>
               )}
 
               {/* Direct UPI App Links */}
-              <div className="pt-2 border-t border-slate-800 flex flex-wrap gap-2">
+              <div className="pt-2 border-t border-red-900/60 flex flex-wrap gap-2">
                 <a
                   href={`upi://pay?pa=${recipientUpi}&pn=${encodeURIComponent(recipientName)}&am=${amount}&cu=INR`}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-[11px] font-bold flex items-center gap-1 transition"
+                  className="px-3 py-1.5 rounded-xl bg-red-900/80 hover:bg-red-800 border border-red-500/40 text-white text-[11px] font-bold flex items-center gap-1 transition shadow-sm"
                 >
-                  <Send className="h-3 w-3" />
+                  <Send className="h-3 w-3 text-amber-300" />
                   <span>PhonePe / GPay / Paytm</span>
                 </a>
               </div>
@@ -477,11 +477,11 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
             {!isVerificationPending && !isCompleted && (
               <div className="space-y-3 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <UploadCloud className="h-4 w-4 text-rose-400" />
+                  <span className="text-xs font-bold text-red-200 flex items-center gap-1.5">
+                    <UploadCloud className="h-4 w-4 text-amber-300" />
                     <span>📤 UPLOAD PAYMENT SLIP</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">JPG, JPEG, PNG, PDF</span>
+                  <span className="text-[10px] text-red-300/70">JPG, JPEG, PNG, PDF</span>
                 </div>
 
                 {/* Quick UTR Reference Form */}
@@ -492,12 +492,12 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
                     value={inlineUtr}
                     onChange={(e) => setInlineUtr(e.target.value)}
                     placeholder="Enter 12-digit UTR / UPI Reference *"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 font-mono tracking-wider"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-red-950 border border-red-500/40 text-xs text-white placeholder-red-300/40 focus:outline-none focus:border-white font-mono tracking-wider"
                   />
                   <button
                     type="submit"
                     disabled={isSubmittingInline}
-                    className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition cursor-pointer disabled:opacity-50"
+                    className="py-2.5 px-4 rounded-xl bg-white text-red-700 hover:bg-red-50 font-black text-xs transition cursor-pointer disabled:opacity-50 shadow-md"
                   >
                     {isSubmittingInline ? 'Submitting...' : 'SUBMIT PAYMENT'}
                   </button>
@@ -507,9 +507,9 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(true)}
-                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-600 via-slate-800 to-blue-600 hover:from-rose-500 hover:to-blue-500 border border-rose-500/40 text-white font-extrabold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-500 hover:to-red-700 border border-red-400 text-white font-black text-xs shadow-lg shadow-red-950/60 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <UploadCloud className="h-4 w-4 text-rose-300" />
+                  <UploadCloud className="h-4 w-4 text-amber-300" />
                   <span>UPLOAD SLIP (ATTACH DOCUMENT / SCREENSHOT)</span>
                 </button>
               </div>

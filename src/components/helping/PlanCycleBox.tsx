@@ -417,25 +417,25 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             </span>
           </div>
 
-          {/* CARD 1A: प्रोवाइड वेरीफिकेशन लिंक 50/रुपए */}
+          {/* CARD 1A: प्रोवाइड वेरीफिकेशन लिंक 50/रुपए (लाल रंग / RED THEMED LINK BOX) */}
           <div className={`rounded-2xl border-2 transition-all p-5 space-y-4 ${
             isStep1Done
-              ? 'bg-slate-900/80 border-emerald-500/40 text-slate-100 shadow-md'
-              : 'bg-gradient-to-br from-red-950/70 via-slate-900 to-slate-950 border-red-500/60 shadow-xl shadow-red-950/30'
+              ? 'bg-slate-900/90 border-emerald-500/50 text-slate-100 shadow-md'
+              : 'bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-red-500 shadow-2xl shadow-red-950/60 text-white'
           }`}>
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className={`flex items-center justify-between pb-3 border-b ${isStep1Done ? 'border-emerald-500/20' : 'border-red-500/40'}`}>
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl font-bold text-xs ${
-                  isStep1Done ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+                  isStep1Done ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white shadow-md shadow-red-950'
                 }`}>
                   {isStep1Done ? <Check className="w-5 h-5" /> : '1'}
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white flex items-center gap-2">
                     <span>प्रोवाइड वेरीफिकेशन लिंक</span>
-                    <span className="text-emerald-400 font-mono text-base font-black">₹50</span>
+                    <span className="text-amber-300 font-mono text-base font-black">₹50</span>
                   </h4>
-                  <div className="text-[10px] text-slate-400">Step 1: Verification Link (₹50)</div>
+                  <div className={`text-[10px] ${isStep1Done ? 'text-slate-400' : 'text-red-200'}`}>Step 1: Verification Link (₹50)</div>
                 </div>
               </div>
 
@@ -445,25 +445,29 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   <span>सत्यापित / पूर्ण</span>
                 </span>
               ) : (
-                <span className="px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-black animate-pulse">
-                  सक्रिय (Active)
+                <span className="px-2.5 py-1 rounded-full bg-white text-red-700 font-black text-[10px] shadow-sm uppercase tracking-wider">
+                  🔴 सक्रिय (Active)
                 </span>
               )}
             </div>
 
             {/* Recipient Details */}
-            <div className="bg-slate-950/70 rounded-xl p-3 border border-white/10 space-y-2">
+            <div className={`rounded-xl p-3.5 space-y-2.5 ${
+              isStep1Done
+                ? 'bg-slate-950/70 border border-slate-800'
+                : 'bg-red-950/90 border border-red-500/50 shadow-inner'
+            }`}>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">प्राप्तकर्ता (Recipient):</span>
+                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>प्राप्तकर्ता (Recipient):</span>
                 <span className="font-bold text-white flex items-center gap-1.5">
-                  <UserIcon className="w-3 h-3 text-red-400" />
+                  <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                   <span>{cycle.verificationLink.matchedWithUserName}</span>
-                  <span className="font-mono text-[10px] text-slate-400">({cycle.verificationLink.matchedWithUserId})</span>
+                  <span className="font-mono text-[10px] text-red-300">({cycle.verificationLink.matchedWithUserId})</span>
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">UPI ID:</span>
+                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>UPI ID:</span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono font-bold text-amber-300 text-[11px]">{cycle.verificationLink.matchedWithUpi}</span>
                   <button
@@ -477,9 +481,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">मोबाइल (Mobile):</span>
+                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>मोबाइल (Mobile):</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-slate-200">{cycle.verificationLink.matchedWithMobile}</span>
+                  <span className="font-mono text-white">{cycle.verificationLink.matchedWithMobile}</span>
                   <button
                     onClick={() => handleCopy(cycle.verificationLink.matchedWithMobile, 'ver_mob', 'मोबाइल')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
@@ -491,8 +495,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               {cycle.verificationLink.proofReference && (
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800">
-                  <span className="text-slate-400">UTR / Ref:</span>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-red-900/60">
+                  <span className={isStep1Done ? 'text-slate-400' : 'text-red-200'}>UTR / Ref:</span>
                   <span className="font-mono font-bold text-emerald-400">{cycle.verificationLink.proofReference}</span>
                 </div>
               )}
@@ -508,12 +512,12 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     value={utrVerification}
                     onChange={(e) => setUtrVerification(e.target.value)}
                     placeholder="12-अंकों का UPI UTR नंबर दर्ज करें"
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-red-400 font-mono"
+                    className="flex-1 bg-red-950 border border-red-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-red-300/40 focus:outline-none focus:border-white font-mono"
                   />
                   <button
                     onClick={() => handleSubmitVerification()}
                     disabled={isSubmittingVerification}
-                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs transition cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-red-50 font-black text-xs transition cursor-pointer disabled:opacity-50 shadow-md"
                   >
                     {isSubmittingVerification ? 'सबमिट...' : 'सबमिट ₹50'}
                   </button>
@@ -527,17 +531,17 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                       amount: 50,
                       title: 'वेरीफिकेशन लिंक (₹50) QR कोड',
                     })}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                    className="py-2 px-3 rounded-xl bg-red-900/80 hover:bg-red-850 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-red-500/50"
                   >
-                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                    <QrCode className="w-3.5 h-3.5 text-amber-300" />
                     <span>QR कोड देखें</span>
                   </button>
 
                   <button
                     onClick={() => setUploadTarget('verification')}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                    className="py-2 px-3 rounded-xl bg-red-900/80 hover:bg-red-850 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-red-500/50"
                   >
-                    <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
+                    <UploadCloud className="w-3.5 h-3.5 text-sky-300" />
                     <span>स्लिप अपलोड करें</span>
                   </button>
                 </div>
@@ -566,27 +570,33 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             )}
           </div>
 
-          {/* CARD 1B: सेकंड लिंक 100/रुपए */}
+          {/* CARD 1B: सेकंड लिंक 100/रुपए (लाल रंग / RED THEMED LINK BOX) */}
           <div className={`rounded-2xl border-2 transition-all p-5 space-y-4 ${
             isStep2Done
-              ? 'bg-slate-900/80 border-emerald-500/40 text-slate-100 shadow-md'
+              ? 'bg-slate-900/90 border-emerald-500/50 text-slate-100 shadow-md'
               : isStep1Done
-              ? 'bg-gradient-to-br from-red-950/70 via-slate-900 to-slate-950 border-red-500/60 shadow-xl shadow-red-950/30'
-              : 'bg-slate-900/40 border-slate-800/80 text-slate-400 opacity-80'
+              ? 'bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-red-500 shadow-2xl shadow-red-950/60 text-white'
+              : 'bg-slate-950/60 border-slate-800 text-slate-400 opacity-75'
           }`}>
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className={`flex items-center justify-between pb-3 border-b ${
+              isStep2Done
+                ? 'border-emerald-500/20'
+                : isStep1Done
+                ? 'border-red-500/40'
+                : 'border-slate-800'
+            }`}>
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl font-bold text-xs ${
-                  isStep2Done ? 'bg-emerald-500 text-slate-950' : isStep1Done ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'
+                  isStep2Done ? 'bg-emerald-500 text-slate-950' : isStep1Done ? 'bg-red-500 text-white shadow-md shadow-red-950' : 'bg-slate-800 text-slate-400'
                 }`}>
                   {isStep2Done ? <Check className="w-5 h-5" /> : '2'}
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white flex items-center gap-2">
                     <span>सेकंड लिंक</span>
-                    <span className="text-emerald-400 font-mono text-base font-black">₹100</span>
+                    <span className="text-amber-300 font-mono text-base font-black">₹100</span>
                   </h4>
-                  <div className="text-[10px] text-slate-400">Step 2: Second Link (₹100)</div>
+                  <div className={`text-[10px] ${isStep1Done && !isStep2Done ? 'text-red-200' : 'text-slate-400'}`}>Step 2: Second Link (₹100)</div>
                 </div>
               </div>
 
@@ -596,8 +606,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   <span>सत्यापित / पूर्ण</span>
                 </span>
               ) : isStep1Done ? (
-                <span className="px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-black animate-pulse">
-                  सक्रिय (Active)
+                <span className="px-2.5 py-1 rounded-full bg-white text-red-700 font-black text-[10px] shadow-sm uppercase tracking-wider">
+                  🔴 सक्रिय (Active)
                 </span>
               ) : (
                 <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold">
@@ -607,18 +617,24 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             </div>
 
             {/* Recipient Details */}
-            <div className="bg-slate-950/70 rounded-xl p-3 border border-white/10 space-y-2">
+            <div className={`rounded-xl p-3.5 space-y-2.5 ${
+              isStep2Done
+                ? 'bg-slate-950/70 border border-slate-800'
+                : isStep1Done
+                ? 'bg-red-950/90 border border-red-500/50 shadow-inner'
+                : 'bg-slate-950/60 border border-slate-800'
+            }`}>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">प्राप्तकर्ता (Recipient):</span>
+                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>प्राप्तकर्ता (Recipient):</span>
                 <span className="font-bold text-white flex items-center gap-1.5">
-                  <UserIcon className="w-3 h-3 text-red-400" />
+                  <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                   <span>{cycle.secondLink.matchedWithUserName}</span>
-                  <span className="font-mono text-[10px] text-slate-400">({cycle.secondLink.matchedWithUserId})</span>
+                  <span className={`font-mono text-[10px] ${isStep1Done && !isStep2Done ? 'text-red-300' : 'text-slate-400'}`}>({cycle.secondLink.matchedWithUserId})</span>
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">UPI ID:</span>
+                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>UPI ID:</span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono font-bold text-amber-300 text-[11px]">{cycle.secondLink.matchedWithUpi}</span>
                   <button
@@ -632,9 +648,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">मोबाइल (Mobile):</span>
+                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>मोबाइल (Mobile):</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-slate-200">{cycle.secondLink.matchedWithMobile}</span>
+                  <span className="font-mono text-white">{cycle.secondLink.matchedWithMobile}</span>
                   <button
                     onClick={() => handleCopy(cycle.secondLink.matchedWithMobile, 'sec_mob', 'मोबाइल')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
@@ -646,8 +662,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               {cycle.secondLink.proofReference && (
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800">
-                  <span className="text-slate-400">UTR / Ref:</span>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-red-900/60">
+                  <span className={isStep1Done && !isStep2Done ? 'text-red-200' : 'text-slate-400'}>UTR / Ref:</span>
                   <span className="font-mono font-bold text-emerald-400">{cycle.secondLink.proofReference}</span>
                 </div>
               )}
@@ -662,12 +678,21 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     value={utrSecond}
                     onChange={(e) => setUtrSecond(e.target.value)}
                     placeholder="12-अंकों का UPI UTR नंबर दर्ज करें"
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-red-400 font-mono"
+                    disabled={!isStep1Done}
+                    className={`flex-1 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono ${
+                      isStep1Done
+                        ? 'bg-red-950 border border-red-400/60 placeholder:text-red-300/40 focus:border-white'
+                        : 'bg-slate-950 border border-slate-800 placeholder:text-slate-600 cursor-not-allowed'
+                    }`}
                   />
                   <button
                     onClick={() => handleSubmitSecond()}
-                    disabled={isSubmittingSecond}
-                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs transition cursor-pointer disabled:opacity-50"
+                    disabled={!isStep1Done || isSubmittingSecond}
+                    className={`px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer shadow-md ${
+                      isStep1Done
+                        ? 'bg-white text-red-700 hover:bg-red-50'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
                   >
                     {isSubmittingSecond ? 'सबमिट...' : 'सबमिट ₹100'}
                   </button>
@@ -675,23 +700,33 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => setQrModalData({
+                    onClick={() => isStep1Done && setQrModalData({
                       name: cycle.secondLink.matchedWithUserName,
                       upi: cycle.secondLink.matchedWithUpi,
                       amount: 100,
                       title: 'सेकंड लिंक (₹100) QR कोड',
                     })}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                    disabled={!isStep1Done}
+                    className={`py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 border ${
+                      isStep1Done
+                        ? 'bg-red-900/80 hover:bg-red-850 text-white border-red-500/50 cursor-pointer'
+                        : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                    }`}
                   >
-                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                    <QrCode className="w-3.5 h-3.5 text-amber-300" />
                     <span>QR कोड देखें</span>
                   </button>
 
                   <button
-                    onClick={() => setUploadTarget('second')}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                    onClick={() => isStep1Done && setUploadTarget('second')}
+                    disabled={!isStep1Done}
+                    className={`py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 border ${
+                      isStep1Done
+                        ? 'bg-red-900/80 hover:bg-red-850 text-white border-red-500/50 cursor-pointer'
+                        : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                    }`}
                   >
-                    <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
+                    <UploadCloud className="w-3.5 h-3.5 text-sky-300" />
                     <span>स्लिप अपलोड करें</span>
                   </button>
                 </div>
@@ -735,48 +770,51 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             </span>
           </div>
 
-          {/* RECEIVE HELP CARD */}
+          {/* RECEIVE HELP CARD (नीला रंग / BLUE THEMED LINK BOX) */}
           {isReceivePhase && cycle.receiveLink ? (
-            <div className="rounded-2xl border-2 border-emerald-400/80 bg-gradient-to-br from-emerald-950/60 via-slate-900 to-sky-950/60 p-6 space-y-4 shadow-2xl shadow-emerald-950/40 relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-emerald-400/30 pb-3">
+            <div className="rounded-2xl border-2 border-sky-400 bg-gradient-to-b from-sky-950 via-sky-900 to-sky-950 p-6 space-y-4 shadow-2xl shadow-sky-950/60 text-white relative overflow-hidden">
+              {/* Decorative ambient sky glow */}
+              <div className="absolute top-0 right-0 h-40 w-40 bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex items-center justify-between border-b border-sky-400/40 pb-3 relative z-10">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-slate-950 font-black text-sm shadow-md">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400 text-slate-950 font-black text-sm shadow-md">
                     ₹
                   </div>
                   <div>
                     <h4 className="text-base font-black text-white flex items-center gap-2">
                       <span>रिसीव हेल्प लिंक</span>
-                      <span className="text-yellow-300 font-mono text-xl font-black">₹200</span>
+                      <span className="text-amber-300 font-mono text-xl font-black">₹200</span>
                     </h4>
-                    <div className="text-[10px] text-emerald-300 font-bold">
+                    <div className="text-[10px] text-sky-200 font-bold">
                       12 घंटे पूरे होने पर सिस्टम द्वारा स्वतः असाइन किया गया
                     </div>
                   </div>
                 </div>
 
-                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-black animate-pulse">
-                  पेमेंट प्राप्त / कन्फर्म करें
+                <span className="px-3 py-1 rounded-full bg-white text-sky-800 font-black text-xs shadow-md uppercase tracking-wider">
+                  🔵 सहायता प्राप्त करें
                 </span>
               </div>
 
               {/* Sender Details */}
-              <div className="bg-slate-950/80 rounded-xl p-4 border border-emerald-500/20 space-y-2.5">
+              <div className="bg-sky-950/90 rounded-xl p-4 border border-sky-400/50 space-y-2.5 shadow-inner relative z-10">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">सहायता प्रदाता (Sender):</span>
+                  <span className="text-sky-200 font-semibold">सहायता प्रदाता (Sender):</span>
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <UserIcon className="w-3.5 h-3.5 text-sky-400" />
+                    <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                     <span>{cycle.receiveLink.matchedWithUserName}</span>
-                    <span className="font-mono text-[10px] text-slate-400">({cycle.receiveLink.matchedWithUserId})</span>
+                    <span className="font-mono text-[10px] text-sky-300">({cycle.receiveLink.matchedWithUserId})</span>
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">मोबाइल नंबर:</span>
+                  <span className="text-sky-200 font-semibold">मोबाइल नंबर:</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-slate-200">{cycle.receiveLink.matchedWithMobile}</span>
+                    <span className="font-mono text-white">{cycle.receiveLink.matchedWithMobile}</span>
                     <button
                       onClick={() => handleCopy(cycle.receiveLink!.matchedWithMobile, 'rec_mob', 'मोबाइल')}
-                      className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                      className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
                     >
                       {copiedKey === 'rec_mob' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                     </button>
@@ -784,18 +822,18 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">सहायता राशि:</span>
-                  <span className="text-base font-black text-yellow-300 font-mono">₹ 200.00</span>
+                  <span className="text-sky-200 font-semibold">सहायता राशि:</span>
+                  <span className="text-base font-black text-amber-300 font-mono">₹ 200.00</span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-800">
-                  <span className="text-slate-400">UTR / Ref:</span>
+                <div className="flex items-center justify-between text-xs pt-1.5 border-t border-sky-900/60">
+                  <span className="text-sky-200">UTR / Ref:</span>
                   <span className="font-mono font-bold text-emerald-400">{cycle.receiveLink.proofReference}</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2 pt-1 relative z-10">
                 {cycle.receiveLink.slipUrl && (
                   <button
                     onClick={() => setViewSlipUrl({
@@ -804,9 +842,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                       amount: 200,
                       ref: cycle.receiveLink!.proofReference || '',
                     })}
-                    className="w-full py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
+                    className="w-full py-2 px-4 rounded-xl bg-sky-900/80 hover:bg-sky-850 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-sky-400/50 shadow-sm"
                   >
-                    <Eye className="w-4 h-4 text-sky-400" />
+                    <Eye className="w-4 h-4 text-amber-300" />
                     <span>भेजी गई पेमेंट स्लिप देखें (View Slip)</span>
                   </button>
                 )}
@@ -824,12 +862,12 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             </div>
           ) : (
             /* Standby Card when timer is running or provide help not done */
-            <div className="rounded-2xl border-2 border-dashed border-sky-500/30 bg-slate-900/60 p-8 text-center flex flex-col items-center justify-center min-h-[360px] space-y-3">
+            <div className="rounded-2xl border-2 border-dashed border-sky-400/40 bg-gradient-to-b from-sky-950/40 to-slate-950/60 p-8 text-center flex flex-col items-center justify-center min-h-[360px] space-y-3 text-sky-100">
               <div className="w-16 h-16 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-1">
                 <Clock className="w-8 h-8" />
               </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-200 text-xs font-bold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
                 {isTimerPhase ? '12 घंटे टाइमर चालू है' : 'प्रतीक्षा स्थिति (Standby)'}
               </div>
@@ -840,7 +878,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   : 'स्टेप 1 और 2 पूर्ण होने पर 12 घंटे का टाइमर शुरू होगा'}
               </h4>
 
-              <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+              <p className="text-xs text-sky-200/80 max-w-sm leading-relaxed">
                 {isTimerPhase
                   ? `जैसे ही 12 घंटे का टाइमर शून्य होगा, सिस्टम स्वतः ₹200 सहायता लिंक असाइन कर देगा। आप ऊपर "⚡ तुरंत 12 घंटे पूरे करें" दबाकर अभी परीक्षण कर सकते हैं।`
                   : 'पहले प्रोवाइड वेरीफिकेशन लिंक (₹50) और सेकंड लिंक (₹100) पूरा करें। इसके तुरंत बाद 12 घंटे का टाइमर चलेगा और फिर ₹200 का लिंक आएगा।'}
