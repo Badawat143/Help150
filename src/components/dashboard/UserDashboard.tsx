@@ -60,7 +60,6 @@ import { PaymentSlipUploadModal } from '../helping/PaymentSlipUploadModal';
 import { ProfileModal } from './ProfileModal';
 import { DirectReferralsSection } from './DirectReferralsSection';
 import { DirectReferralsModal } from './DirectReferralsModal';
-import { PlanCycleBox } from '../helping/PlanCycleBox';
 import { Help150DualBox } from '../helping/Help150DualBox';
 
 interface UserDashboardProps {
@@ -670,12 +669,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
           {/* ======================================================================= */}
           {/* 🔴 PROVIDE HELP BOX (Red) & 🔵 RECEIVE HELP BOX (Sky Blue)               */}
+          {/* Cycle: 50 -> 100 -> 12h Maturation Timer -> 200 Receive Help & Loop     */}
           {/* ======================================================================= */}
           <Help150DualBox onNavigateTab={handleNavClick} />
-
-          {/* ======================================================================= */}
-          {/* 2. PLAN 50/100/200 CYCLE ENGINE (12h Timer -> Auto Receive Help -> Loop) */}
-          <PlanCycleBox onNavigateTab={handleNavClick} />
 
           {/* ======================================================================= */}
           {/* 3. ACCOUNT STATUS & KYC STATUS PANEL                                    */}

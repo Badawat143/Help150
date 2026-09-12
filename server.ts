@@ -212,6 +212,80 @@ function writeDb(data: any) {
   }
 }
 
+// Background sweep for 24-hour unpaid ₹50 link auto-block & auto-delete
+function enforceServerPenalties() {
+  try {
+    const dbData = readDb();
+    const now = Date.now();
+    let changed = false;
+    const usersToDelete: string[] = [];
+
+    if (!Array.isArray(dbData.users)) return;
+
+    for (const user of dbData.users) {
+      if (user.role === 'admin') continue;
+
+      // 1. If blocked and passed auto-delete time -> permanently delete
+      if (user.status === 'blocked' && user.autoDeleteAt) {
+        if (now >= new Date(user.autoDeleteAt).getTime()) {
+          usersToDelete.push(user.id);
+          continue;
+        }
+      }
+
+      // 2. Check ₹50 verification link deadline
+      const userCycles = Array.isArray(dbData.helpCycles)
+        ? dbData.helpCycles.filter((c: any) => c.userId === user.id)
+        : [];
+      const activeCycle = userCycles.find((c: any) => c.status !== 'completed');
+
+      if (
+        activeCycle &&
+        activeCycle.status === 'provide_verification' &&
+        activeCycle.verificationLink?.status === 'pending'
+      ) {
+        const deadline =
+          activeCycle.verificationLink.deadlineTime ||
+          new Date(activeCycle.createdAt).getTime() + 24 * 3600000;
+
+        if (now > deadline && user.status !== 'blocked') {
+          user.status = 'blocked';
+          user.blockedAt = new Date().toISOString();
+          user.autoDeleteAt = new Date(now + 24 * 3600000).toISOString();
+          user.blockedReason =
+            'Did not complete ₹50 Provide Help payment within 24 hours of registration.';
+          changed = true;
+          console.log(`[PENALTY] User ${user.id} BLOCKED for unpaid ₹50 link.`);
+        }
+      }
+    }
+
+    if (usersToDelete.length > 0) {
+      dbData.users = dbData.users.filter((u: any) => !usersToDelete.includes(u.id));
+      usersToDelete.forEach((delId) => {
+        if (dbData.wallets) delete dbData.wallets[delId];
+        if (dbData.helpCycles) {
+          dbData.helpCycles = dbData.helpCycles.filter((c: any) => c.userId !== delId);
+        }
+        if (dbData.helpRequests) {
+          dbData.helpRequests = dbData.helpRequests.filter((r: any) => r.userId !== delId);
+        }
+        console.log(`[PENALTY] User ${delId} PERMANENTLY DELETED after 24 hours blocked.`);
+      });
+      changed = true;
+    }
+
+    if (changed) {
+      writeDb(dbData);
+    }
+  } catch (err) {
+    console.error('Penalty sweep error:', err);
+  }
+}
+
+// Run penalty sweep every 20 seconds
+setInterval(enforceServerPenalties, 20000);
+
 // ---------------- API ROUTES ----------------
 
 // Health check
@@ -339,11 +413,44 @@ app.post('/api/register', async (req, res) => {
       userMobile: cleanMobile,
       userEmail: cleanEmail,
       userUpi: `${newUserId.toLowerCase()}@upi`,
-      amount: 150,
+      amount: 50,
       type: 'give_help',
       status: 'pending_match',
       adminApproved: false,
       timerStatus: 'pending',
+      createdAt: now,
+    };
+
+    // Cycle 1: Step 1 ₹50 Verification Link (24-hour deadline) + Step 2 ₹100 Second Link
+    const initialCycle = {
+      id: `CYC-${newUserId.replace(/[^a-zA-Z0-9]/g, '')}-1-${Date.now().toString().slice(-4)}`,
+      userId: newUserId,
+      cycleNumber: 1,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 50,
+        title: 'Provide Verification Link (₹50)',
+        status: 'pending',
+        matchedWithUserId: 'H150-918234',
+        matchedWithUserName: 'Priya Sharma',
+        matchedWithUpi: 'priyasharma@okaxis',
+        matchedWithMobile: '9876512345',
+        matchedWithEmail: 'priya.sharma@example.com',
+        deadlineTime: Date.now() + 24 * 3600000, // 24 hours deadline
+      },
+      secondLink: {
+        requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 100,
+        title: 'Second Link (₹100)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Central Community Treasury',
+        matchedWithUpi: 'help150.treasury@icici',
+        matchedWithMobile: '9800000001',
+        matchedWithEmail: 'admin@help150.org',
+      },
+      timerDurationHours: 12,
       createdAt: now,
     };
 
@@ -352,13 +459,15 @@ app.post('/api/register', async (req, res) => {
     dbData.wallets[newUserId] = initialWallet;
     if (!dbData.helpRequests) dbData.helpRequests = [];
     dbData.helpRequests.unshift(initialProvideHelpRequest);
+    if (!dbData.helpCycles) dbData.helpCycles = [];
+    dbData.helpCycles.unshift(initialCycle);
 
     if (!dbData.notifications) dbData.notifications = [];
     dbData.notifications.unshift({
       id: `NOTIF-${Date.now().toString().slice(-6)}`,
       userId: newUserId,
       title: 'Welcome to HELP150 Community',
-      message: `Your User ID is ${newUserId}. Your registration is complete!`,
+      message: `Your User ID is ${newUserId}. Your first ₹50 Provide Help link is active! Please complete ₹50 within 24 hours to prevent account block and automatic deletion.`,
       type: 'info',
       isRead: false,
       createdAt: now,

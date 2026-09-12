@@ -29,6 +29,11 @@ export interface User {
   internalNotes?: string[];
   avatarUrl?: string;
   
+  // Account blocking & auto-deletion tracking
+  blockedAt?: string;
+  autoDeleteAt?: string;
+  blockedReason?: string;
+  
   // Banking & Payment Details (Direct in Profile)
   bankName?: string;
   accountHolderName?: string;
@@ -194,6 +199,7 @@ export interface CycleLinkDetails {
   matchedWithUpi: string;
   matchedWithMobile: string;
   matchedWithEmail?: string;
+  deadlineTime?: number; // 24-hour countdown deadline for ₹50 link
   proofReference?: string;
   slipUrl?: string;
   submittedAt?: string;

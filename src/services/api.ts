@@ -268,13 +268,18 @@ export const api = {
         initialProvideHelpRequest.adminNotes = 'Auto-dispatched on registration by Auto Mode';
       }
 
+      // Generate initial ₹50 verification cycle link immediately upon registration
+      if (!draft.helpCycles) draft.helpCycles = [];
+      const newCycle = db.createNewCycle(newUserId, 1);
+      draft.helpCycles.unshift(newCycle);
+
       draft.helpRequests.unshift(initialProvideHelpRequest);
 
       draft.notifications.unshift({
         id: `NOTIF-${Date.now().toString().slice(-6)}`,
         userId: newUserId,
         title: 'Welcome to HELP150 Community',
-        message: `Your User ID is ${newUserId}. Your ₹${defaultAmount} Provide Help status is queued. Link will activate once dispatched by Admin.`,
+        message: `Your User ID is ${newUserId}. Your first Provide Help Link of ₹50 has been activated! Please complete within 24 hours to avoid account block and auto-deletion.`,
         type: 'info',
         isRead: false,
         createdAt: now,

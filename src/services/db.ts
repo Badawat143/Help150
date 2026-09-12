@@ -842,6 +842,10 @@ class DatabaseManager {
 
   constructor() {
     this.state = this.loadFromStorage();
+    // Periodically enforce 24-hour unpaid block & auto-delete penalties
+    setInterval(() => {
+      this.checkAndEnforcePenalties();
+    }, 10000);
   }
 
   private loadFromStorage(): DatabaseState {
@@ -945,10 +949,78 @@ class DatabaseManager {
   }
 
   // ---------------- PLAN CYCLE ENGINE (₹50 Verification + ₹100 Second ➔ 12h Timer ➔ ₹200 Receive) ----------------
+  public checkAndEnforcePenalties(): void {
+    const now = Date.now();
+    let hasChanges = false;
+    const usersToDelete: string[] = [];
+
+    for (const user of this.state.users) {
+      if (user.role === 'admin') continue;
+
+      // 1. Check if user is blocked and has passed the 24-hour auto-deletion mark
+      if (user.status === 'blocked' && user.autoDeleteAt) {
+        const deleteTime = new Date(user.autoDeleteAt).getTime();
+        if (now >= deleteTime) {
+          usersToDelete.push(user.id);
+          continue;
+        }
+      }
+
+      // 2. Check if user has an unpaid ₹50 link past the 24-hour deadline
+      const userCycles = this.state.helpCycles?.filter((c) => c.userId === user.id) || [];
+      const activeCycle = userCycles.find((c) => c.status !== 'completed');
+      if (activeCycle && activeCycle.status === 'provide_verification' && activeCycle.verificationLink.status === 'pending') {
+        const deadline = activeCycle.verificationLink.deadlineTime || (new Date(activeCycle.createdAt).getTime() + 24 * 3600000);
+        if (now > deadline) {
+          if (user.status !== 'blocked') {
+            user.status = 'blocked';
+            user.blockedAt = new Date().toISOString();
+            user.autoDeleteAt = new Date(now + 24 * 3600000).toISOString();
+            user.blockedReason = 'Failed to pay ₹50 Provide Help link within 24 hours. Account will be automatically deleted in 24 hours.';
+            hasChanges = true;
+
+            this.state.notifications.unshift({
+              id: `NOTIF-BLK-${Date.now().toString().slice(-6)}`,
+              userId: user.id,
+              title: 'Account ID Blocked (Unpaid ₹50 Link)',
+              message: 'Your account has been blocked because the ₹50 Provide Help link was not paid within 24 hours. Your ID will be automatically deleted in 24 hours.',
+              type: 'alert',
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    }
+
+    // Permanently auto-delete expired blocked users
+    if (usersToDelete.length > 0) {
+      this.state.users = this.state.users.filter((u) => !usersToDelete.includes(u.id));
+      usersToDelete.forEach((delId) => {
+        delete this.state.wallets[delId];
+        if (this.state.helpCycles) {
+          this.state.helpCycles = this.state.helpCycles.filter((c) => c.userId !== delId);
+        }
+        if (this.state.helpRequests) {
+          this.state.helpRequests = this.state.helpRequests.filter((r) => r.userId !== delId);
+        }
+      });
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      this.saveToStorage(this.state);
+      this.notifySubscribers();
+    }
+  }
+
   public getUserHelpCycle(userId: string): UserHelpCycle {
     if (!this.state.helpCycles) {
       this.state.helpCycles = [];
     }
+
+    // Check penalty states
+    this.checkAndEnforcePenalties();
 
     // Find latest active cycle or most recent cycle
     let userCycles = this.state.helpCycles.filter((c) => c.userId === userId);
@@ -1011,6 +1083,7 @@ class DatabaseManager {
         matchedWithUpi: `${peer1.fullName.toLowerCase().replace(/\s+/g, '')}@okaxis`,
         matchedWithMobile: peer1.mobile || '9876501234',
         matchedWithEmail: peer1.email || 'peer@help150.org',
+        deadlineTime: Date.now() + 24 * 3600000, // 24-hour countdown deadline for ₹50 link
       },
       secondLink: {
         requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
