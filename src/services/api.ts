@@ -2319,16 +2319,37 @@ export const api = {
     const user = state.users.find((u) => u.id === userId);
     if (!user) return { success: false, error: 'User not found' };
 
+    let updatedUser: User | null = null;
     db.updateState((draft) => {
       const u = draft.users.find((x) => x.id === userId);
       if (u) {
         u.status = newStatus;
+        if (newStatus === 'blocked') {
+          u.blockedAt = new Date().toISOString();
+          u.blockedReason = reason || 'Account blocked by Administrator';
+          u.autoDeleteAt = new Date(Date.now() + 24 * 3600000).toISOString();
+        } else if (newStatus === 'active') {
+          delete u.blockedAt;
+          delete u.blockedReason;
+          delete u.autoDeleteAt;
+        }
         if (reason) {
           u.internalNotes = u.internalNotes || [];
           u.internalNotes.push(`[${new Date().toLocaleDateString()}] Status changed to ${newStatus}: ${reason}`);
         }
+        updatedUser = { ...u };
       }
     });
+
+    if (updatedUser) {
+      firestoreSync.syncUser(updatedUser);
+      // Sync with server backend
+      fetch('/api/admin/user/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, status: newStatus, reason }),
+      }).catch((e) => console.warn('Server user status sync notice:', e));
+    }
 
     logAudit(
       adminActor,
@@ -2336,6 +2357,51 @@ export const api = {
       'User',
       userId,
       `Changed user ${user.fullName} (${userId}) status to ${newStatus}. Reason: ${reason || 'Admin action'}`
+    );
+
+    return { success: true, data: db.getState().users.find((u) => u.id === userId)! };
+  },
+
+  async adminUpdateUserPassword(
+    adminActor: { id: string; name: string; role: string },
+    userId: string,
+    newPassword: string
+  ): Promise<ApiResponse<User>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    if (!newPassword || newPassword.trim().length < 4) {
+      return { success: false, error: 'Password must be at least 4 characters long' };
+    }
+
+    let updatedUser: User | null = null;
+    db.updateState((draft) => {
+      const u = draft.users.find((x) => x.id === userId);
+      if (u) {
+        u.password = newPassword.trim();
+        u.passwordHash = btoa(newPassword.trim());
+        u.internalNotes = u.internalNotes || [];
+        u.internalNotes.push(`[${new Date().toLocaleDateString()}] Password reset by Admin ${adminActor.name}`);
+        updatedUser = { ...u };
+      }
+    });
+
+    if (updatedUser) {
+      firestoreSync.syncUser(updatedUser);
+      fetch('/api/admin/user/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, password: newPassword.trim() }),
+      }).catch((e) => console.warn('Server password update sync notice:', e));
+    }
+
+    logAudit(
+      adminActor,
+      'RESET_USER_PASSWORD',
+      'User',
+      userId,
+      `Reset password for user ${user.fullName} (${userId}) by Admin.`
     );
 
     return { success: true, data: db.getState().users.find((u) => u.id === userId)! };

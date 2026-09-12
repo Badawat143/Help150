@@ -56,6 +56,11 @@ import {
   AlertTriangle,
   X,
   Eye,
+  EyeOff,
+  Copy,
+  Check,
+  Unlock,
+  Key,
   Edit,
   Trash2,
   RefreshCw,
@@ -100,6 +105,14 @@ export const AdminPanel: React.FC = () => {
     date: '16 Aug 2025',
     time: '02:45 PM',
   });
+
+  // User Management & Credentials State (सभी यूजर आईडी, पासवर्ड, ब्लॉक/अनब्लॉक कंट्रोल)
+  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+  const [showAllPasswords, setShowAllPasswords] = useState<boolean>(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
+  const [editingUserPassword, setEditingUserPassword] = useState<{ userId: string; userName: string; currentPass: string; newPass: string } | null>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -242,6 +255,51 @@ export const AdminPanel: React.FC = () => {
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast('Database JSON backup exported successfully!');
+  };
+
+  const handleToggleBlockUser = async (user: User) => {
+    const adminActor = { id: currentUser?.id || 'H150-ADMIN01', name: currentUser?.fullName || 'System Superadmin', role: 'admin' };
+    if (user.status === 'blocked') {
+      const res = await api.updateUserStatus(adminActor, user.id, 'active', 'Account unblocked by Administrator');
+      if (res.success) {
+        showToast(`User ${user.id} (${user.fullName}) has been UNBLOCKED successfully! Account is now Active.`);
+      } else {
+        showToast(res.error || 'Failed to unblock user', 'error');
+      }
+    } else {
+      const res = await api.updateUserStatus(adminActor, user.id, 'blocked', 'Account manually blocked by Administrator');
+      if (res.success) {
+        showToast(`User ${user.id} (${user.fullName}) has been BLOCKED!`, 'error');
+      } else {
+        showToast(res.error || 'Failed to block user', 'error');
+      }
+    }
+    refreshUserData();
+  };
+
+  const handleCopyText = (text: string, key: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    showToast(`Copied: ${text}`);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleSavePasswordChange = async () => {
+    if (!editingUserPassword) return;
+    if (!editingUserPassword.newPass || editingUserPassword.newPass.trim().length < 4) {
+      showToast('Password must be at least 4 characters long', 'error');
+      return;
+    }
+    const adminActor = { id: currentUser?.id || 'H150-ADMIN01', name: currentUser?.fullName || 'System Superadmin', role: 'admin' };
+    const res = await api.adminUpdateUserPassword(adminActor, editingUserPassword.userId, editingUserPassword.newPass.trim());
+    if (res.success) {
+      showToast(`Password successfully updated for user ${editingUserPassword.userId}!`);
+      setEditingUserPassword(null);
+      refreshUserData();
+    } else {
+      showToast(res.error || 'Failed to update password', 'error');
+    }
   };
 
   return (
@@ -957,18 +1015,19 @@ export const AdminPanel: React.FC = () => {
           {/* ===================================================================== */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             
-            {/* Table 1: Recent Users */}
+            {/* Table 1: Recent Users with Password & Block/Unblock */}
             <div className="lg:col-span-6 bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2 font-black text-slate-900 text-sm font-heading">
                   <UserIcon className="h-4 w-4 text-blue-600" />
-                  <span>Recent Users</span>
+                  <span>Users & Credentials (यूजर ID और पासवर्ड)</span>
                 </div>
                 <button
                   onClick={() => handleQuickAction('users')}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer flex items-center gap-1"
                 >
-                  View All
+                  <span>View All ({state.users.length})</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
 
@@ -976,42 +1035,107 @@ export const AdminPanel: React.FC = () => {
                 <table className="w-full text-left text-xs text-slate-700">
                   <thead className="text-[11px] font-bold text-slate-400 border-b border-slate-100">
                     <tr>
-                      <th className="py-2.5 px-2">#</th>
                       <th className="py-2.5 px-2">User ID</th>
-                      <th className="py-2.5 px-2">Name</th>
-                      <th className="py-2.5 px-2">Mobile</th>
+                      <th className="py-2.5 px-2">Name / Mobile</th>
+                      <th className="py-2.5 px-2">Password</th>
                       <th className="py-2.5 px-2">Status</th>
-                      <th className="py-2.5 px-2">Joined On</th>
+                      <th className="py-2.5 px-2 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {recentUsersData.map((u, idx) => (
-                      <tr key={u.id} className="hover:bg-slate-50/70 transition">
-                        <td className="py-3 px-2 font-semibold text-slate-400">{idx + 1}</td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-6 w-6 rounded-full bg-gradient-to-tr ${u.avatarBg} text-white flex items-center justify-center text-[10px] font-bold shrink-0`}>
-                              {u.name.charAt(0)}
+                    {state.users.slice(0, 6).map((u) => {
+                      const isPassVisible = showAllPasswords || !!showPasswordMap[u.id];
+                      const userPass = u.password || (u.passwordHash ? atob(u.passwordHash) : (u.role === 'admin' ? 'Admin@150' : 'Pass@123'));
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-2.5 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-blue-600 font-mono text-[11px]">{u.id}</span>
+                              <button
+                                onClick={() => handleCopyText(u.id, `uid_${u.id}`)}
+                                title="Copy User ID"
+                                className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                              >
+                                {copiedKey === `uid_${u.id}` ? (
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
                             </div>
-                            <span className="font-bold text-blue-600 font-mono text-[11px]">{u.id}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-2 font-bold text-slate-900">{u.name}</td>
-                        <td className="py-3 px-2 text-slate-600 font-mono text-[11px]">{u.mobile}</td>
-                        <td className="py-3 px-2">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              u.status === 'Active'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}
-                          >
-                            {u.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-2 text-[11px] text-slate-500 whitespace-nowrap">{u.joinedOn}</td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <div className="font-bold text-slate-900 text-xs truncate max-w-[120px]">{u.fullName}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{u.mobile}</div>
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <div className="flex items-center gap-1 bg-slate-100/90 px-2 py-1 rounded-lg border border-slate-200/60 font-mono text-[11px] w-fit">
+                              <span className="font-semibold text-slate-800">
+                                {isPassVisible ? userPass : '••••••••'}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setShowPasswordMap((prev) => ({ ...prev, [u.id]: !prev[u.id] }))
+                                }
+                                title={isPassVisible ? 'Hide Password' : 'Show Password'}
+                                className="p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer ml-1"
+                              >
+                                {isPassVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </button>
+                              <button
+                                onClick={() => handleCopyText(userPass, `pwd_${u.id}`)}
+                                title="Copy Password"
+                                className="p-0.5 text-slate-400 hover:text-blue-600 cursor-pointer"
+                              >
+                                {copiedKey === `pwd_${u.id}` ? (
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                                u.status === 'active'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${u.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                              {u.status === 'active' ? 'Active' : 'Blocked'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-2 text-right">
+                            {u.role !== 'admin' ? (
+                              <button
+                                onClick={() => handleToggleBlockUser(u)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
+                                  u.status === 'blocked'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                                }`}
+                              >
+                                {u.status === 'blocked' ? (
+                                  <>
+                                    <Unlock className="h-3 w-3" />
+                                    <span>Unblock</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="h-3 w-3" />
+                                    <span>Block</span>
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-400 px-2 py-1">Superadmin</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1306,68 +1430,458 @@ export const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 1: USER MANAGEMENT */}
-      {activeModal === 'users' && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-4xl w-full shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {/* MODAL 1: USER MANAGEMENT & CREDENTIALS (यूजर आईडी, पासवर्ड और ब्लॉक/अनब्लॉक) */}
+      {(activeModal === 'users' || activeModal === 'user_details') && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-6xl w-full shadow-2xl border border-slate-200 space-y-5 max-h-[92vh] overflow-y-auto animate-in fade-in">
+            {/* Modal Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white">
-                  <Users className="h-5 w-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+                  <Users className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 font-heading">User Management</h3>
-                  <p className="text-xs text-slate-500">Manage registered members, review balances, and suspend accounts.</p>
+                  <h3 className="text-lg font-black text-slate-900 font-heading flex items-center gap-2">
+                    <span>User Management & Credentials</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold">
+                      सभी यूजर ID, पासवर्ड और ब्लॉक/अनब्लॉक
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    View plain passwords, copy credentials, search members, and instantly Block or Unblock accounts.
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
-                <X className="h-5 w-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAllPasswords((prev) => !prev)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                    showAllPasswords
+                      ? 'bg-amber-500 text-slate-950 border-amber-400'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  {showAllPasswords ? (
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      <span>Hide Passwords (छुपाएं)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      <span>Show All Passwords (सभी पासवर्ड दिखाएं)</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveModal(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Quick Stats & Filter Bar */}
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+              {/* Search input */}
+              <div className="relative w-full sm:w-80">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by User ID, Name, Mobile, Email..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                />
+                {userSearchQuery && (
+                  <button
+                    onClick={() => setUserSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+                <button
+                  onClick={() => setUserStatusFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    userStatusFilter === 'all'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All ({state.users.length})
+                </button>
+                <button
+                  onClick={() => setUserStatusFilter('active')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    userStatusFilter === 'active'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Active ({state.users.filter((u) => u.status === 'active').length})
+                </button>
+                <button
+                  onClick={() => setUserStatusFilter('blocked')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    userStatusFilter === 'blocked'
+                      ? 'bg-white text-red-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                  Blocked ({state.users.filter((u) => u.status === 'blocked').length})
+                </button>
+              </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
               <table className="w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3">User ID</th>
-                    <th className="py-2.5 px-3">Full Name</th>
-                    <th className="py-2.5 px-3">Contact</th>
-                    <th className="py-2.5 px-3">KYC</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3">Action</th>
+                    <th className="py-3 px-3">#</th>
+                    <th className="py-3 px-3">User ID (आईडी)</th>
+                    <th className="py-3 px-3">Member Details (नाम / ईमेल)</th>
+                    <th className="py-3 px-3">Mobile (मोबाइल)</th>
+                    <th className="py-3 px-3">Password (पासवर्ड)</th>
+                    <th className="py-3 px-3">Sponsor ID</th>
+                    <th className="py-3 px-3">KYC</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Action (ब्लॉक / अनब्लॉक)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {state.users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3 font-mono font-bold text-blue-600">{u.id}</td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900">{u.fullName}</td>
-                      <td className="py-2.5 px-3 text-[11px] text-slate-500">{u.mobile}</td>
-                      <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.kycStatus === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {u.kycStatus}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <button
-                          onClick={() => {
-                            showToast(`User status updated for ${u.id}`);
-                            refreshUserData();
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 font-bold text-[10px] hover:bg-blue-100 cursor-pointer"
-                        >
-                          Toggle Status
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {state.users
+                    .filter((u) => {
+                      if (userStatusFilter === 'active' && u.status !== 'active') return false;
+                      if (userStatusFilter === 'blocked' && u.status !== 'blocked') return false;
+                      if (userSearchQuery.trim()) {
+                        const q = userSearchQuery.toLowerCase().trim();
+                        const matchId = u.id.toLowerCase().includes(q);
+                        const matchName = u.fullName.toLowerCase().includes(q);
+                        const matchMobile = u.mobile.includes(q);
+                        const matchEmail = u.email.toLowerCase().includes(q);
+                        const matchSponsor = (u.sponsorId || '').toLowerCase().includes(q);
+                        return matchId || matchName || matchMobile || matchEmail || matchSponsor;
+                      }
+                      return true;
+                    })
+                    .map((u, idx) => {
+                      const isPassVisible = showAllPasswords || !!showPasswordMap[u.id];
+                      const userPass =
+                        u.password ||
+                        (u.passwordHash
+                          ? (() => {
+                              try {
+                                return atob(u.passwordHash);
+                              } catch {
+                                return u.role === 'admin' ? 'Admin@150' : 'Pass@123';
+                              }
+                            })()
+                          : u.role === 'admin'
+                          ? 'Admin@150'
+                          : 'Pass@123');
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-3 text-slate-400 font-semibold">{idx + 1}</td>
+                          
+                          {/* User ID with 1-click Copy */}
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-black text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded-md border border-blue-200/50">
+                                {u.id}
+                              </span>
+                              <button
+                                onClick={() => handleCopyText(u.id, `modal_uid_${u.id}`)}
+                                title="Copy User ID"
+                                className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                              >
+                                {copiedKey === `modal_uid_${u.id}` ? (
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </div>
+                            {u.role === 'admin' && (
+                              <span className="text-[9px] font-bold uppercase text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                Administrator
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Member Name & Email */}
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-slate-900 text-xs">{u.fullName}</div>
+                            <div className="text-[11px] text-slate-500 truncate max-w-[160px]">{u.email}</div>
+                          </td>
+
+                          {/* Mobile */}
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1 font-mono font-semibold text-slate-700">
+                              <span>{u.mobile}</span>
+                              <button
+                                onClick={() => handleCopyText(u.mobile, `mob_${u.id}`)}
+                                title="Copy Mobile"
+                                className="p-0.5 text-slate-400 hover:text-blue-600 cursor-pointer"
+                              >
+                                {copiedKey === `mob_${u.id}` ? (
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Password Field with Eye Toggle, Copy and Edit */}
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 font-mono text-xs w-fit">
+                              <span className={`font-black ${isPassVisible ? 'text-amber-700 font-mono' : 'text-slate-500'}`}>
+                                {isPassVisible ? userPass : '••••••••'}
+                              </span>
+
+                              {/* Toggle view/hide */}
+                              <button
+                                onClick={() =>
+                                  setShowPasswordMap((prev) => ({ ...prev, [u.id]: !prev[u.id] }))
+                                }
+                                title={isPassVisible ? 'Hide Password' : 'Show Password'}
+                                className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition cursor-pointer ml-1"
+                              >
+                                {isPassVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </button>
+
+                              {/* Copy Password */}
+                              <button
+                                onClick={() => handleCopyText(userPass, `modal_pwd_${u.id}`)}
+                                title="Copy Password"
+                                className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                              >
+                                {copiedKey === `modal_pwd_${u.id}` ? (
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+
+                              {/* Edit / Reset Password */}
+                              <button
+                                onClick={() =>
+                                  setEditingUserPassword({
+                                    userId: u.id,
+                                    userName: u.fullName,
+                                    currentPass: userPass,
+                                    newPass: '',
+                                  })
+                                }
+                                title="Reset / Change Password"
+                                className="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer"
+                              >
+                                <Key className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Sponsor ID */}
+                          <td className="py-3 px-3">
+                            <span className="font-mono text-xs text-slate-600 font-semibold">
+                              {u.sponsorId || 'Direct (Admin)'}
+                            </span>
+                          </td>
+
+                          {/* KYC */}
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                u.kycStatus === 'verified'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : u.kycStatus === 'pending'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {u.kycStatus}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col gap-0.5">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 w-fit ${
+                                  u.status === 'active'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    u.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'
+                                  }`}
+                                ></span>
+                                {u.status === 'active' ? 'Active' : 'Blocked'}
+                              </span>
+                              {u.status === 'blocked' && (
+                                <span className="text-[9px] text-red-600 font-medium">
+                                  Auto-delete in 24h
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Action: Block / Unblock */}
+                          <td className="py-3 px-3 text-right">
+                            {u.role !== 'admin' ? (
+                              <button
+                                onClick={() => handleToggleBlockUser(u)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5 ${
+                                  u.status === 'blocked'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                                }`}
+                              >
+                                {u.status === 'blocked' ? (
+                                  <>
+                                    <Unlock className="h-3.5 w-3.5" />
+                                    <span>Unblock (अनब्लॉक)</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="h-3.5 w-3.5" />
+                                    <span>Block (ब्लॉक करें)</span>
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-400 px-3 py-1.5">
+                                Superadmin
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
+
+              {state.users.length === 0 && (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  No registered users found.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Summary */}
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500 gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700">Total Registered Members:</span>
+                <span className="font-bold text-blue-600 font-mono">{state.users.length}</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-emerald-700 font-semibold">
+                  Active: {state.users.filter((u) => u.status === 'active').length}
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-red-700 font-semibold">
+                  Blocked: {state.users.filter((u) => u.status === 'blocked').length}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-MODAL: CHANGE / RESET USER PASSWORD */}
+      {editingUserPassword && (
+        <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+                  <Key className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 font-heading">
+                    Reset User Password
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    {editingUserPassword.userName} ({editingUserPassword.userId})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingUserPassword(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-500 font-semibold mb-1">Current Password:</label>
+                <div className="px-3 py-2 rounded-xl bg-slate-100 font-mono font-bold text-slate-800 border border-slate-200 flex items-center justify-between">
+                  <span>{editingUserPassword.currentPass}</span>
+                  <button
+                    onClick={() => handleCopyText(editingUserPassword.currentPass, 'edit_cur_pwd')}
+                    className="text-slate-400 hover:text-blue-600"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  New Password (नया पासवर्ड):
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter new password (min 4 chars)"
+                  value={editingUserPassword.newPass}
+                  onChange={(e) =>
+                    setEditingUserPassword((prev) =>
+                      prev ? { ...prev, newPass: e.target.value } : null
+                    )
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-mono text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  autoFocus
+                />
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                Updating will immediately sync with the database and server. The user can log in with this new password.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setEditingUserPassword(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePasswordChange}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs cursor-pointer shadow-md shadow-amber-500/20"
+              >
+                Save New Password
+              </button>
             </div>
           </div>
         </div>

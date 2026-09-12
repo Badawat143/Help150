@@ -90,6 +90,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'System Superadmin',
       mobile: '9800000001',
       email: 'admin@help150.org',
+      password: 'Admin@150',
+      passwordHash: btoa('Admin@150'),
       role: 'admin',
       sponsorId: null,
       status: 'active',
@@ -107,6 +109,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Vikram Mehta (Legal & Compliance)',
       mobile: '9800000002',
       email: 'compliance@help150.org',
+      password: 'Comp@150',
+      passwordHash: btoa('Comp@150'),
       role: 'compliance_officer',
       sponsorId: null,
       status: 'active',
@@ -124,6 +128,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Ashok Kumar',
       mobile: '9876543210',
       email: 'ashuk2968@gmail.com',
+      password: 'Pass@123',
+      passwordHash: btoa('Pass@123'),
       role: 'user',
       sponsorId: 'H150-ADMIN01',
       status: 'active',
@@ -141,6 +147,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Priya Sharma',
       mobile: '9876501234',
       email: 'priya.sharma@example.com',
+      password: 'Pass@123',
+      passwordHash: btoa('Pass@123'),
       role: 'user',
       sponsorId: 'H150-784920',
       status: 'active',
@@ -158,6 +166,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Rahul Verma',
       mobile: '9876505678',
       email: 'rahul.verma@example.com',
+      password: 'Pass@123',
+      passwordHash: btoa('Pass@123'),
       role: 'user',
       sponsorId: 'H150-784920',
       status: 'active',
@@ -175,6 +185,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Sunita Patel',
       mobile: '9876509988',
       email: 'sunita.patel@example.com',
+      password: 'Pass@123',
+      passwordHash: btoa('Pass@123'),
       role: 'user',
       sponsorId: 'H150-918234',
       status: 'active',
@@ -192,6 +204,8 @@ function getSeedDatabase(): DatabaseState {
       fullName: 'Manoj Tiwari',
       mobile: '9876503344',
       email: 'manoj.tiwari@example.com',
+      password: 'Pass@123',
+      passwordHash: btoa('Pass@123'),
       role: 'user',
       sponsorId: 'H150-610293',
       status: 'active',
@@ -861,6 +875,25 @@ class DatabaseManager {
           };
           if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
+          }
+          // Ensure all users have valid passwords and hashes populated
+          if (Array.isArray(loadedState.users)) {
+            loadedState.users.forEach((u) => {
+              if (!u.password) {
+                if (u.passwordHash) {
+                  try {
+                    u.password = atob(u.passwordHash);
+                  } catch {
+                    u.password = u.role === 'admin' ? 'Admin@150' : 'Pass@123';
+                  }
+                } else {
+                  u.password = u.role === 'admin' ? 'Admin@150' : 'Pass@123';
+                }
+              }
+              if (!u.passwordHash && u.password) {
+                u.passwordHash = btoa(u.password);
+              }
+            });
           }
           // Automatically migrate referral levels if they still reflect older configuration
           if (

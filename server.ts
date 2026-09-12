@@ -592,6 +592,70 @@ app.get('/api/sponsor/:id', (req, res) => {
   return res.json({ exists: false, id: searchId });
 });
 
+// Admin User Status Toggle (Block / Unblock)
+app.post('/api/admin/user/status', async (req, res) => {
+  try {
+    const { userId, status, reason } = req.body;
+    if (!userId || !status) {
+      return res.status(400).json({ success: false, message: 'userId and status are required' });
+    }
+    const dbData = readDb();
+    const user = dbData.users?.find((u: any) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    user.status = status;
+    if (status === 'blocked') {
+      user.blockedAt = new Date().toISOString();
+      user.blockedReason = reason || 'Blocked by Administrator';
+      user.autoDeleteAt = new Date(Date.now() + 24 * 3600000).toISOString();
+    } else if (status === 'active') {
+      delete user.blockedAt;
+      delete user.blockedReason;
+      delete user.autoDeleteAt;
+    }
+    writeDb(dbData);
+    if (serverFirestore) {
+      try {
+        await setDoc(doc(serverFirestore, 'users', user.id), user);
+      } catch (fErr) {
+        console.warn('Server firestore status sync warning:', fErr);
+      }
+    }
+    return res.json({ success: true, user });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin User Password Update / Reset
+app.post('/api/admin/user/password', async (req, res) => {
+  try {
+    const { userId, password } = req.body;
+    if (!userId || !password) {
+      return res.status(400).json({ success: false, message: 'userId and password are required' });
+    }
+    const dbData = readDb();
+    const user = dbData.users?.find((u: any) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    user.password = password;
+    user.passwordHash = Buffer.from(String(password)).toString('base64');
+    writeDb(dbData);
+    if (serverFirestore) {
+      try {
+        await setDoc(doc(serverFirestore, 'users', user.id), user);
+      } catch (fErr) {
+        console.warn('Server firestore password sync warning:', fErr);
+      }
+    }
+    return res.json({ success: true, user });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Push client updates (e.g. slips, approvals) to server
 app.post('/api/sync/push', async (req, res) => {
   try {
