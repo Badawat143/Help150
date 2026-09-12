@@ -211,8 +211,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } else {
-        // Unauthenticated: ensure no background Firestore listeners run
-        firestoreSync.cleanup();
+        // Keep multi-device cloud listener active for public collections (users, wallets)
+        // Only authenticated user actions require Firebase Auth token
       }
     });
 

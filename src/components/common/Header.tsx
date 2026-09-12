@@ -24,8 +24,10 @@ import {
   Search,
   Moon,
   Sun,
+  Database,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { FirebaseConnectionModal } from './FirebaseConnectionModal';
 
 interface HeaderProps {
   onOpenLogin?: () => void;
@@ -56,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [firebaseModalOpen, setFirebaseModalOpen] = useState(false);
 
   const navItems = [
     { id: 'home', label: 'Home', icon: HeartHandshake, publicOnly: false },
@@ -141,6 +144,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
 
           {/* Right Action Items */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Firebase Database Connection Status Pill */}
+            <button
+              id="header-firebase-status-pill"
+              onClick={() => setFirebaseModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-500/60 rounded-full py-1.5 px-3 transition cursor-pointer group shadow-sm"
+              title="Firebase Firestore Cloud Database — Connected & Live. Click to inspect connection."
+            >
+              <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </div>
+              <Database className="h-3.5 w-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-bold text-slate-200">
+                DB: <span className="text-emerald-400">Live</span>
+              </span>
+            </button>
+
             {currentUser ? (
               <>
                 {/* Live Wallet Pill */}
@@ -462,8 +482,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
               })}
           </div>
 
+          <div className="mt-3">
+            <button
+              id="mobile-firebase-status-btn"
+              onClick={() => {
+                setFirebaseModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="w-full p-2.5 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2"
+            >
+              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Database className="h-4 w-4 text-amber-400" />
+              <span>Firebase Database: Connected & Live</span>
+            </button>
+          </div>
+
           {(isAdmin || isCompliance) && (
-            <div className="mt-3">
+            <div className="mt-2">
               <button
                 id="mobile-nav-admin"
                 onClick={() => {
@@ -502,6 +537,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
           )}
         </div>
       )}
+
+      {/* Firebase Database Connection & Diagnostics Modal */}
+      <FirebaseConnectionModal
+        isOpen={firebaseModalOpen}
+        onClose={() => setFirebaseModalOpen(false)}
+      />
     </header>
   );
 };

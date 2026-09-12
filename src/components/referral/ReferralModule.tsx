@@ -18,6 +18,9 @@ import {
   Clock,
   Coins,
   RefreshCw,
+  Copy,
+  Check,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -30,6 +33,8 @@ export const ReferralModule: React.FC = () => {
   const [dbTick, setDbTick] = useState<number>(0);
   const [selectedLevel, setSelectedLevel] = useState<number>(1);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [filterQuery, setFilterQuery] = useState<string>('');
 
   useEffect(() => {
     const unsub = db.subscribe(() => {
@@ -81,7 +86,18 @@ export const ReferralModule: React.FC = () => {
   const totalPaidRewards = referralTransactions.reduce((acc, t) => acc + t.amount, 0);
 
   // Filter downline members for selected level
-  const filteredMembers = hierarchy.allDownline.filter((m) => m.level === selectedLevel);
+  const rawMembers = hierarchy.allDownline.filter((m) => m.level === selectedLevel);
+  const filteredMembers = rawMembers.filter(
+    (m) =>
+      m.userId.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      m.fullName.toLowerCase().includes(filterQuery.toLowerCase())
+  );
+
+  const handleCopyMemberId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -225,13 +241,27 @@ export const ReferralModule: React.FC = () => {
         </div>
 
         {/* Selected Level Team Members Table */}
-        <div className="pt-4 border-t border-slate-800">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Level {selectedLevel} Members ({filteredMembers.length})
-            </h4>
-            <div className="text-xs text-slate-400">
-              Reward Rate: <strong className="text-amber-400">{referralLevels.find((l) => l.level === selectedLevel)?.percentage}%</strong>
+        <div className="pt-4 border-t border-slate-800 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Level {selectedLevel} Members ({filteredMembers.length})
+              </h4>
+              <span className="text-[11px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                Reward: {referralLevels.find((l) => l.level === selectedLevel)?.percentage}%
+              </span>
+            </div>
+
+            {/* Member Search */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search Member ID or Name..."
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
             </div>
           </div>
 
@@ -251,14 +281,31 @@ export const ReferralModule: React.FC = () => {
                 {filteredMembers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-slate-500">
-                      No members registered under Level {selectedLevel} yet. Share your referral link to expand your community team.
+                      {filterQuery
+                        ? 'No members match the search query.'
+                        : `No members registered under Level ${selectedLevel} yet. Share your referral link to expand your community team.`}
                     </td>
                   </tr>
                 ) : (
-                  filteredMembers.map((m) => (
-                    <tr key={m.userId} className="hover:bg-slate-850/40 transition">
-                      <td className="py-2.5 px-3 font-mono text-amber-400 font-bold">{m.userId}</td>
-                      <td className="py-2.5 px-3 font-semibold text-white">{m.fullName}</td>
+                  filteredMembers.map((m) => {
+                    const isCopied = copiedId === m.userId;
+                    return (
+                      <tr key={m.userId} className="hover:bg-slate-850/40 transition">
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                              {m.userId}
+                            </span>
+                            <button
+                              onClick={() => handleCopyMemberId(m.userId)}
+                              className="text-slate-400 hover:text-amber-400 p-1 rounded transition cursor-pointer"
+                              title="Copy Member ID"
+                            >
+                              {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-white">{m.fullName}</td>
                       <td className="py-2.5 px-3">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400">
                           {m.status}
@@ -284,8 +331,8 @@ export const ReferralModule: React.FC = () => {
                         {new Date(m.joinedAt).toLocaleDateString()}
                       </td>
                     </tr>
-                  ))
-                )}
+                  );
+                }))}
               </tbody>
             </table>
           </div>

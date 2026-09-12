@@ -58,6 +58,8 @@ import { referralTracker } from '../../services/referralTracker';
 import { firestoreSync } from '../../services/firestoreSync';
 import { PaymentSlipUploadModal } from '../helping/PaymentSlipUploadModal';
 import { ProfileModal } from './ProfileModal';
+import { DirectReferralsSection } from './DirectReferralsSection';
+import { DirectReferralsModal } from './DirectReferralsModal';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -123,6 +125,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showDirectModal, setShowDirectModal] = useState(false);
   const [showProofModal, setShowProofModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -1090,7 +1093,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
                 <Users className="h-6 w-6" />
               </div>
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 space-y-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-500">Direct Referrals (लेवल 1)</span>
                   <button
@@ -1101,22 +1104,39 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-blue-600' : ''}`} />
                   </button>
                 </div>
-                <div className="text-xl font-black text-slate-900 font-heading">
-                  {hierarchy.directReferrals.length}
+                <div className="flex items-baseline gap-2">
+                  <div className="text-xl font-black text-slate-900 font-heading">
+                    {hierarchy.directReferrals.length}
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500">Members</span>
                 </div>
-                <div className="flex items-center gap-3">
+
+                {/* Latest Joined User ID badge */}
+                {hierarchy.directReferrals.length > 0 && (
+                  <div className="pt-0.5">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-200/80 rounded-md text-[11px]">
+                      <span className="text-slate-500 text-[10px]">Latest ID:</span>
+                      <span className="font-mono font-bold text-blue-700">
+                        {hierarchy.directReferrals[0].userId}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
                   <button
-                    onClick={() => setActiveTab('referral')}
-                    className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"
+                    onClick={() => setShowDirectModal(true)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer flex items-center gap-1"
                   >
-                    View Team
+                    <span>View All IDs ({hierarchy.directReferrals.length})</span>
                   </button>
+                  <span className="text-slate-300">•</span>
                   <button
                     onClick={handleSyncReferrals}
                     disabled={isSyncing}
-                    className="mt-1 text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline cursor-pointer"
+                    className="text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline cursor-pointer"
                   >
-                    {isSyncing ? 'सिंक हो रहा है...' : 'रिफ्रेश'}
+                    {isSyncing ? 'सिंक हो रहा...' : 'रिफ्रेश'}
                   </button>
                 </div>
               </div>
@@ -1293,6 +1313,17 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
             </div>
           </div>
+
+          {/* ======================================================================= */}
+          {/* DIRECT REFERRALS (LEVEL 1) TABLE & USER IDs LIST                         */}
+          {/* ======================================================================= */}
+          <DirectReferralsSection
+            currentUserId={currentUser?.id || 'H150-784920'}
+            directReferrals={hierarchy.directReferrals}
+            onSync={handleSyncReferrals}
+            isSyncing={isSyncing}
+            onNavigateTab={setActiveTab}
+          />
 
           {/* ======================================================================= */}
           {/* 4. BOTTOM 3 SUMMARY CARDS (Transactions, Referral Levels, Wallet & Sec) */}
@@ -1859,6 +1890,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
         onClose={() => setShowProfileModal(false)}
         currentUser={currentUser}
         onProfileUpdated={refreshUserData}
+      />
+
+      {/* Direct Referrals User IDs Modal */}
+      <DirectReferralsModal
+        isOpen={showDirectModal}
+        onClose={() => setShowDirectModal(false)}
+        currentUserId={currentUser?.id || 'H150-784920'}
+        directReferrals={hierarchy.directReferrals}
+        onSync={handleSyncReferrals}
+        isSyncing={isSyncing}
       />
     </div>
   );

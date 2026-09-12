@@ -1,6 +1,22 @@
 {
   "users": [
     {
+      "id": "H150-656508",
+      "fullName": "Ramesh Sharma",
+      "mobile": "9822334455",
+      "email": "ramesh.sharma@example.com",
+      "password": "pass123",
+      "passwordHash": "cGFzczEyMw==",
+      "role": "user",
+      "sponsorId": "H150-784920",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-12T02:27:13.838Z",
+      "lastLoginAt": "2026-09-12T02:27:13.838Z"
+    },
+    {
       "id": "H150-779184",
       "fullName": "Suresh Kumar Verma",
       "mobile": "9811223344",
@@ -189,9 +205,33 @@
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
       "lastUpdated": "2026-09-12T01:44:46.763Z"
+    },
+    "H150-656508": {
+      "userId": "H150-656508",
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-12T02:27:13.838Z"
     }
   },
   "helpRequests": [
+    {
+      "id": "HP-25811577",
+      "userId": "H150-656508",
+      "userName": "Ramesh Sharma",
+      "userMobile": "9822334455",
+      "userEmail": "ramesh.sharma@example.com",
+      "userUpi": "h150-656508@upi",
+      "amount": 150,
+      "type": "give_help",
+      "status": "pending_match",
+      "adminApproved": false,
+      "timerStatus": "pending",
+      "createdAt": "2026-09-12T02:27:13.838Z"
+    },
     {
       "id": "HP-99720310",
       "userId": "H150-779184",
@@ -224,6 +264,24 @@
   "transactions": [],
   "kycRecords": [],
   "notifications": [
+    {
+      "id": "NOTIF-033838",
+      "userId": "H150-784920",
+      "title": "New Direct Referral Joined!",
+      "message": "Ramesh Sharma (H150-656508) has joined your direct team (Level 1).",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-12T02:27:13.838Z"
+    },
+    {
+      "id": "NOTIF-033838",
+      "userId": "H150-656508",
+      "title": "Welcome to HELP150 Community",
+      "message": "Your User ID is H150-656508. Your registration is complete!",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-12T02:27:13.838Z"
+    },
     {
       "id": "NOTIF-486763",
       "userId": "H150-784920",

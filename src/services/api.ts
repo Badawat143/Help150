@@ -2146,6 +2146,7 @@ export const api = {
           sponsorTokens.has(sClean) ||
           (sClean.startsWith('H150-') && sponsorTokens.has(sClean.replace('H150-', ''))) ||
           sponsorTokens.has(`H150-${sClean}`) ||
+          (sDigits.length >= 6 && sponsorTokens.has(sDigits)) ||
           (sDigits.length >= 10 && sponsorTokens.has(sDigits.slice(-10))) ||
           sponsorTokens.has(sEmail)
         );
@@ -2157,6 +2158,8 @@ export const api = {
         const refItem: ReferralMember = {
           userId: member.id,
           fullName: member.fullName,
+          mobile: member.mobile,
+          email: member.email,
           joinedAt: member.joinedAt,
           status: member.status,
           level,

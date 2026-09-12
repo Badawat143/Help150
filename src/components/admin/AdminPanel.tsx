@@ -78,6 +78,7 @@ import { api } from '../../services/api';
 import { User, HelpRequest, WithdrawalRequest, KycRecord } from '../../types';
 import { PaymentVerificationDesk } from './PaymentVerificationDesk';
 import { MemberToMemberLinkBox } from './MemberToMemberLinkBox';
+import { FirebaseConnectionModal } from '../common/FirebaseConnectionModal';
 
 export const AdminPanel: React.FC = () => {
   const { currentUser, refreshUserData, logout, setActiveTab } = useAuth();
@@ -158,6 +159,7 @@ export const AdminPanel: React.FC = () => {
     { id: 'privacy_policy', label: 'Privacy Policy', icon: Shield, hasArrow: true },
     { id: 'admin_roles', label: 'Admin Roles', icon: KeyRound, hasArrow: true },
     { id: 'security', label: 'Security', icon: Lock, hasArrow: true },
+    { id: 'firebase_database', label: 'Firebase Database', icon: Database, hasArrow: true, badge: 'Live' },
     { id: 'backup', label: 'Backup', icon: Database, hasArrow: true },
     { id: 'logout', label: 'Logout', icon: LogOut, hasArrow: false },
   ];
@@ -1604,6 +1606,13 @@ export const AdminPanel: React.FC = () => {
                 <span>Download JSON Backup</span>
               </button>
               <button
+                onClick={() => setActiveModal('firebase_database')}
+                className="w-full py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Database className="h-4 w-4 text-amber-600" />
+                <span>View Firebase Cloud DB Connection</span>
+              </button>
+              <button
                 onClick={() => setActiveModal(null)}
                 className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
               >
@@ -1613,6 +1622,12 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* FIREBASE DATABASE CONNECTION & DIAGNOSTICS MODAL */}
+      <FirebaseConnectionModal
+        isOpen={activeModal === 'firebase_database'}
+        onClose={() => setActiveModal(null)}
+      />
     </div>
   );
 };

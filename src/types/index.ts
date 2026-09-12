@@ -203,6 +203,8 @@ export interface ReferralStat {
 export interface ReferralMember {
   userId: string;
   fullName: string;
+  mobile?: string;
+  email?: string;
   joinedAt: string;
   status: AccountStatus;
   level: number;
