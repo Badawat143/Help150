@@ -77,12 +77,12 @@ export const KycModule: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('कृपया केवल इमेज फाइल (JPG, PNG, WEBP) चुनें।', 'Invalid File');
+      toast.error('Please select an image file (JPG, PNG, WEBP).', 'Invalid File');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('फोटो का आकार 5MB से कम होना चाहिए।', 'File Too Large');
+      toast.error('Photo size must be less than 5MB.', 'File Too Large');
       return;
     }
 
@@ -90,7 +90,7 @@ export const KycModule: React.FC = () => {
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setAvatarUrl(result);
-      toast.success('प्रोफाइल फोटो लोड हो गई है। सेव बटन दबाएं।', 'Photo Ready');
+      toast.success('Profile photo loaded. Click save button to apply.', 'Photo Ready');
     };
     reader.readAsDataURL(file);
   };
@@ -101,12 +101,12 @@ export const KycModule: React.FC = () => {
     setSuccessMsg(null);
 
     if (!fullName.trim()) {
-      setErrorMsg('कृपया अपना पूरा नाम दर्ज करें।');
+      setErrorMsg('Please enter your full name.');
       return;
     }
 
     if (!mobile.trim() || mobile.length < 10) {
-      setErrorMsg('कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।');
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
       return;
     }
 
@@ -127,14 +127,14 @@ export const KycModule: React.FC = () => {
       });
 
       if (res.success) {
-        setSuccessMsg('आपकी प्रोफाइल और बैंक विवरण सफलतापूर्वक सुरक्षित हो गए हैं!');
-        toast.success('प्रोफाइल और बैंक विवरण सुरक्षित कर दिए गए हैं।', 'Saved Successfully 🎉');
+        setSuccessMsg('Your profile and bank details have been saved successfully!');
+        toast.success('Profile and bank details saved.', 'Saved Successfully 🎉');
         refreshUserData();
       } else {
-        setErrorMsg(res.error || 'विवरण सेव करने में समस्या आई।');
+        setErrorMsg(res.error || 'Failed to save details.');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'त्रुटि हुई।');
+      setErrorMsg(err.message || 'An error occurred.');
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export const KycModule: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  यूजर प्रोफाइल और बैंक विवरण
+                  User Profile & Bank Details
                 </h1>
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" />
@@ -160,7 +160,7 @@ export const KycModule: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-blue-200 mt-0.5">
-                आधार और पैन कार्ड की आवश्यकता नहीं है। अपना नाम, फोटो और डायरेक्ट बैंक/UPI विवरण यहां सेट करें।
+                No Aadhaar or PAN card required. Set your profile photo, name, and direct Bank/UPI payout details here.
               </p>
             </div>
           </div>
@@ -177,9 +177,9 @@ export const KycModule: React.FC = () => {
       <div className="p-4 rounded-3xl bg-blue-50 border border-blue-200 text-xs text-slate-700 flex items-start gap-3 shadow-sm">
         <Sparkles className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
         <div>
-          <strong className="text-blue-900 font-bold block text-sm">डायरेक्ट पेमेंट्स और सहायता प्राप्ति:</strong>
+          <strong className="text-blue-900 font-bold block text-sm">Direct Payments & Receiving Help:</strong>
           <p className="mt-0.5 text-slate-600 leading-relaxed">
-            आपके द्वारा दर्ज किए गए UPI ID और बैंक खाते पर अन्य कम्युनिटी मेंबर्स ₹150 की सहायता राशि सीधे ट्रांसफर करेंगे। विवरण बिल्कुल सही भरें।
+            Other community members will transfer peer assistance directly to your UPI ID and Bank Account. Please ensure your details are accurate.
           </p>
         </div>
       </div>
@@ -204,7 +204,7 @@ export const KycModule: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-5">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <UserIcon className="h-5 w-5 text-blue-600" />
-              <h3 className="text-sm font-bold text-slate-900">1. पर्सनल प्रोफाइल व फोटो</h3>
+              <h3 className="text-sm font-bold text-slate-900">1. Personal Profile & Photo</h3>
             </div>
 
             {/* Profile Photo Uploader */}
@@ -228,7 +228,7 @@ export const KycModule: React.FC = () => {
               </div>
 
               <div className="flex-1">
-                <div className="text-xs font-bold text-slate-800">यूजर प्रोफाइल पिक्चर</div>
+                <div className="text-xs font-bold text-slate-800">Profile Picture</div>
                 <div className="text-[11px] text-slate-500">JPG, PNG, WEBP (Max 5MB)</div>
                 <div className="flex items-center gap-2 mt-2">
                   <button
@@ -237,7 +237,7 @@ export const KycModule: React.FC = () => {
                     className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow-sm"
                   >
                     <UploadCloud className="h-3.5 w-3.5" />
-                    <span>फोटो बदलें</span>
+                    <span>Change Photo</span>
                   </button>
                   {avatarUrl && (
                     <button
@@ -262,14 +262,14 @@ export const KycModule: React.FC = () => {
             {/* Name */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                पूरा नाम (Full Name) *
+                Full Name *
               </label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="अपना पूरा नाम दर्ज करें"
+                placeholder="Enter your full name"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
               />
             </div>
@@ -277,14 +277,14 @@ export const KycModule: React.FC = () => {
             {/* Mobile */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                मोबाइल नंबर (Mobile Number) *
+                Mobile Number *
               </label>
               <input
                 type="tel"
                 required
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
-                placeholder="10-अंकों का मोबाइल नंबर"
+                placeholder="10-digit mobile number"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
               />
             </div>
@@ -292,7 +292,7 @@ export const KycModule: React.FC = () => {
             {/* Email */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                ईमेल (Email Address)
+                Email Address
               </label>
               <input
                 type="email"
@@ -308,7 +308,7 @@ export const KycModule: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <Building className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-sm font-bold text-slate-900">2. बैंक व UPI भुगतान विवरण</h3>
+              <h3 className="text-sm font-bold text-slate-900">2. Bank & UPI Payment Details</h3>
             </div>
 
             {/* UPI ID */}
@@ -321,7 +321,7 @@ export const KycModule: React.FC = () => {
                 type="text"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                placeholder="उदा. name@okhdfcbank / 9876543210@paytm"
+                placeholder="e.g. name@okhdfcbank / 9876543210@paytm"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
               />
             </div>
@@ -330,7 +330,7 @@ export const KycModule: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                 <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Google Pay / PhonePe नंबर</span>
+                <span>Google Pay / PhonePe Mobile Number</span>
               </label>
               <input
                 type="tel"
@@ -344,13 +344,13 @@ export const KycModule: React.FC = () => {
             {/* Bank Name */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                बैंक का नाम (Bank Name)
+                Bank Name
               </label>
               <input
                 type="text"
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
-                placeholder="उदा. State Bank of India / HDFC Bank"
+                placeholder="e.g. State Bank of India / HDFC Bank"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
               />
             </div>
@@ -358,13 +358,13 @@ export const KycModule: React.FC = () => {
             {/* Account Holder Name */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                खाताधारक का नाम (Account Holder Name)
+                Account Holder Name
               </label>
               <input
                 type="text"
                 value={accountHolderName}
                 onChange={(e) => setAccountHolderName(e.target.value)}
-                placeholder="खाताधारक का नाम"
+                placeholder="Account holder name"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
               />
             </div>
@@ -373,7 +373,7 @@ export const KycModule: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  खाता संख्या (Account No.)
+                  Account Number
                 </label>
                 <input
                   type="text"
@@ -385,7 +385,7 @@ export const KycModule: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  IFSC कोड (IFSC Code)
+                  IFSC Code
                 </label>
                 <input
                   type="text"
@@ -403,7 +403,7 @@ export const KycModule: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-md">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            <span>विवरण सुरक्षित हैं और केवल कम्युनिटी लेन-देन के लिए उपयोग किए जाते हैं।</span>
+            <span>Details are secure and used exclusively for community peer-to-peer transfers.</span>
           </div>
 
           <button
@@ -412,7 +412,7 @@ export const KycModule: React.FC = () => {
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition cursor-pointer disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            <span>{loading ? 'सुरक्षित हो रहा है...' : 'सुरक्षित करें (Save Details)'}</span>
+            <span>{loading ? 'Saving...' : 'Save Details'}</span>
           </button>
         </div>
       </form>

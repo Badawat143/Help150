@@ -138,7 +138,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match / पासवर्ड मेल नहीं खा रहे हैं');
+      setError('Passwords do not match');
       return;
     }
 
@@ -187,7 +187,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const handleCopyAllCredentials = () => {
     if (!successData) return;
-    const textToCopy = `🎉 HELP150 LOGIN CREDENTIALS / लॉगिन विवरण:\n` +
+    const textToCopy = `🎉 HELP150 LOGIN CREDENTIALS:\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `👤 Name: ${successData.fullName}\n` +
       `🆔 User ID: ${successData.id}\n` +
@@ -252,13 +252,13 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-1">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>पंजीकरण सफल / Registration Successful</span>
+                <span>Registration Successful</span>
               </div>
               <h3 className="text-2xl font-black text-white font-heading">
                 Welcome, {successData.fullName}!
               </h3>
               <p className="text-xs text-slate-300 mt-1">
-                आपका HELP150 कम्युनिटी अकाउंट सफलतापूर्वक बन गया है।
+                Your HELP150 community account has been created successfully.
               </p>
             </div>
 
@@ -271,7 +271,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 <div className="space-y-0.5">
                   <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    <span>User ID (यूजर आईडी)</span>
+                    <span>User ID</span>
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono tracking-wide">
                     {successData.id}
@@ -301,7 +301,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 <div className="space-y-0.5">
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     <Lock className="h-3 w-3" />
-                    <span>Password (पासवर्ड)</span>
+                    <span>Password</span>
                   </div>
                   <div className="text-lg font-bold text-white font-mono tracking-wider">
                     {showPassword ? successData.password : '••••••••••••'}
@@ -353,7 +353,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-left flex items-start gap-2.5 text-amber-200 text-xs">
                 <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
                 <div className="leading-snug">
-                  <strong className="text-amber-300">महत्वपूर्ण सूचना:</strong> कृपया अपना यूजर ID और पासवर्ड कहीं सुरक्षित लिख लें या इसका स्क्रीनशॉट ले लें। किसी भी डिवाइस या ब्राउज़र में लॉगिन करने के लिए इसका उपयोग करें।
+                  <strong className="text-amber-300">Important Notice:</strong> Please write down or screenshot your User ID and Password safely. You can use these credentials to log in on any device or browser.
                 </div>
               </div>
             </div>
@@ -396,7 +396,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-sm transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogIn className="h-4 w-4" />
-                <span>डैशबोर्ड में लॉगिन करें / Enter Dashboard</span>
+                <span>Enter Dashboard</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
 
@@ -405,7 +405,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 className="w-full py-2.5 text-xs text-slate-400 hover:text-white transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <KeyRound className="h-3.5 w-3.5" />
-                <span>लॉगिन स्क्रीन पर जाएं / Go to Login Screen</span>
+                <span>Go to Login Screen</span>
               </button>
             </div>
           </div>
@@ -440,7 +440,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               {/* Full Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Name (पूरा नाम) <span className="text-amber-400">*</span>
+                  Full Name <span className="text-amber-400">*</span>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -460,7 +460,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Mobile Number (मोबाइल) <span className="text-amber-400">*</span>
+                    Mobile Number <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -478,7 +478,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Email Address (ईमेल) <span className="text-amber-400">*</span>
+                    Email Address <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -499,7 +499,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Password (पासवर्ड) <span className="text-amber-400">*</span>
+                    Password <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -545,7 +545,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-slate-300">
-                    Referral / Sponsor ID (रेफरल स्पॉन्सर आईडी)
+                    Referral / Sponsor ID
                   </label>
                   {isAutoTracked && sponsorId && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">

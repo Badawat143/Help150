@@ -101,9 +101,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
             HELP<span className="gradient-gold-text">150</span>
           </h1>
 
-          {/* Hindi Tagline */}
+          {/* Tagline */}
           <p className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-amber-200 to-slate-200 font-heading mb-4">
-            “एक transparent और community-focused helping platform”
+            “A transparent and community-focused helping platform”
           </p>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">

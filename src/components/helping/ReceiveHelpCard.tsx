@@ -202,7 +202,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
 
   return (
     <div className="relative rounded-3xl bg-gradient-to-b from-sky-950 via-slate-900 to-sky-950 border-2 border-sky-400 shadow-2xl shadow-sky-950/50 overflow-hidden transition-all duration-300 hover:border-sky-300">
-      {/* 🔵 RECEIVE HELP Header with Sky Blue Theme (आसमानी रंग) */}
+      {/* 🔵 RECEIVE HELP Header with Sky Blue Theme */}
       <div className="p-5 sm:p-6 bg-gradient-to-r from-sky-950 via-sky-900 to-sky-950 border-b border-sky-400/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -219,7 +219,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-sky-200 mt-0.5 font-medium">
-                RECEIVE HELP ASSIGNMENT • Peer Mutual Inflow (सहायता प्राप्त करें)
+                RECEIVE HELP ASSIGNMENT • Peer Mutual Inflow (Receive Help)
               </p>
             </div>
           </div>
@@ -250,7 +250,7 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
         <div className="p-4 sm:p-5 rounded-2xl bg-sky-950/80 border border-sky-400/40 space-y-3.5 shadow-inner">
           <div className="flex items-center justify-between border-b border-sky-900/60 pb-2.5">
             <span className="text-xs font-bold text-sky-200 uppercase tracking-wider">
-              Sender Details (सहायता भेजने वाला)
+              Sender Details
             </span>
             <span className="text-xs font-mono font-bold text-sky-100 bg-sky-800/80 px-2 py-0.5 rounded-full border border-sky-400/40">
               Assigned Giver

@@ -260,7 +260,7 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
 
   return (
     <div className="relative rounded-3xl bg-gradient-to-b from-red-950 via-slate-900 to-red-950 border-2 border-red-500 shadow-2xl shadow-red-950/50 overflow-hidden transition-all duration-300 hover:border-red-400">
-      {/* 🔴 PROVIDE HELP Header with Deep Red Theme (लाल रंग) */}
+      {/* 🔴 PROVIDE HELP Header with Deep Red Theme */}
       <div className="p-5 sm:p-6 bg-gradient-to-r from-red-950 via-red-900 to-red-950 border-b border-red-500/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -277,7 +277,7 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-red-200 mt-0.5 font-medium">
-                PROVIDE HELP REQUEST • Peer Mutual Assistance (सहायता भेजें)
+                PROVIDE HELP REQUEST • Peer Mutual Assistance (Send Help)
               </p>
             </div>
           </div>
@@ -308,7 +308,7 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
         <div className="p-4 sm:p-5 rounded-2xl bg-red-950/80 border border-red-500/40 space-y-3.5 shadow-inner">
           <div className="flex items-center justify-between border-b border-red-900/60 pb-2.5">
             <span className="text-xs font-bold text-red-200 uppercase tracking-wider">
-              Recipient Details (प्राप्तकर्ता)
+              Recipient Details
             </span>
             <span className="text-xs font-mono font-bold text-red-100 bg-red-800/80 px-2 py-0.5 rounded-full border border-red-400/40">
               Matched Member

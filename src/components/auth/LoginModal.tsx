@@ -100,7 +100,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              User ID / Email / Mobile (यूजर आईडी, ईमेल या मोबाइल)
+              User ID / Email / Mobile
             </label>
             <div className="relative">
               <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -118,7 +118,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Account Password (पासवर्ड)
+              Account Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -146,7 +146,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             disabled={loading}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
           >
-            <span>{loading ? 'Verifying & Syncing Session...' : 'Sign In to Dashboard (लॉगिन करें)'}</span>
+            <span>{loading ? 'Verifying & Syncing Session...' : 'Sign In to Dashboard'}</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>

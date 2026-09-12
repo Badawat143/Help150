@@ -67,7 +67,7 @@ export const DirectReferralsModal: React.FC<DirectReferralsModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-black tracking-tight font-heading">
-                  Direct Referral IDs (डायरेक्ट यूजर आईडी)
+                  Direct Referral IDs
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
                   {directReferrals.length} Members
@@ -122,7 +122,7 @@ export const DirectReferralsModal: React.FC<DirectReferralsModalProps> = ({
                 {search ? 'No matching members' : 'No direct referrals registered yet'}
               </div>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                जब कोई सदस्य किसी भी दूसरे मोबाइल या कंप्यूटर से आपके स्पॉन्सर कोड से जुड़ेगा, तो उसका User ID यहाँ तुरंत दिखाई देगा।
+                When a member registers from any phone or computer using your sponsor code, their User ID will appear here instantly.
               </p>
             </div>
           ) : (

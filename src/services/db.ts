@@ -761,7 +761,7 @@ function getSeedDatabase(): DatabaseState {
       verificationLink: {
         requestId: 'LNK-50-784901',
         amount: 50,
-        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        title: 'Provide Verification Link (₹50)',
         status: 'pending',
         matchedWithUserId: 'H150-918234',
         matchedWithUserName: 'Priya Sharma',
@@ -772,7 +772,7 @@ function getSeedDatabase(): DatabaseState {
       secondLink: {
         requestId: 'LNK-100-784902',
         amount: 100,
-        title: 'सेकंड लिंक (₹100)',
+        title: 'Second Link (₹100)',
         status: 'pending',
         matchedWithUserId: 'H150-ADMIN01',
         matchedWithUserName: 'Community Treasury Pool',
@@ -791,7 +791,7 @@ function getSeedDatabase(): DatabaseState {
       verificationLink: {
         requestId: 'LNK-50-918201',
         amount: 50,
-        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        title: 'Provide Verification Link (₹50)',
         status: 'completed',
         matchedWithUserId: 'H150-ADMIN01',
         matchedWithUserName: 'Community Treasury Pool',
@@ -803,7 +803,7 @@ function getSeedDatabase(): DatabaseState {
       secondLink: {
         requestId: 'LNK-100-918202',
         amount: 100,
-        title: 'सेकंड लिंक (₹100)',
+        title: 'Second Link (₹100)',
         status: 'completed',
         matchedWithUserId: 'H150-784920',
         matchedWithUserName: 'Ashok Kumar',
@@ -1004,7 +1004,7 @@ class DatabaseManager {
       verificationLink: {
         requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
         amount: 50,
-        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        title: 'Provide Verification Link (₹50)',
         status: 'pending',
         matchedWithUserId: peer1.id,
         matchedWithUserName: peer1.fullName,
@@ -1015,7 +1015,7 @@ class DatabaseManager {
       secondLink: {
         requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
         amount: 100,
-        title: 'सेकंड लिंक (₹100)',
+        title: 'Second Link (₹100)',
         status: 'pending',
         matchedWithUserId: peer2.id,
         matchedWithUserName: peer2.fullName,
@@ -1069,8 +1069,8 @@ class DatabaseManager {
       this.state.notifications.unshift({
         id: `NOTIF-CYC-${Date.now().toString().slice(-6)}`,
         userId,
-        title: `साइकिल #${cycle.cycleNumber}: 12 घंटे का टाइमर शुरू!`,
-        message: 'वेरीफिकेशन लिंक ₹50 व सेकंड लिंक ₹100 पूरे हुए। 12 घंटे समाप्त होते ही ₹200 का रिसीव लिंक ऑटोमेटिक जनरेट होगा।',
+        title: `Cycle #${cycle.cycleNumber}: 12-Hour Maturation Timer Started!`,
+        message: 'Verification Link ₹50 and Second Link ₹100 are completed. Upon timer completion, your ₹200 Receive Help link will be automatically generated.',
         type: 'success',
         isRead: false,
         createdAt: now,
@@ -1108,7 +1108,7 @@ class DatabaseManager {
     cycle.receiveLink = {
       requestId: `REC-200-${Math.floor(100000 + Math.random() * 900000)}`,
       amount: 200,
-      title: 'रिसीव हेल्प लिंक (₹200)',
+      title: 'Receive Help Link (₹200)',
       status: 'submitted', // Incoming peer already attached slip for user to review and confirm
       matchedWithUserId: pickedSender.id,
       matchedWithUserName: pickedSender.name,
@@ -1123,8 +1123,8 @@ class DatabaseManager {
     this.state.notifications.unshift({
       id: `NOTIF-REC-${Date.now().toString().slice(-6)}`,
       userId: cycle.userId,
-      title: `₹200 रिसीव लिंक प्राप्त! (साइकिल #${cycle.cycleNumber})`,
-      message: `${pickedSender.name} (${pickedSender.id}) ने ₹200 सहायता भेजी है। कृपया विवरण देखकर कन्फर्म करें।`,
+      title: `₹200 Receive Help Link Assigned! (Cycle #${cycle.cycleNumber})`,
+      message: `${pickedSender.name} (${pickedSender.id}) has sent ₹200 peer assistance. Please review payment proof and confirm.`,
       type: 'success',
       isRead: false,
       createdAt: now,
@@ -1180,7 +1180,7 @@ class DatabaseManager {
       createdAt: now,
     });
 
-    // Automatically create next cycle in loop: "यही लगातार चलता रहेगा"
+    // Automatically create next cycle in loop: Continuous Revolving Cycles
     const nextCycleNum = cycle.cycleNumber + 1;
     const nextCycle = this.createNewCycle(userId, nextCycleNum);
     this.state.helpCycles.unshift(nextCycle);
@@ -1188,8 +1188,8 @@ class DatabaseManager {
     this.state.notifications.unshift({
       id: `NOTIF-LOOP-${Date.now().toString().slice(-6)}`,
       userId,
-      title: `बधाई हो! साइकिल #${cycle.cycleNumber} पूरी हुई ➔ साइकिल #${nextCycleNum} शुरू!`,
-      message: `₹200 आपके वॉलेट में जमा हो गए हैं (कुल लाभ: ₹50)। नई साइकिल #${nextCycleNum} शुरू हो चुकी है।`,
+      title: `Congratulations! Cycle #${cycle.cycleNumber} Completed ➔ Cycle #${nextCycleNum} Started!`,
+      message: `₹200 has been credited to your wallet (Net gain: +₹50). New Cycle #${nextCycleNum} is now active.`,
       type: 'success',
       isRead: false,
       createdAt: now,

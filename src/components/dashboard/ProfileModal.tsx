@@ -65,12 +65,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('कृपया केवल इमेज फाइल (JPG, PNG, WEBP) चुनें।', 'Invalid File');
+      toast.error('Please select an image file (JPG, PNG, WEBP).', 'Invalid File');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('फोटो का साइज 5MB से कम होना चाहिए।', 'File Too Large');
+      toast.error('Photo size must be less than 5MB.', 'File Too Large');
       return;
     }
 
@@ -78,7 +78,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setAvatarUrl(result);
-      toast.success('प्रोफाइल फोटो सफलतापूर्वक लोड हो गई है।', 'Photo Selected');
+      toast.success('Profile photo selected successfully.', 'Photo Selected');
     };
     reader.readAsDataURL(file);
   };
@@ -86,11 +86,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) {
-      toast.error('कृपया अपना पूरा नाम दर्ज करें।', 'Validation Error');
+      toast.error('Please enter your full name.', 'Validation Error');
       return;
     }
     if (!mobile.trim() || mobile.length < 10) {
-      toast.error('कृपया वैध 10-अंकों का मोबाइल नंबर दर्ज करें।', 'Validation Error');
+      toast.error('Please enter a valid 10-digit mobile number.', 'Validation Error');
       return;
     }
 
@@ -111,14 +111,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       });
 
       if (res.success) {
-        toast.success('आपकी प्रोफाइल और बैंक विवरण सफलतापूर्वक सुरक्षित हो गए हैं!', 'Profile Updated 🎉');
+        toast.success('Profile and bank details updated successfully!', 'Profile Updated 🎉');
         if (onProfileUpdated) onProfileUpdated();
         onClose();
       } else {
-        toast.error(res.error || 'प्रोफाइल सेव करने में समस्या आई।', 'Save Failed');
+        toast.error(res.error || 'Failed to update profile.', 'Save Failed');
       }
     } catch (err: any) {
-      toast.error(err.message || 'त्रुटि हुई।', 'Error');
+      toast.error(err.message || 'An error occurred.', 'Error');
     } finally {
       setIsSaving(false);
     }
@@ -135,7 +135,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <UserIcon className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-black tracking-tight">यूजर प्रोफाइल और बैंक विवरण</h2>
+                <h2 className="text-lg font-black tracking-tight">User Profile & Bank Details</h2>
                 <p className="text-xs text-blue-200">User Profile, Photo & Payment Details</p>
               </div>
             </div>
@@ -169,7 +169,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   : 'text-blue-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              1. पर्सनल प्रोफाइल व फोटो
+              1. Personal Profile & Photo
             </button>
             <button
               type="button"
@@ -180,7 +180,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   : 'text-blue-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              2. बैंक व UPI विवरण
+              2. Bank & UPI Details
             </button>
           </div>
         </div>
@@ -210,8 +210,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
 
                 <div className="flex-1">
-                  <h4 className="text-xs font-bold text-slate-900">प्रोफाइल फोटो (Profile Picture)</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">JPG, PNG या WEBP (Max 5MB)</p>
+                  <h4 className="text-xs font-bold text-slate-900">Profile Picture</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">JPG, PNG or WEBP (Max 5MB)</p>
                   <div className="flex items-center gap-2 mt-2">
                     <button
                       type="button"
@@ -219,7 +219,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                     >
                       <UploadCloud className="h-3.5 w-3.5" />
-                      <span>फोटो अपलोड करें</span>
+                      <span>Upload Photo</span>
                     </button>
                     {avatarUrl && (
                       <button
@@ -245,14 +245,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <UserIcon className="h-3.5 w-3.5 text-blue-600" />
-                  <span>पूरा नाम (Full Name) *</span>
+                  <span>Full Name *</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="अपना पूरा नाम दर्ज करें"
+                  placeholder="Enter your full name"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
                 />
               </div>
@@ -261,14 +261,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-blue-600" />
-                  <span>मोबाइल नंबर (Mobile Number) *</span>
+                  <span>Mobile Number *</span>
                 </label>
                 <input
                   type="tel"
                   required
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
-                  placeholder="10-अंकों का मोबाइल नंबर"
+                  placeholder="10-digit mobile number"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
                 />
               </div>
@@ -277,7 +277,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-blue-600" />
-                  <span>ईमेल एड्रेस (Email Address)</span>
+                  <span>Email Address</span>
                 </label>
                 <input
                   type="email"
@@ -296,7 +296,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
                 <Sparkles className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong>डायरेक्ट पेमेंट विवरण:</strong> अन्य कम्युनिटी मेंबर्स आपको सहायता राशि भेजने के लिए इसी UPI ID और बैंक खाते का उपयोग करेंगे।
+                  <strong>Direct Payment Details:</strong> Other community members will send assistance directly to this UPI ID and Bank Account.
                 </p>
               </div>
 
@@ -310,7 +310,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   type="text"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="उदा. yourname@okhdfcbank / 9876543210@paytm"
+                  placeholder="e.g. yourname@okhdfcbank / 9876543210@paytm"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono"
                 />
               </div>
@@ -319,7 +319,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Google Pay / PhonePe नंबर</span>
+                  <span>Google Pay / PhonePe Mobile Number</span>
                 </label>
                 <input
                   type="tel"
@@ -334,13 +334,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Building className="h-3.5 w-3.5 text-blue-600" />
-                  <span>बैंक का नाम (Bank Name)</span>
+                  <span>Bank Name</span>
                 </label>
                 <input
                   type="text"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="उदा. State Bank of India / HDFC Bank"
+                  placeholder="e.g. State Bank of India / HDFC Bank"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
                 />
               </div>
@@ -349,13 +349,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <UserIcon className="h-3.5 w-3.5 text-blue-600" />
-                  <span>खाताधारक का नाम (Account Holder Name)</span>
+                  <span>Account Holder Name</span>
                 </label>
                 <input
                   type="text"
                   value={accountHolderName}
                   onChange={(e) => setAccountHolderName(e.target.value)}
-                  placeholder="बैंक पासबुक के अनुसार नाम"
+                  placeholder="Name as per Bank Passbook"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
                 />
               </div>
@@ -365,26 +365,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                     <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-                    <span>खाता संख्या (Account Number)</span>
+                    <span>Account Number</span>
                   </label>
                   <input
                     type="text"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="उदा. 384910294819"
+                    placeholder="e.g. 384910294819"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                     <Building className="h-3.5 w-3.5 text-blue-600" />
-                    <span>IFSC कोड (IFSC Code)</span>
+                    <span>IFSC Code</span>
                   </label>
                   <input
                     type="text"
                     value={ifscCode}
                     onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
-                    placeholder="उदा. SBIN0001234"
+                    placeholder="e.g. SBIN0001234"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono uppercase"
                   />
                 </div>
@@ -399,7 +399,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
             >
-              रद्द करें (Cancel)
+              Cancel
             </button>
             <button
               type="submit"
@@ -407,7 +407,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25 transition cursor-pointer disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              <span>{isSaving ? 'सेव हो रहा है...' : 'सुरक्षित करें (Save Details)'}</span>
+              <span>{isSaving ? 'Saving...' : 'Save Details'}</span>
             </button>
           </div>
         </form>

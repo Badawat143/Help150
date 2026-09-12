@@ -86,12 +86,12 @@ export const WithdrawalModule: React.FC = () => {
     }
 
     if (payoutMethod === 'upi' && (!upiId.trim() || !upiId.includes('@'))) {
-      setErrorMsg('कृपया वैध UPI ID दर्ज करें (e.g. name@okhdfcbank)');
+      setErrorMsg('Please enter a valid UPI ID (e.g. name@okhdfcbank)');
       return;
     }
 
     if (payoutMethod === 'bank_transfer' && (!accountNumber.trim() || !ifscCode.trim())) {
-      setErrorMsg('कृपया बैंक खाता संख्या और IFSC कोड दर्ज करें।');
+      setErrorMsg('Please enter your bank account number and IFSC code.');
       return;
     }
 
@@ -204,7 +204,7 @@ export const WithdrawalModule: React.FC = () => {
           <div>
             <strong className="text-emerald-300 font-bold block text-sm">0% Withdrawal Fee • 100% Direct Payout</strong>
             <p className="text-slate-300">
-              विड्रॉल पर कोई फीस या कटौती नहीं है। आपकी पूरी राशि सीधे आपके बैंक खाते / UPI ID में भेजी जाती है।
+              Zero fees or deductions on withdrawals. 100% of your requested amount is paid directly to your verified Bank / UPI.
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@ export const WithdrawalModule: React.FC = () => {
           onClick={() => setActiveTab('profile')}
           className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition shrink-0 cursor-pointer"
         >
-          अपडेट बैंक / UPI विवरण
+          Update Bank / UPI Details
         </button>
       </div>
 

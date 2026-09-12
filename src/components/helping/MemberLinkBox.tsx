@@ -201,7 +201,7 @@ export const MemberLinkBox: React.FC<MemberLinkBoxProps> = ({ onNavigateTab }) =
               }`}
             >
               <Send className="h-3.5 w-3.5" />
-              <span>🔴 Provide Help Link (लाल)</span>
+              <span>🔴 Provide Help Link (Red)</span>
               {outgoingRequest && <span className="h-2 w-2 rounded-full bg-white animate-pulse" />}
             </button>
 
@@ -214,7 +214,7 @@ export const MemberLinkBox: React.FC<MemberLinkBoxProps> = ({ onNavigateTab }) =
               }`}
             >
               <UserCheck className="h-3.5 w-3.5" />
-              <span>🔵 Receive Help Box (आसमानी)</span>
+              <span>🔵 Receive Help Box (Sky Blue)</span>
               {pendingIncomingRequests.length > 0 && (
                 <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-950 text-sky-300 font-black">
                   {pendingIncomingRequests.length}

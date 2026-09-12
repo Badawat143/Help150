@@ -61,6 +61,7 @@ import { ProfileModal } from './ProfileModal';
 import { DirectReferralsSection } from './DirectReferralsSection';
 import { DirectReferralsModal } from './DirectReferralsModal';
 import { PlanCycleBox } from '../helping/PlanCycleBox';
+import { Help150DualBox } from '../helping/Help150DualBox';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -106,7 +107,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           });
           refreshUserData();
           setDbTick((t) => t + 1);
-          toast.success('डैशबोर्ड और रेफरल टीम डेटा सिंक हो गया!', 'Synced');
+          toast.success('Dashboard and referral team data synced!', 'Synced');
         }
       }
     } catch (e) {
@@ -621,7 +622,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                   className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-bold text-[11px] shadow-sm hover:bg-amber-300 transition cursor-pointer flex items-center gap-1"
                 >
                   <UserIcon className="h-3 w-3" />
-                  <span>एडिट प्रोफाइल व बैंक विवरण</span>
+                  <span>Edit Profile & Bank Details</span>
                 </button>
               </div>
             </div>
@@ -666,6 +667,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </span>
             </div>
           </div>
+
+          {/* ======================================================================= */}
+          {/* 🔴 PROVIDE HELP BOX (Red) & 🔵 RECEIVE HELP BOX (Sky Blue)               */}
+          {/* ======================================================================= */}
+          <Help150DualBox onNavigateTab={handleNavClick} />
 
           {/* ======================================================================= */}
           {/* 2. PLAN 50/100/200 CYCLE ENGINE (12h Timer -> Auto Receive Help -> Loop) */}
@@ -757,10 +763,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
               <div className="flex-1 space-y-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500">Direct Referrals (लेवल 1)</span>
+                  <span className="text-xs font-semibold text-slate-500">Direct Referrals (Level 1)</span>
                   <button
                     onClick={handleSyncReferrals}
-                    title="रिफ्रेश करें / Sync now"
+                    title="Refresh / Sync now"
                     className="text-slate-400 hover:text-blue-600 p-1 rounded-lg hover:bg-blue-50 transition cursor-pointer"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-blue-600' : ''}`} />
@@ -798,7 +804,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                     disabled={isSyncing}
                     className="text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline cursor-pointer"
                   >
-                    {isSyncing ? 'सिंक हो रहा...' : 'रिफ्रेश'}
+                    {isSyncing ? 'Syncing...' : 'Refresh'}
                   </button>
                 </div>
               </div>
@@ -1304,7 +1310,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
 
               <div className="text-slate-500 text-[11px] leading-relaxed">
-                कृपया उपरोक्त UPI आईडी पर सीधे ₹150 भेजें और भुगतान के बाद 12-अंकों का UTR और पेमेंट स्लिप अपलोड करें।
+                Please send ₹150 directly to the UPI ID above and upload the 12-digit UTR and payment slip receipt.
               </div>
             </div>
 
@@ -1355,7 +1361,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               <div className="p-6 rounded-2xl bg-blue-50 border border-blue-100 text-center space-y-2">
                 <FileCheck2 className="h-10 w-10 text-blue-600 mx-auto" />
                 <div className="text-xs text-slate-600 font-medium">
-                  {receiveProofRef ? `Submitted UTR / Transaction No: ${receiveProofRef}` : 'सेंडर द्वारा UTR या स्क्रीनशॉट सबमिट होते ही यहाँ दिखाई देगा।'}
+                  {receiveProofRef ? `Submitted UTR / Transaction No: ${receiveProofRef}` : 'UTR and payment screenshot will appear here once submitted by sender.'}
                 </div>
               </div>
             )}
@@ -1385,7 +1391,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              क्या आप पुष्टि करते हैं कि <strong>{receiveUserName}</strong> से <strong>₹150</strong> की सहायता राशि आपके बैंक/UPI खाते में सफलतापूर्वक प्राप्त हो चुकी है?
+              Do you confirm that you have received <strong>₹150</strong> help amount from <strong>{receiveUserName}</strong> directly into your Bank/UPI account?
             </p>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -1393,14 +1399,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 onClick={() => setShowConfirmModal(false)}
                 className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
               >
-                रद्द करें
+                Cancel
               </button>
               <button
                 onClick={handleConfirmReceived}
                 disabled={isConfirming}
                 className="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md cursor-pointer disabled:opacity-50"
               >
-                {isConfirming ? 'पुष्टि हो रही है...' : 'हाँ, पेमेंट मिल गया'}
+                {isConfirming ? 'Confirming...' : 'Yes, Payment Received'}
               </button>
             </div>
           </div>
@@ -1423,10 +1429,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
             <div className="space-y-3 text-xs">
               <p className="text-slate-600">
-                क्या आप वाकई <strong>{rejectTarget.name}</strong> के अनुरोध को अस्वीकार (Reject) करना चाहते हैं?
+                Are you sure you want to reject the help request from <strong>{rejectTarget.name}</strong>?
               </p>
               <div>
-                <label className="text-[11px] font-bold text-slate-500 mb-1 block">अस्वीकार करने का कारण:</label>
+                <label className="text-[11px] font-bold text-slate-500 mb-1 block">Reason for Rejection:</label>
                 <textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
@@ -1441,14 +1447,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 onClick={() => setShowRejectModal(false)}
                 className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
               >
-                रद्द करें
+                Cancel
               </button>
               <button
                 onClick={handleExecuteReject}
                 disabled={isRejecting}
                 className="py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md cursor-pointer disabled:opacity-50"
               >
-                {isRejecting ? 'Rejecting...' : 'हाँ, Reject करें'}
+                {isRejecting ? 'Rejecting...' : 'Yes, Reject'}
               </button>
             </div>
           </div>
@@ -1509,13 +1515,13 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
             <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 font-medium">
-                <strong className="text-blue-900">1. प्रोवाइड हेल्प (₹150):</strong> आप सीधे कम्युनिटी मेंबर को ₹150 की सहायता UPI / QR द्वारा भेजते हैं और स्लिप सबमिट करते हैं।
+                <strong className="text-blue-900">1. Provide Help (₹150):</strong> Send ₹150 peer assistance directly to the assigned member via UPI / QR and submit the payment slip.
               </div>
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 font-medium">
-                <strong className="text-blue-900">2. रिसीव हेल्प (₹150):</strong> एक्टिव होने के बाद अन्य मेंबर्स सीधे आपके खाते में सहायता राशि भेजते हैं जिसे आप कन्फर्म करते हैं।
+                <strong className="text-blue-900">2. Receive Help (₹150):</strong> Once active, other community members send direct assistance to your account, which you verify and confirm.
               </div>
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 font-medium">
-                <strong className="text-blue-900">3. 6-लेवल रेफरल इनकम:</strong> अपने रेफरल लिंक से टीम बनाएं और लेवल 1 से 6 तक (10%, 5%, 4%, 3%, 2%, 1%) असीमित इनकम प्राप्त करें।
+                <strong className="text-blue-900">3. 6-Level Referral Income:</strong> Build your team with your referral link and earn multi-tier bonuses across Levels 1 to 6 (10%, 5%, 4%, 3%, 2%, 1%).
               </div>
             </div>
 
@@ -1544,7 +1550,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
             </div>
 
             <div className="space-y-3 text-xs text-slate-600">
-              <p>हेल्पडेस्क टीम 24x7 आपकी सहायता के लिए उपलब्ध है:</p>
+              <p>Our dedicated support team is available 24x7 to assist you:</p>
               <div className="p-3 rounded-xl bg-slate-50 space-y-2 border border-slate-100 font-medium">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-blue-600" />

@@ -223,7 +223,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
     showToast(`Selected ${user.fullName} (${user.id}) in Manual Dispatch.`);
   };
 
-  // BATCH DISPATCH FROM QUEUE (जितना लिंक जाना है उतना ही का लिंक जायेगा)
+  // BATCH DISPATCH FROM QUEUE (Dispatches exact link count as configured)
   const handleBatchDispatchFromQueue = async () => {
     if (selectedQueueUsers.length === 0) {
       showToast('Please select at least 1 member from the Provide Help list.', 'error');
@@ -461,7 +461,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
               <span>Member to Member Send Link Box</span>
             </h2>
             <p className="text-xs text-blue-100/80">
-              नया रजिस्ट्रेशन सूची, प्रोवाइड हेल्प लिस्ट, ऑटो मोड और मैन्युअल मोड दोनों नियंत्रण (जितना लिंक भेजना है उतना ही जाएगा).
+              New registration queue, provide help list, auto mode and manual mode dispatch controls with batch limits.
             </p>
           </div>
 
@@ -489,7 +489,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             }`}
           >
             <UserPlus className="h-4 w-4" />
-            <span>📋 प्रोवाइड हेल्प लिस्ट (New Registrations Queue)</span>
+            <span>📋 Provide Help List (New Registrations Queue)</span>
             {pendingProvideHelpUsers.length > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
                 activeTab === 'provide_help_queue' ? 'bg-slate-950 text-amber-400' : 'bg-amber-400 text-slate-950'
@@ -508,7 +508,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             }`}
           >
             <Sliders className="h-4 w-4" />
-            <span>✍️ मैन्युअल मोड (Manual Dispatch)</span>
+            <span>✍️ Manual Dispatch</span>
           </button>
 
           <button
@@ -520,7 +520,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             }`}
           >
             <Zap className="h-4 w-4 text-amber-300" />
-            <span>⚡ ऑटो मोड (Auto Mode Settings)</span>
+            <span>⚡ Auto Mode Settings</span>
             <span className={`px-2 py-0.2 rounded text-[9px] font-bold ${
               autoDispatchMode ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-slate-200'
             }`}>
@@ -543,7 +543,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: PROVIDE HELP LIST (नया रजिस्ट्रेशन सूची - PENDING QUEUE)            */}
+      {/* TAB 1: PROVIDE HELP LIST (Provide Help Queue)                             */}
       {/* ========================================================================= */}
       {activeTab === 'provide_help_queue' && (
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
@@ -554,7 +554,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                   <UserPlus className="h-4 w-4" />
                 </span>
                 <h3 className="text-base font-black text-slate-900 font-heading">
-                  नया रजिस्ट्रेशन / प्रोवाइड हेल्प लिस्ट (Provide Help Queue)
+                  Provide Help Queue (New Registrations)
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -575,7 +575,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             </div>
           </div>
 
-          {/* BATCH ACTION & LIMIT CONTROL BAR (जितना लिंक जाना है उतना ही जाएगा) */}
+          {/* BATCH ACTION & LIMIT CONTROL BAR (Dispatches exact link count) */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md">
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -721,7 +721,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                         <td className="py-3 px-3">
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            <span>🔴 नया रजिस्ट्रेशन (Waiting for Link)</span>
+                            <span>🔴 New Registration (Waiting for Link)</span>
                           </span>
                         </td>
 
@@ -736,7 +736,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                             onClick={() => handleQuickLinkForUser(user)}
                             className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs transition cursor-pointer border border-blue-200"
                           >
-                            ⚡ Send Link (लिंक भेजें)
+                            ⚡ Send Link
                           </button>
                         </td>
                       </tr>
@@ -750,7 +750,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: MANUAL MODE (मैन्युअल मोड - EXACT SINGLE DISPATCH)                  */}
+      {/* TAB 2: MANUAL MODE (Exact Single Dispatch)                                */}
       {/* ========================================================================= */}
       {activeTab === 'manual_dispatch' && (
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
@@ -761,7 +761,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                   <Sliders className="h-4 w-4" />
                 </span>
                 <h3 className="text-base font-black text-slate-900 font-heading">
-                  मैन्युअल मोड (Manual Member-to-Member Link Dispatch)
+                  Manual Member-to-Member Link Dispatch
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -785,7 +785,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
-                    <span>Sender (Provide Help Member - पैसे देने वाला)</span>
+                    <span>Sender (Provide Help Member - Payer)</span>
                   </label>
                   {selectedSender && (
                     <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
@@ -839,7 +839,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold">2</span>
-                    <span>Receiver (Receive Help Member - पैसे लेने वाला)</span>
+                    <span>Receiver (Receive Help Member - Payee)</span>
                   </label>
                   {selectedReceiver && (
                     <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
@@ -966,10 +966,10 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: AUTO MODE SETTINGS & ENGINE (ऑटो मोड और सेटिंग्स)                 */}
+      {/* TAB 3: AUTO MODE SETTINGS & ENGINE (Auto Mode Controls)                   */}
       {/* ========================================================================= */}
       {activeTab === 'auto_mode' && (
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <div className="flex items-center gap-2">
@@ -977,7 +977,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                   <Zap className="h-4 w-4 text-purple-700" />
                 </span>
                 <h3 className="text-base font-black text-slate-900 font-heading">
-                  ऑटो मोड सेटिंग्स (Automated Dispatch Controls)
+                  Automated Dispatch Controls
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1018,7 +1018,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-black text-slate-900">नया रजिस्ट्रेशन होते ही ऑटो लिंक</h4>
+                  <h4 className="text-xs font-black text-slate-900">Auto-Link Upon Registration</h4>
                   <p className="text-[11px] text-slate-500">Auto-generate Provide Help link immediately when user registers</p>
                 </div>
                 <button
@@ -1076,7 +1076,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
 
             {/* EXACT LINK COUNT LIMIT PER BATCH */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <h4 className="text-xs font-black text-slate-900">Batch Match Run Limit (जितना लिंक भेजना है)</h4>
+              <h4 className="text-xs font-black text-slate-900">Batch Match Run Limit</h4>
               <div className="flex items-center gap-2">
                 {[1, 2, 5, 10, 25].map((l) => (
                   <button

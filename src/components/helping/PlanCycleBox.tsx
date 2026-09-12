@@ -97,7 +97,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
           db.getUserHelpCycle(currentUser.id); // triggers auto-advance
           refreshCycle();
           refreshUserData();
-          toast.success('12 घंटे पूरे हुए! आपका ₹200 का रिसीव हेल्प लिंक ऑटोमेटिक जनरेट हो गया है।', '₹200 Receive Link Ready');
+          toast.success('12 Hours completed! Your ₹200 Receive Help link has been automatically generated.', '₹200 Receive Link Ready');
         }
         clearInterval(interval);
         return;
@@ -121,7 +121,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
   const handleCopy = (text: string, key: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
-    toast.info(`${label} कॉपी हो गया: ${text}`, 'Copied');
+    toast.info(`${label} copied: ${text}`, 'Copied');
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
@@ -134,9 +134,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
       refreshCycle();
       refreshUserData();
       setUtrVerification('');
-      toast.success('वेरीफिकेशन लिंक ₹50 सफलतापूर्वक सबमिट हुआ! अब सेकंड लिंक ₹100 पूरा करें।', 'Step 1 Completed');
+      toast.success('Verification Link ₹50 submitted successfully! Now complete the second link (₹100).', 'Step 1 Completed');
     } catch (e: any) {
-      toast.error(e.message || 'त्रुटि हुई');
+      toast.error(e.message || 'An error occurred');
     } finally {
       setIsSubmittingVerification(false);
     }
@@ -151,9 +151,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
       refreshCycle();
       refreshUserData();
       setUtrSecond('');
-      toast.success('सेकंड लिंक ₹100 पूरा हुआ! दोनों लिंक पूर्ण होते ही 12 घंटे का टाइमर शुरू हो गया है।', '12h Timer Started');
+      toast.success('Second Link ₹100 completed! The 12-hour maturation timer has now started.', '12h Timer Started');
     } catch (e: any) {
-      toast.error(e.message || 'त्रुटि हुई');
+      toast.error(e.message || 'An error occurred');
     } finally {
       setIsSubmittingSecond(false);
     }
@@ -165,7 +165,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
       db.fastForwardCycleTimer(currentUser.id);
       refreshCycle();
       refreshUserData();
-      toast.success('⚡ 12 घंटे सफलतापूर्वक पूरे हुए! ₹200 का रिसीव हेल्प लिंक ऑटोमेटिक आ गया है।', '12h Completed');
+      toast.success('⚡ 12 Hours completed successfully! ₹200 Receive Help link is now ready.', '12h Completed');
     } catch (e: any) {
       toast.error(e.message || 'Error');
     }
@@ -182,9 +182,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
         cycleNum: completedCycle.cycleNumber,
         profit: 50,
       });
-      toast.success(`₹200 आपके वॉलेट में जमा हो गए! साइकिल #${completedCycle.cycleNumber} पूरी हुई। नई साइकिल #${newCycle.cycleNumber} शुरू!`, 'Payment Confirmed');
+      toast.success(`₹200 credited to your wallet! Cycle #${completedCycle.cycleNumber} completed. New Cycle #${newCycle.cycleNumber} started!`, 'Payment Confirmed');
     } catch (e: any) {
-      toast.error(e.message || 'त्रुटि हुई');
+      toast.error(e.message || 'An error occurred');
     } finally {
       setIsConfirmingReceive(false);
     }
@@ -210,10 +210,10 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="px-3 py-1 rounded-full bg-gradient-to-r from-rose-600 to-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-rose-950/50 flex items-center gap-1.5">
                 <RotateCcw className="w-3.5 h-3.5 animate-spin-slow" />
-                <span>साइकिल #{cycle.cycleNumber} (Cycle #{cycle.cycleNumber})</span>
+                <span>Cycle #{cycle.cycleNumber}</span>
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
-                🔄 लगातार रिवॉल्विंग लूप
+                🔄 Continuous Revolving Loop
               </span>
               {allCycles.filter((c) => c.status === 'completed').length > 0 && (
                 <button
@@ -221,35 +221,35 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
                 >
                   <History className="w-3 h-3 text-amber-400" />
-                  <span>{allCycles.filter((c) => c.status === 'completed').length} साइकिल पूर्ण</span>
+                  <span>{allCycles.filter((c) => c.status === 'completed').length} Cycles Completed</span>
                 </button>
               )}
             </div>
 
             <h2 className="text-lg sm:text-2xl font-black text-white font-heading flex items-center gap-2">
-              <span>कम्युनिटी सहायता प्लान साइकिल</span>
+              <span>Community Helping Plan Cycle</span>
               <span className="text-amber-400 font-mono text-sm sm:text-base">(₹50 + ₹100 ➔ 12h ➔ ₹200)</span>
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-              <strong className="text-amber-300">नियम:</strong> प्रोवाइड वेरीफिकेशन लिंक <span className="text-rose-400 font-bold">₹50</span> + सेकंड लिंक <span className="text-rose-400 font-bold">₹100</span> ➔ दोनों पूर्ण होने पर डैशबोर्ड पर <span className="text-amber-300 font-bold">12 घंटे का टाइमर</span> ➔ 12 घंटे बाद ऑटोमेटिक रिसीव लिंक <span className="text-emerald-400 font-bold">₹200</span> ➔ यही लगातार चलता रहेगा!
+              <strong className="text-amber-300">Rule:</strong> Provide Verification Link <span className="text-rose-400 font-bold">₹50</span> + Second Link <span className="text-rose-400 font-bold">₹100</span> ➔ After both links complete, a <span className="text-amber-300 font-bold">12-Hour Timer</span> activates ➔ Automatically receive <span className="text-emerald-400 font-bold">₹200</span> link after 12 hours ➔ Continuous cycle repeats!
             </p>
           </div>
 
           {/* Quick Stats Pill */}
           <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 p-3 rounded-2xl shrink-0">
             <div className="text-center px-2">
-              <div className="text-[10px] uppercase font-bold text-slate-400">कुल दिया (Give)</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total Given</div>
               <div className="text-sm font-black text-rose-400 font-mono">₹150</div>
             </div>
             <div className="h-7 w-[1px] bg-slate-800" />
             <div className="text-center px-2">
-              <div className="text-[10px] uppercase font-bold text-slate-400">टाइमर</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">Timer</div>
               <div className="text-sm font-black text-amber-300 font-mono">12 Hours</div>
             </div>
             <div className="h-7 w-[1px] bg-slate-800" />
             <div className="text-center px-2">
-              <div className="text-[10px] uppercase font-bold text-slate-400">प्राप्त (Receive)</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total Received</div>
               <div className="text-sm font-black text-emerald-400 font-mono">₹200</div>
             </div>
           </div>
@@ -270,8 +270,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 {isStep1Done ? <Check className="w-4 h-4" /> : '1'}
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase opacity-80">स्टेप 1</div>
-                <div className="text-xs font-black truncate">वेरीफिकेशन लिंक ₹50</div>
+                <div className="text-[10px] font-bold uppercase opacity-80">Step 1</div>
+                <div className="text-xs font-black truncate">Verification Link ₹50</div>
               </div>
             </div>
 
@@ -289,8 +289,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 {isStep2Done ? <Check className="w-4 h-4" /> : '2'}
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase opacity-80">स्टेप 2</div>
-                <div className="text-xs font-black truncate">सेकंड लिंक ₹100</div>
+                <div className="text-[10px] font-bold uppercase opacity-80">Step 2</div>
+                <div className="text-xs font-black truncate">Second Link ₹100</div>
               </div>
             </div>
 
@@ -308,8 +308,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 {isReceivePhase ? <Check className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase opacity-80">स्टेप 3</div>
-                <div className="text-xs font-black truncate">12 घंटे टाइमर</div>
+                <div className="text-[10px] font-bold uppercase opacity-80">Step 3</div>
+                <div className="text-xs font-black truncate">12-Hour Timer</div>
               </div>
             </div>
 
@@ -325,8 +325,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 {isReceivePhase ? '₹' : '4'}
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase opacity-80">स्टेप 4</div>
-                <div className="text-xs font-black truncate">रिसीव लिंक ₹200</div>
+                <div className="text-[10px] font-bold uppercase opacity-80">Step 4</div>
+                <div className="text-xs font-black truncate">Receive Link ₹200</div>
               </div>
             </div>
           </div>
@@ -344,13 +344,13 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-black uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                <span>12 घंटे टाइमर प्रगति पर है (12-Hour Maturation Timer Active)</span>
+                <span>12-Hour Maturation Timer Active</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white">
-                12 घंटे समाप्त होते ही ₹200 का रिसीव लिंक ऑटोमेटिक आएगा!
+                ₹200 Receive Help link unlocks automatically after 12 hours!
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                आपने वेरीफिकेशन लिंक <span className="text-amber-300 font-bold">₹50</span> और सेकंड लिंक <span className="text-amber-300 font-bold">₹100</span> सफलतापूर्वक पूरा कर लिया है। आपका 12 घंटे का टाइमर चल रहा है। टाइमर शून्य होते ही नया सदस्य आपको ₹200 सहायता प्रदान करेगा।
+                You have successfully completed Verification Link <span className="text-amber-300 font-bold">₹50</span> and Second Link <span className="text-amber-300 font-bold">₹100</span>. The 12-hour maturation timer is actively running. Once it hits zero, an active peer member will be assigned to provide you ₹200 assistance.
               </p>
             </div>
 
@@ -358,7 +358,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             <div className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-amber-400/40 shadow-inner shrink-0 min-w-[280px]">
               <div className="text-[10px] uppercase font-bold text-amber-300 tracking-wider flex items-center gap-1.5 mb-2">
                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
-                <span>समय शेष (Time Remaining)</span>
+                <span>Time Remaining</span>
               </div>
 
               {/* Big Digits */}
@@ -371,9 +371,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               <div className="flex justify-between w-full text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1 px-3">
-                <span>घंटे (Hours)</span>
-                <span>मिनट (Mins)</span>
-                <span>सेकंड (Secs)</span>
+                <span>Hours</span>
+                <span>Mins</span>
+                <span>Secs</span>
               </div>
 
               {/* Progress Bar */}
@@ -389,10 +389,10 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 id="btn-fast-forward-timer"
                 onClick={handleFastForward12h}
                 className="mt-4 w-full py-2 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-400/50 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                title="डेमो व टेस्टिंग के लिए तुरंत 12 घंटे पूरे करें"
+                title="Fast-forward 12 hours for instant testing"
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>⚡ तुरंत 12 घंटे पूरे करें (Fast-Forward Demo)</span>
+                <span>⚡ Fast-Forward 12h (Demo)</span>
               </button>
             </div>
           </div>
@@ -410,14 +410,14 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-rose-400 text-xs">🔥</span>
-              <span>1. प्रोवाइड हेल्प लिंक्स (Provide Help Links - ₹150)</span>
+              <span>1. Provide Help Links (₹150 Total)</span>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20">
               ₹50 + ₹100
             </span>
           </div>
 
-          {/* CARD 1A: प्रोवाइड वेरीफिकेशन लिंक 50/रुपए (लाल रंग / RED THEMED LINK BOX) */}
+          {/* CARD 1A: Provide Verification Link ₹50 (RED THEMED LINK BOX) */}
           <div className={`rounded-2xl border-2 transition-all p-5 space-y-4 ${
             isStep1Done
               ? 'bg-slate-900/90 border-emerald-500/50 text-slate-100 shadow-md'
@@ -432,7 +432,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white flex items-center gap-2">
-                    <span>प्रोवाइड वेरीफिकेशन लिंक</span>
+                    <span>Provide Verification Link</span>
                     <span className="text-amber-300 font-mono text-base font-black">₹50</span>
                   </h4>
                   <div className={`text-[10px] ${isStep1Done ? 'text-slate-400' : 'text-red-200'}`}>Step 1: Verification Link (₹50)</div>
@@ -442,11 +442,11 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               {isStep1Done ? (
                 <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>सत्यापित / पूर्ण</span>
+                  <span>Verified / Completed</span>
                 </span>
               ) : (
                 <span className="px-2.5 py-1 rounded-full bg-white text-red-700 font-black text-[10px] shadow-sm uppercase tracking-wider">
-                  🔴 सक्रिय (Active)
+                  🔴 Active Link
                 </span>
               )}
             </div>
@@ -458,7 +458,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 : 'bg-red-950/90 border border-red-500/50 shadow-inner'
             }`}>
               <div className="flex items-center justify-between text-xs">
-                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>प्राप्तकर्ता (Recipient):</span>
+                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>Recipient:</span>
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                   <span>{cycle.verificationLink.matchedWithUserName}</span>
@@ -473,7 +473,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   <button
                     onClick={() => handleCopy(cycle.verificationLink.matchedWithUpi, 'ver_upi', 'UPI ID')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
-                    title="UPI कॉपी करें"
+                    title="Copy UPI ID"
                   >
                     {copiedKey === 'ver_upi' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
@@ -481,13 +481,13 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>मोबाइल (Mobile):</span>
+                <span className={isStep1Done ? 'text-slate-400' : 'text-red-200 font-semibold'}>Mobile Number:</span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-white">{cycle.verificationLink.matchedWithMobile}</span>
                   <button
-                    onClick={() => handleCopy(cycle.verificationLink.matchedWithMobile, 'ver_mob', 'मोबाइल')}
+                    onClick={() => handleCopy(cycle.verificationLink.matchedWithMobile, 'ver_mob', 'Mobile Number')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
-                    title="मोबाइल नंबर कॉपी करें"
+                    title="Copy Mobile Number"
                   >
                     {copiedKey === 'ver_mob' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
@@ -511,7 +511,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     type="text"
                     value={utrVerification}
                     onChange={(e) => setUtrVerification(e.target.value)}
-                    placeholder="12-अंकों का UPI UTR नंबर दर्ज करें"
+                    placeholder="Enter 12-digit UPI UTR number"
                     className="flex-1 bg-red-950 border border-red-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-red-300/40 focus:outline-none focus:border-white font-mono"
                   />
                   <button
@@ -519,7 +519,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     disabled={isSubmittingVerification}
                     className="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-red-50 font-black text-xs transition cursor-pointer disabled:opacity-50 shadow-md"
                   >
-                    {isSubmittingVerification ? 'सबमिट...' : 'सबमिट ₹50'}
+                    {isSubmittingVerification ? 'Submitting...' : 'Submit ₹50'}
                   </button>
                 </div>
 
@@ -529,12 +529,12 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                       name: cycle.verificationLink.matchedWithUserName,
                       upi: cycle.verificationLink.matchedWithUpi,
                       amount: 50,
-                      title: 'वेरीफिकेशन लिंक (₹50) QR कोड',
+                      title: 'Verification Link (₹50) QR Code',
                     })}
                     className="py-2 px-3 rounded-xl bg-red-900/80 hover:bg-red-850 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-red-500/50"
                   >
                     <QrCode className="w-3.5 h-3.5 text-amber-300" />
-                    <span>QR कोड देखें</span>
+                    <span>View QR Code</span>
                   </button>
 
                   <button
@@ -542,7 +542,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     className="py-2 px-3 rounded-xl bg-red-900/80 hover:bg-red-850 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-red-500/50"
                   >
                     <UploadCloud className="w-3.5 h-3.5 text-sky-300" />
-                    <span>स्लिप अपलोड करें</span>
+                    <span>Upload Slip</span>
                   </button>
                 </div>
               </div>
@@ -550,68 +550,64 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
                 <span className="flex items-center gap-1.5 font-bold">
                   <CheckCheck className="w-4 h-4 text-emerald-400" />
-                  <span>₹50 वेरीफिकेशन पेमेंट पूरा हुआ</span>
+                  <span>₹50 Verification Payment Completed</span>
                 </span>
                 {cycle.verificationLink.slipUrl && (
                   <button
                     onClick={() => setViewSlipUrl({
                       url: cycle.verificationLink.slipUrl!,
-                      title: '₹50 वेरीफिकेशन लिंक रसीद',
+                      title: '₹50 Verification Link Receipt',
                       amount: 50,
                       ref: cycle.verificationLink.proofReference || '',
                     })}
                     className="text-[11px] font-bold underline hover:text-emerald-200 cursor-pointer flex items-center gap-1"
                   >
                     <Eye className="w-3 h-3" />
-                    <span>रसीद देखें</span>
+                    <span>View Receipt</span>
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* CARD 1B: सेकंड लिंक 100/रुपए (लाल रंग / RED THEMED LINK BOX) */}
+          {/* CARD 1B: Second Link ₹100 (RED THEMED LINK BOX) */}
           <div className={`rounded-2xl border-2 transition-all p-5 space-y-4 ${
             isStep2Done
               ? 'bg-slate-900/90 border-emerald-500/50 text-slate-100 shadow-md'
-              : isStep1Done
-              ? 'bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-red-500 shadow-2xl shadow-red-950/60 text-white'
-              : 'bg-slate-950/60 border-slate-800 text-slate-400 opacity-75'
+              : 'bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-red-500 shadow-2xl shadow-red-950/60 text-white'
           }`}>
             <div className={`flex items-center justify-between pb-3 border-b ${
               isStep2Done
                 ? 'border-emerald-500/20'
-                : isStep1Done
-                ? 'border-red-500/40'
-                : 'border-slate-800'
+                : 'border-red-500/40'
             }`}>
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl font-bold text-xs ${
-                  isStep2Done ? 'bg-emerald-500 text-slate-950' : isStep1Done ? 'bg-red-500 text-white shadow-md shadow-red-950' : 'bg-slate-800 text-slate-400'
+                  isStep2Done ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white shadow-md shadow-red-950'
                 }`}>
                   {isStep2Done ? <Check className="w-5 h-5" /> : '2'}
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white flex items-center gap-2">
-                    <span>सेकंड लिंक</span>
+                    <span>Second Link</span>
                     <span className="text-amber-300 font-mono text-base font-black">₹100</span>
                   </h4>
-                  <div className={`text-[10px] ${isStep1Done && !isStep2Done ? 'text-red-200' : 'text-slate-400'}`}>Step 2: Second Link (₹100)</div>
+                  <div className={`text-[10px] ${isStep2Done ? 'text-slate-400' : 'text-red-200'}`}>Step 2: Second Link (₹100)</div>
                 </div>
               </div>
 
               {isStep2Done ? (
                 <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>सत्यापित / पूर्ण</span>
+                  <span>Verified / Completed</span>
                 </span>
               ) : isStep1Done ? (
-                <span className="px-2.5 py-1 rounded-full bg-white text-red-700 font-black text-[10px] shadow-sm uppercase tracking-wider">
-                  🔴 सक्रिय (Active)
+                <span className="px-2.5 py-1 rounded-full bg-white text-red-700 font-black text-[10px] shadow-sm uppercase tracking-wider animate-pulse">
+                  🔴 Active Link
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold">
-                  स्टेप 1 के बाद खुलेगा
+                <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-bold">
+                  🔴 Queued (₹100)
                 </span>
               )}
             </div>
@@ -625,7 +621,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 : 'bg-slate-950/60 border border-slate-800'
             }`}>
               <div className="flex items-center justify-between text-xs">
-                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>प्राप्तकर्ता (Recipient):</span>
+                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>Recipient:</span>
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                   <span>{cycle.secondLink.matchedWithUserName}</span>
@@ -640,7 +636,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   <button
                     onClick={() => handleCopy(cycle.secondLink.matchedWithUpi, 'sec_upi', 'UPI ID')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
-                    title="UPI कॉपी करें"
+                    title="Copy UPI ID"
                   >
                     {copiedKey === 'sec_upi' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
@@ -648,13 +644,13 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>मोबाइल (Mobile):</span>
+                <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>Mobile Number:</span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-white">{cycle.secondLink.matchedWithMobile}</span>
                   <button
-                    onClick={() => handleCopy(cycle.secondLink.matchedWithMobile, 'sec_mob', 'मोबाइल')}
+                    onClick={() => handleCopy(cycle.secondLink.matchedWithMobile, 'sec_mob', 'Mobile Number')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
-                    title="मोबाइल नंबर कॉपी करें"
+                    title="Copy Mobile Number"
                   >
                     {copiedKey === 'sec_mob' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
@@ -677,7 +673,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     type="text"
                     value={utrSecond}
                     onChange={(e) => setUtrSecond(e.target.value)}
-                    placeholder="12-अंकों का UPI UTR नंबर दर्ज करें"
+                    placeholder="Enter 12-digit UPI UTR number"
                     disabled={!isStep1Done}
                     className={`flex-1 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono ${
                       isStep1Done
@@ -694,7 +690,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}
                   >
-                    {isSubmittingSecond ? 'सबमिट...' : 'सबमिट ₹100'}
+                    {isSubmittingSecond ? 'Submitting...' : 'Submit ₹100'}
                   </button>
                 </div>
 
@@ -704,7 +700,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                       name: cycle.secondLink.matchedWithUserName,
                       upi: cycle.secondLink.matchedWithUpi,
                       amount: 100,
-                      title: 'सेकंड लिंक (₹100) QR कोड',
+                      title: 'Second Link (₹100) QR Code',
                     })}
                     disabled={!isStep1Done}
                     className={`py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 border ${
@@ -714,7 +710,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     }`}
                   >
                     <QrCode className="w-3.5 h-3.5 text-amber-300" />
-                    <span>QR कोड देखें</span>
+                    <span>View QR Code</span>
                   </button>
 
                   <button
@@ -727,7 +723,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                     }`}
                   >
                     <UploadCloud className="w-3.5 h-3.5 text-sky-300" />
-                    <span>स्लिप अपलोड करें</span>
+                    <span>Upload Slip</span>
                   </button>
                 </div>
               </div>
@@ -735,20 +731,20 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
                 <span className="flex items-center gap-1.5 font-bold">
                   <CheckCheck className="w-4 h-4 text-emerald-400" />
-                  <span>₹100 सेकंड लिंक पेमेंट पूरा हुआ</span>
+                  <span>₹100 Second Link Payment Completed</span>
                 </span>
                 {cycle.secondLink.slipUrl && (
                   <button
                     onClick={() => setViewSlipUrl({
                       url: cycle.secondLink.slipUrl!,
-                      title: '₹100 सेकंड लिंक रसीद',
+                      title: '₹100 Second Link Receipt',
                       amount: 100,
                       ref: cycle.secondLink.proofReference || '',
                     })}
                     className="text-[11px] font-bold underline hover:text-emerald-200 cursor-pointer flex items-center gap-1"
                   >
                     <Eye className="w-3 h-3" />
-                    <span>रसीद देखें</span>
+                    <span>View Receipt</span>
                   </button>
                 )}
               </div>
@@ -763,14 +759,14 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500/20 text-sky-400 text-xs">📥</span>
-              <span>2. रिसीव हेल्प लिंक (Receive Help Link - ₹200)</span>
+              <span>2. Receive Help Link (₹200)</span>
             </span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">
-              12 घंटे बाद ऑटोमेटिक
+              Automatic after 12h
             </span>
           </div>
 
-          {/* RECEIVE HELP CARD (नीला रंग / BLUE THEMED LINK BOX) */}
+          {/* RECEIVE HELP CARD (SKY BLUE THEMED LINK BOX) */}
           {isReceivePhase && cycle.receiveLink ? (
             <div className="rounded-2xl border-2 border-sky-400 bg-gradient-to-b from-sky-950 via-sky-900 to-sky-950 p-6 space-y-4 shadow-2xl shadow-sky-950/60 text-white relative overflow-hidden">
               {/* Decorative ambient sky glow */}
@@ -783,24 +779,24 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   </div>
                   <div>
                     <h4 className="text-base font-black text-white flex items-center gap-2">
-                      <span>रिसीव हेल्प लिंक</span>
+                      <span>Receive Help Link</span>
                       <span className="text-amber-300 font-mono text-xl font-black">₹200</span>
                     </h4>
                     <div className="text-[10px] text-sky-200 font-bold">
-                      12 घंटे पूरे होने पर सिस्टम द्वारा स्वतः असाइन किया गया
+                      System automatically assigned after 12-hour maturation
                     </div>
                   </div>
                 </div>
 
                 <span className="px-3 py-1 rounded-full bg-white text-sky-800 font-black text-xs shadow-md uppercase tracking-wider">
-                  🔵 सहायता प्राप्त करें
+                  🔵 Receive Help
                 </span>
               </div>
 
               {/* Sender Details */}
               <div className="bg-sky-950/90 rounded-xl p-4 border border-sky-400/50 space-y-2.5 shadow-inner relative z-10">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-sky-200 font-semibold">सहायता प्रदाता (Sender):</span>
+                  <span className="text-sky-200 font-semibold">Sender:</span>
                   <span className="font-bold text-white flex items-center gap-1.5">
                     <UserIcon className="w-3.5 h-3.5 text-amber-300" />
                     <span>{cycle.receiveLink.matchedWithUserName}</span>
@@ -809,11 +805,11 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-sky-200 font-semibold">मोबाइल नंबर:</span>
+                  <span className="text-sky-200 font-semibold">Mobile Number:</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono text-white">{cycle.receiveLink.matchedWithMobile}</span>
                     <button
-                      onClick={() => handleCopy(cycle.receiveLink!.matchedWithMobile, 'rec_mob', 'मोबाइल')}
+                      onClick={() => handleCopy(cycle.receiveLink!.matchedWithMobile, 'rec_mob', 'Mobile Number')}
                       className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
                     >
                       {copiedKey === 'rec_mob' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -822,7 +818,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-sky-200 font-semibold">सहायता राशि:</span>
+                  <span className="text-sky-200 font-semibold">Assistance Amount:</span>
                   <span className="text-base font-black text-amber-300 font-mono">₹ 200.00</span>
                 </div>
 
@@ -838,14 +834,14 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   <button
                     onClick={() => setViewSlipUrl({
                       url: cycle.receiveLink!.slipUrl!,
-                      title: '₹200 सहायता रसीद (Payment Slip)',
+                      title: '₹200 Payment Slip Receipt',
                       amount: 200,
                       ref: cycle.receiveLink!.proofReference || '',
                     })}
                     className="w-full py-2 px-4 rounded-xl bg-sky-900/80 hover:bg-sky-850 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-sky-400/50 shadow-sm"
                   >
                     <Eye className="w-4 h-4 text-amber-300" />
-                    <span>भेजी गई पेमेंट स्लिप देखें (View Slip)</span>
+                    <span>View Uploaded Payment Slip</span>
                   </button>
                 )}
 
@@ -856,33 +852,66 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                   className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-sm tracking-wide shadow-xl shadow-emerald-500/30 transition transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-5 h-5 text-slate-950" />
-                  <span>{isConfirmingReceive ? 'कन्फर्म हो रहा है...' : '₹200 प्राप्त हुआ - कन्फर्म करें (CONFIRM ₹200)'}</span>
+                  <span>{isConfirmingReceive ? 'Confirming...' : 'CONFIRM ₹200 RECEIVED'}</span>
                 </button>
               </div>
             </div>
           ) : (
-            /* Standby Card when timer is running or provide help not done */
-            <div className="rounded-2xl border-2 border-dashed border-sky-400/40 bg-gradient-to-b from-sky-950/40 to-slate-950/60 p-8 text-center flex flex-col items-center justify-center min-h-[360px] space-y-3 text-sky-100">
-              <div className="w-16 h-16 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-1">
-                <Clock className="w-8 h-8" />
+            /* Standby Card when timer is running or provide help not done (Sky Blue) */
+            <div className="rounded-2xl border-2 border-sky-400 bg-gradient-to-b from-sky-950 via-sky-900 to-sky-950 p-6 sm:p-8 text-center flex flex-col items-center justify-between min-h-[360px] text-white shadow-2xl shadow-sky-950/60 relative overflow-hidden">
+              <div className="absolute top-0 right-0 h-40 w-40 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 h-32 w-32 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="w-full flex items-center justify-between border-b border-sky-400/40 pb-3 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400 text-slate-950 font-black text-sm shadow-md">
+                    🔵
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-base font-black text-white flex items-center gap-2">
+                      <span>Receive Help Link Box</span>
+                      <span className="text-amber-300 font-mono text-base font-black">₹200</span>
+                    </h4>
+                    <div className="text-[10px] text-sky-200 font-bold">
+                      Sky Blue Themed Link Box
+                    </div>
+                  </div>
+                </div>
+
+                <span className="px-3 py-1 rounded-full bg-white text-sky-800 font-black text-xs shadow-md uppercase tracking-wider">
+                  🔵 RECEIVE HELP
+                </span>
               </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-200 text-xs font-bold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-                {isTimerPhase ? '12 घंटे टाइमर चालू है' : 'प्रतीक्षा स्थिति (Standby)'}
+              <div className="my-6 space-y-3 relative z-10 flex flex-col items-center">
+                <div className="w-16 h-16 rounded-2xl bg-sky-500/20 border-2 border-sky-400/50 flex items-center justify-center text-sky-300 shadow-lg shadow-sky-950/50">
+                  <Clock className="w-8 h-8 animate-pulse" />
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-sky-800 text-xs font-black uppercase tracking-wider shadow-md">
+                  <span className="w-2 h-2 rounded-full bg-sky-500 animate-ping" />
+                  {isTimerPhase ? '⏱ 12-Hour Timer Running' : '🔵 Receive Help Queue (Standby)'}
+                </div>
+
+                <h4 className="text-base sm:text-lg font-black text-white">
+                  {isTimerPhase
+                    ? '₹200 Help link activates automatically upon 12h timer completion'
+                    : '12-Hour timer begins after completing Step 1 and Step 2'}
+                </h4>
+
+                <p className="text-xs text-sky-200/90 max-w-sm leading-relaxed font-medium">
+                  {isTimerPhase
+                    ? `Once the 12-hour maturation timer reaches zero, the system automatically assigns your ₹200 receive help link. You can use the "⚡ Fast-Forward 12h (Demo)" button above for instant testing.`
+                    : 'First complete Provide Verification Link (₹50) and Second Link (₹100). The 12-hour timer will start immediately after, followed by your ₹200 receive link.'}
+                </p>
               </div>
 
-              <h4 className="text-base font-bold text-white">
-                {isTimerPhase
-                  ? '12 घंटे समाप्त होते ही लिंक स्वतः प्रकट होगा'
-                  : 'स्टेप 1 और 2 पूर्ण होने पर 12 घंटे का टाइमर शुरू होगा'}
-              </h4>
-
-              <p className="text-xs text-sky-200/80 max-w-sm leading-relaxed">
-                {isTimerPhase
-                  ? `जैसे ही 12 घंटे का टाइमर शून्य होगा, सिस्टम स्वतः ₹200 सहायता लिंक असाइन कर देगा। आप ऊपर "⚡ तुरंत 12 घंटे पूरे करें" दबाकर अभी परीक्षण कर सकते हैं।`
-                  : 'पहले प्रोवाइड वेरीफिकेशन लिंक (₹50) और सेकंड लिंक (₹100) पूरा करें। इसके तुरंत बाद 12 घंटे का टाइमर चलेगा और फिर ₹200 का लिंक आएगा।'}
-              </p>
+              <div className="w-full pt-3 border-t border-sky-400/30 flex items-center justify-between text-xs text-sky-200 font-bold relative z-10">
+                <span>Receive Help Status:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                  Sky Blue Box (₹200)
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -896,10 +925,10 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-black text-white flex items-center gap-2">
               <History className="w-4 h-4 text-amber-400" />
-              <span>साइकिल इतिहास (Completed Plan Cycles)</span>
+              <span>Completed Plan Cycles History</span>
             </h4>
             <span className="text-xs text-slate-400">
-              यही लगातार चलता रहेगा (Continuous Revolving Cycles)
+              Continuous Revolving Cycles
             </span>
           </div>
 
@@ -907,32 +936,32 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 font-bold">
                 <tr>
-                  <th className="p-3">साइकिल</th>
-                  <th className="p-3">वेरीफिकेशन लिंक (₹50)</th>
-                  <th className="p-3">सेकंड लिंक (₹100)</th>
-                  <th className="p-3">12h टाइमर</th>
-                  <th className="p-3">रिसीव लिंक (₹200)</th>
-                  <th className="p-3">शुद्ध लाभ</th>
-                  <th className="p-3">स्थिति</th>
+                  <th className="p-3">Cycle</th>
+                  <th className="p-3">Verification Link (₹50)</th>
+                  <th className="p-3">Second Link (₹100)</th>
+                  <th className="p-3">12h Timer</th>
+                  <th className="p-3">Receive Link (₹200)</th>
+                  <th className="p-3">Net Gain</th>
+                  <th className="p-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {allCycles.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-800/40">
                     <td className="p-3 font-mono font-black text-white">#{c.cycleNumber}</td>
-                    <td className="p-3 text-rose-300 font-mono">₹50 (पूर्ण)</td>
-                    <td className="p-3 text-rose-300 font-mono">₹100 (पूर्ण)</td>
-                    <td className="p-3 text-amber-300 font-mono">12 घंटे पूर्ण</td>
+                    <td className="p-3 text-rose-300 font-mono">₹50 (Done)</td>
+                    <td className="p-3 text-rose-300 font-mono">₹100 (Done)</td>
+                    <td className="p-3 text-amber-300 font-mono">12h Matured</td>
                     <td className="p-3 text-emerald-400 font-mono font-bold">₹200</td>
                     <td className="p-3 text-yellow-300 font-mono font-black">+₹50</td>
                     <td className="p-3">
                       {c.status === 'completed' ? (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px]">
-                          पूर्ण ✅
+                          Completed ✅
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px]">
-                          प्रगति पर ⏳
+                          In Progress ⏳
                         </span>
                       )}
                     </td>
@@ -983,7 +1012,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2"
             >
               <Copy className="w-3.5 h-3.5" />
-              <span>UPI ID कॉपी करें</span>
+              <span>Copy UPI ID</span>
             </button>
           </div>
         </div>
@@ -1020,7 +1049,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-black text-white">{viewSlipUrl.title}</h4>
-                <div className="text-xs text-slate-400">राशि: ₹{viewSlipUrl.amount} | UTR: {viewSlipUrl.ref}</div>
+                <div className="text-xs text-slate-400">Amount: ₹{viewSlipUrl.amount} | UTR: {viewSlipUrl.ref}</div>
               </div>
               <button
                 onClick={() => setViewSlipUrl(null)}
@@ -1038,7 +1067,7 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               onClick={() => setViewSlipUrl(null)}
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition cursor-pointer"
             >
-              बंद करें (Close)
+              Close
             </button>
           </div>
         </div>
@@ -1056,37 +1085,37 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
 
             <div className="space-y-1.5">
               <h3 className="text-xl sm:text-2xl font-black text-white font-heading">
-                साइकिल #{showCelebration.cycleNum} सफलतापूर्वक पूरी हुई!
+                Cycle #{showCelebration.cycleNum} Successfully Completed!
               </h3>
               <p className="text-xs text-slate-300">
-                ₹200 आपके वॉलेट में जमा हो गए हैं।
+                ₹200 has been credited to your wallet balance.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-400">प्रदान की गई सहायता (Give Help):</span>
+                <span className="text-slate-400">Total Provided Help:</span>
                 <span className="font-mono text-rose-300 font-bold">₹150 (₹50 + ₹100)</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-400">प्राप्त सहायता (Receive Help):</span>
+                <span className="text-slate-400">Total Received Help:</span>
                 <span className="font-mono text-emerald-400 font-black">₹200</span>
               </div>
               <div className="flex justify-between text-xs pt-1 border-t border-emerald-500/20">
-                <span className="text-white font-bold">शुद्ध लाभ (Net Profit):</span>
+                <span className="text-white font-bold">Net Profit:</span>
                 <span className="font-mono text-yellow-300 font-black text-sm">+₹50.00</span>
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
-              🔄 नियम के अनुसार नई साइकिल #{showCelebration.cycleNum + 1} स्वतः शुरू हो चुकी है! यही लगातार चलता रहेगा।
+              🔄 By system rules, new Cycle #{showCelebration.cycleNum + 1} has automatically started! The revolving cycle continues seamlessly.
             </div>
 
             <button
               onClick={() => setShowCelebration(null)}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/30 transition cursor-pointer"
             >
-              साइकिल #{showCelebration.cycleNum + 1} जारी रखें ➔
+              Continue with Cycle #{showCelebration.cycleNum + 1} ➔
             </button>
           </div>
         </div>

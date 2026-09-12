@@ -25,6 +25,8 @@ import {
   Lock,
   Paperclip,
   Banknote,
+  Flame,
+  RotateCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
@@ -147,11 +149,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (res.success) {
         setFeedback({
           type: 'success',
-          message: `${type === 'provide' ? 'Provide' : 'Receive'} Help अनुरोध सफलतापूर्वक स्वीकार कर लिया गया!`,
+          message: `${type === 'provide' ? 'Provide' : 'Receive'} Help request accepted successfully!`,
         });
         refreshUserData();
       } else {
-        setFeedback({ type: 'error', message: res.error || 'स्वीकार करने में त्रुटि।' });
+        setFeedback({ type: 'error', message: res.error || 'Error accepting request.' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error accepting request' });
@@ -180,12 +182,12 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (res.success) {
         setFeedback({
           type: 'success',
-          message: `अनुरोध #${rejectTarget.id} सफलतापूर्वक अस्वीकार (Reject) कर दिया गया।`,
+          message: `Request #${rejectTarget.id} has been rejected successfully.`,
         });
         setShowRejectModal(false);
         refreshUserData();
       } else {
-        setFeedback({ type: 'error', message: res.error || 'अस्वीकार करने में त्रुटि।' });
+        setFeedback({ type: 'error', message: res.error || 'Error rejecting request.' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error rejecting request' });
@@ -198,7 +200,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const handleSubmitInlineUtr = async () => {
     if (!activeProvide) return;
     if (!inlineUtr.trim()) {
-      setFeedback({ type: 'error', message: 'कृपया 12-अंकों का मान्य UTR / Reference नंबर दर्ज करें।' });
+      setFeedback({ type: 'error', message: 'Please enter a valid 12-digit UTR / Reference number.' });
       return;
     }
 
@@ -213,10 +215,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       });
 
       if (res.success) {
-        setFeedback({ type: 'success', message: 'पेमेंट स्लिप / UTR सफलतापूर्वक सबमिट हो गई! रिसीवर जल्द ही पुष्टि करेगा।' });
+        setFeedback({ type: 'success', message: 'Payment slip / UTR submitted successfully! Receiver will verify soon.' });
         refreshUserData();
       } else {
-        setFeedback({ type: 'error', message: res.error || 'सबमिट करने में विफल।' });
+        setFeedback({ type: 'error', message: res.error || 'Failed to submit.' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error submitting proof' });
@@ -238,11 +240,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       );
 
       if (res.success) {
-        setFeedback({ type: 'success', message: 'बधाई हो! ₹150 सहायता प्राप्त होने की पुष्टि हो गई और वॉलेट में क्रेडिट कर दिया गया।' });
+        setFeedback({ type: 'success', message: 'Congratulations! ₹150 assistance receipt confirmed and credited to wallet.' });
         setShowConfirmModal(false);
         refreshUserData();
       } else {
-        setFeedback({ type: 'error', message: res.error || 'कन्फर्म करने में विफल।' });
+        setFeedback({ type: 'error', message: res.error || 'Failed to confirm.' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error confirming payment' });
@@ -263,11 +265,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       });
 
       if (res.success) {
-        setFeedback({ type: 'success', message: 'नई प्रोवाइड हेल्प (₹150) सफलतापूर्वक शुरू हो गई और पीयर मैच हो गया!' });
+        setFeedback({ type: 'success', message: 'New Provide Help (₹150) initiated successfully and peer matched!' });
         setShowInitiateModal(false);
         refreshUserData();
       } else {
-        setFeedback({ type: 'error', message: res.error || 'अनुरोध बनाने में विफल।' });
+        setFeedback({ type: 'error', message: res.error || 'Failed to create request.' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error creating request' });
@@ -297,7 +299,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       slipFileSize: params.slipFileSize,
     });
     if (res.success) {
-      setFeedback({ type: 'success', message: 'पेमेंट स्लिप सफलतापूर्वक अपलोड हो गई!' });
+      setFeedback({ type: 'success', message: 'Payment slip uploaded successfully!' });
       setShowUploadModal(false);
       refreshUserData();
     } else {
@@ -337,7 +339,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </span>
             </h2>
             <p className="text-[11px] text-slate-400">
-              प्रोवाइड हेल्प (₹150 सहायता भेजें) &amp; रिसिव हेल्प (₹150 सहायता प्राप्त करें)
+              Provide Help (Send ₹150 Assistance) &amp; Received Help (Receive ₹150 Assistance)
             </p>
           </div>
         </div>
@@ -347,10 +349,37 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             onClick={() => onNavigateTab('help')}
             className="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 self-start sm:self-auto cursor-pointer"
           >
-            <span>सभी हेल्प ऑर्डर्स देखें</span>
+            <span>View All Help Orders</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         )}
+      </div>
+
+      {/* 🔴 PROVIDE HELP & 🟡 RECEIVED HELP Quick Action Buttons */}
+      <div className="flex flex-wrap items-center gap-3 py-1">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('box-provide-help');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-500 font-black text-xs sm:text-sm tracking-wider shadow-lg shadow-red-950/60 flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 cursor-pointer border-2 border-red-400"
+        >
+          <span className="text-base">🔥</span>
+          <span className="text-emerald-300 font-extrabold tracking-wider">PROVIDE HELP</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('box-receive-help');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          className="px-5 py-2 rounded-full bg-amber-400 hover:bg-amber-300 font-black text-xs sm:text-sm tracking-wider shadow-lg shadow-amber-950/50 flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 cursor-pointer border-2 border-amber-300"
+        >
+          <RotateCw className="w-4 h-4 text-blue-950 font-black stroke-[2.5]" />
+          <span className="text-blue-950 font-extrabold tracking-wider">RECEIVED HELP</span>
+        </button>
       </div>
 
       {/* Global Feedback Banner */}
@@ -379,7 +408,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       {/* THE TWO MAIN BOXES GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* ========================================================================= */}
-        {/* 🔴 PROVIDE HELP BOX (पूरा लाल रंग / FULL RED THEMED CARD)                   */}
+        {/* 🔴 PROVIDE HELP BOX (RED THEMED CARD)                                     */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
@@ -390,11 +419,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <div className="absolute bottom-0 left-0 h-32 w-32 bg-rose-600/15 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-4">
-            {/* 1. Header: 🔴 PROVIDE HELP */}
+            {/* 1. Header: 🔥 PROVIDE HELP (Red Pill Style) */}
             <div className="flex items-center justify-between border-b border-red-500/40 pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl sm:text-2xl animate-pulse">🔴</span>
-                <h3 className="text-xl sm:text-2xl font-black text-white font-heading uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600 border border-red-400 shadow-md">
+                <span className="text-base">🔥</span>
+                <h3 className="text-sm sm:text-base font-black text-emerald-300 font-heading uppercase tracking-wider">
                   PROVIDE HELP
                 </h3>
               </div>
@@ -505,7 +534,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   if (activeProvide) {
                     openRejectDialog(activeProvide.id, 'provide', provideUserName);
                   } else {
-                    setFeedback({ type: 'error', message: 'वर्तमान में कोई सक्रिय प्रोवाइड हेल्प कार्य नहीं है जिसे अस्वीकार किया जा सके।' });
+                    setFeedback({ type: 'error', message: 'No active Provide Help task currently available to reject.' });
                   }
                 }}
                 className="py-3 px-4 rounded-xl bg-red-900 hover:bg-red-800 text-white border border-red-400/60 font-black text-xs sm:text-sm uppercase tracking-wider shadow transition flex items-center justify-center gap-2 cursor-pointer"
@@ -561,7 +590,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     type="text"
                     value={inlineUtr}
                     onChange={(e) => setInlineUtr(e.target.value)}
-                    placeholder="12-अंकों का UTR दर्ज करें"
+                    placeholder="Enter 12-digit UTR number"
                     className="flex-1 p-2 rounded-lg bg-red-950 border border-red-400/50 text-white text-xs font-mono placeholder:text-red-300/40"
                   />
                   <button
@@ -569,7 +598,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     disabled={isSubmittingUtr}
                     className="px-3 py-2 rounded-lg bg-white text-red-700 font-black text-xs cursor-pointer shadow disabled:opacity-50"
                   >
-                    {isSubmittingUtr ? '...' : 'सबमिट UTR'}
+                    {isSubmittingUtr ? '...' : 'Submit UTR'}
                   </button>
                 </div>
               </div>
@@ -578,13 +607,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
           {/* Box 1 Footer Stats */}
           <div className="mt-4 pt-3 border-t border-red-500/30 flex items-center justify-between text-xs text-red-200 relative z-10 font-medium">
-            <span>कुल दी गई सहायता (Given):</span>
+            <span>Total Assistance Given:</span>
             <strong className="text-white font-black font-mono text-sm">₹{wallet?.totalHelpedGiven ?? 0}</strong>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* 🔵 RECEIVE HELP BOX (पूरा नीला आसमानी रंग / FULL SKY BLUE THEMED CARD)       */}
+        {/* 🔵 RECEIVE HELP BOX (SKY BLUE THEMED CARD)                                */}
         {/* ========================================================================= */}
         <div
           id="box-receive-help"
@@ -595,15 +624,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <div className="absolute bottom-0 left-0 h-32 w-32 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-4">
-            {/* 1. Header: 🔵 RECEIVE HELP */}
+            {/* 1. Header: 🔁 RECEIVED HELP (Amber Pill Style) */}
             <div className="flex items-center justify-between border-b border-sky-400/40 pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl sm:text-2xl animate-pulse">🔵</span>
-                <h3 className="text-xl sm:text-2xl font-black text-white font-heading uppercase tracking-wider">
-                  RECEIVE HELP
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400 border border-amber-300 shadow-md">
+                <RotateCw className="w-4 h-4 text-blue-950 font-black stroke-[2.5]" />
+                <h3 className="text-sm sm:text-base font-black text-blue-950 font-heading uppercase tracking-wider">
+                  RECEIVED HELP
                 </h3>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-sky-800 shadow-md font-mono border border-sky-200">
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-blue-950 shadow-md font-mono border border-sky-200">
                 ₹150
               </span>
             </div>
@@ -695,7 +724,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   if (activeReceive) {
                     handleAccept(activeReceive.id, 'receive');
                   } else {
-                    setFeedback({ type: 'success', message: 'रिसिव हेल्प क्यू सक्रिय है! नया मैच आते ही स्वतः असाइन होगा।' });
+                    setFeedback({ type: 'success', message: 'Receive Help queue is active! You will be automatically assigned when a peer matches.' });
                   }
                 }}
                 disabled={isAccepting}
@@ -710,7 +739,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   if (activeReceive) {
                     openRejectDialog(activeReceive.id, 'receive', receiveUserName);
                   } else {
-                    setFeedback({ type: 'error', message: 'वर्तमान में कोई सक्रिय रिसिव हेल्प कार्य नहीं है जिसे अस्वीकार किया जा सके।' });
+                    setFeedback({ type: 'error', message: 'No active Receive Help task currently available to reject.' });
                   }
                 }}
                 className="py-3 px-4 rounded-xl bg-sky-900 hover:bg-sky-800 text-white border border-sky-300/60 font-black text-xs sm:text-sm uppercase tracking-wider shadow transition flex items-center justify-center gap-2 cursor-pointer"
@@ -746,7 +775,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 if (activeReceive) {
                   setShowConfirmModal(true);
                 } else {
-                  setFeedback({ type: 'error', message: 'भुगतान पुष्टि के लिए सक्रिय रिसीव हेल्प आर्डर होना आवश्यक है।' });
+                  setFeedback({ type: 'error', message: 'An active Receive Help order is required to confirm payment receipt.' });
                 }
               }}
               className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-sky-50 text-sky-800 font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl transition flex items-center justify-center gap-2 cursor-pointer"
@@ -758,7 +787,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
           {/* Box 2 Footer Stats */}
           <div className="mt-4 pt-3 border-t border-sky-400/30 flex items-center justify-between text-xs text-sky-200 relative z-10 font-medium">
-            <span>कुल प्राप्त सहायता (Received):</span>
+            <span>Total Assistance Received:</span>
             <strong className="text-white font-black font-mono text-sm">₹{wallet?.totalHelpedReceived ?? 0}</strong>
           </div>
         </div>
@@ -844,8 +873,8 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <FileCheck2 className="h-10 w-10 text-sky-400 mx-auto" />
                 <p className="text-xs text-sky-200">
                   {activeReceive?.proofReference
-                    ? `सबमिट किया गया UTR / Transaction No: ${activeReceive.proofReference}`
-                    : 'सेंडर द्वारा UTR या पेमेंट स्लिप सबमिट होने पर यहाँ दिखाई देगी।'}
+                    ? `Submitted UTR / Transaction No: ${activeReceive.proofReference}`
+                    : 'Once the sender submits the UTR or payment slip, it will appear here.'}
                 </p>
               </div>
             )}
@@ -876,7 +905,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             <div className="p-4 rounded-2xl bg-sky-950/50 border border-sky-400/40 space-y-2 text-xs">
               <p className="text-slate-200">
-                क्या आप पुष्टि करते हैं कि <strong>{receiveUserName}</strong> द्वारा भेजा गया <strong>₹150</strong> आपके खाते में प्राप्त हो चुका है?
+                Do you confirm that <strong>₹150</strong> sent by <strong>{receiveUserName}</strong> has been successfully credited to your account?
               </p>
               <div className="font-mono text-sky-300 bg-slate-950/80 p-2.5 rounded-xl border border-sky-400/30 font-bold">
                 UTR / Ref: {activeReceive?.proofReference || 'N/A'}
@@ -888,14 +917,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 onClick={() => setShowConfirmModal(false)}
                 className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
               >
-                रद्द करें
+                Cancel
               </button>
               <button
                 onClick={handleConfirmReceived}
                 disabled={isConfirming}
                 className="py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-white font-black text-xs shadow-lg shadow-sky-950/40 transition disabled:opacity-50 cursor-pointer"
               >
-                {isConfirming ? 'पुष्टि हो रही है...' : 'हाँ, पेमेंट मिल गया'}
+                {isConfirming ? 'Confirming...' : 'Yes, Payment Received'}
               </button>
             </div>
           </div>
@@ -918,19 +947,19 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             <div className="space-y-3 text-xs">
               <p className="text-slate-300">
-                क्या आप वाकई <strong>{rejectTarget.name}</strong> के साथ मैच किए गए अनुरोध <strong>#{rejectTarget.id}</strong> को अस्वीकार (Reject) करना चाहते हैं?
+                Are you sure you want to reject matched request <strong>#{rejectTarget.id}</strong> with <strong>{rejectTarget.name}</strong>?
               </p>
 
               <div>
                 <label className="text-[11px] font-bold text-slate-400 mb-1.5 block">
-                  अस्वीकार करने का कारण (Reason for Rejection):
+                  Reason for Rejection:
                 </label>
                 <textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   rows={3}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-red-500"
-                  placeholder="कारण दर्ज करें..."
+                  placeholder="Enter reason..."
                 />
               </div>
 
@@ -953,14 +982,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 onClick={() => setShowRejectModal(false)}
                 className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
               >
-                रद्द करें
+                Cancel
               </button>
               <button
                 onClick={handleExecuteReject}
                 disabled={isRejecting}
                 className="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-950/40 transition disabled:opacity-50 cursor-pointer"
               >
-                {isRejecting ? 'अस्वीकार हो रहा है...' : 'हाँ, Reject करें'}
+                {isRejecting ? 'Rejecting...' : 'Yes, Reject Request'}
               </button>
             </div>
           </div>
@@ -983,12 +1012,12 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             <div className="p-4 rounded-2xl bg-red-950/50 border border-red-500/40 space-y-2 text-xs">
               <p className="text-slate-200">
-                आप कम्युनिटी में <strong>₹150</strong> की सहायता प्रदान करने जा रहे हैं। सिस्टम तुरंत आपको एक सक्रिय रिसीवर से मैच करेगा।
+                You are initiating a <strong>₹150</strong> community assistance pledge. The platform will match you with an active recipient immediately.
               </p>
               <ul className="text-red-300 space-y-1 list-disc list-inside font-medium">
-                <li>24 घंटे का एक्शन टाइमर मिलेगा।</li>
-                <li>सीधे UPI / QR द्वारा भुगतान होगा।</li>
-                <li>भुगतान के बाद UTR सबमिट करना आवश्यक है।</li>
+                <li>24-hour action timer provided.</li>
+                <li>Direct member-to-member UPI / QR payment.</li>
+                <li>Submit transaction UTR upon transfer completion.</li>
               </ul>
             </div>
 
@@ -997,14 +1026,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 onClick={() => setShowInitiateModal(false)}
                 className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
               >
-                रद्द करें
+                Cancel
               </button>
               <button
                 onClick={handleInitiateProvideHelp}
                 disabled={isInitiating}
                 className="py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-lg shadow-red-950/40 transition disabled:opacity-50 cursor-pointer"
               >
-                {isInitiating ? 'मैच हो रहा है...' : 'पुष्टि करें और मैच पाएं'}
+                {isInitiating ? 'Matching...' : 'Confirm & Match Peer'}
               </button>
             </div>
           </div>
