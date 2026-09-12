@@ -17,6 +17,8 @@ import {
   LoginSession,
   FraudAlert,
   WebsiteSettings,
+  UserHelpCycle,
+  CycleLinkDetails,
 } from '../types';
 
 const STORAGE_KEY = 'HELP150_PLATFORM_DB_V1';
@@ -27,6 +29,7 @@ export interface DatabaseState {
   wallets: Record<string, Wallet>;
   transactions: Transaction[];
   helpRequests: HelpRequest[];
+  helpCycles: UserHelpCycle[];
   referralLevels: ReferralLevelConfig[];
   withdrawals: WithdrawalRequest[];
   supportTickets: SupportTicket[];
@@ -51,14 +54,14 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   minWithdrawalAmount: 200,
   withdrawalMultiple: 200,
   withdrawalProcessingFeePercent: 5,
-  timerDurationHours: 24,
+  timerDurationHours: 12,
   maxSlipFileSizeMb: 5,
   kycRequiredForWithdrawal: true,
   manualApprovalForHelp: true,
   legalDisclaimerEnabled: true,
   complianceNotice:
     'HELP150 is a peer community mutual-helping platform. All community transactions, eligibility rules, and referral incentives are subject to platform verification, statutory compliance, and applicable Indian laws. HELP150 strictly does NOT offer guaranteed income, investment schemes, or fixed returns.',
-  systemNoticeText: 'HELP150: Community Mutual Help • Transparent System • 24-Hour Timer Verification',
+  systemNoticeText: 'HELP150: Plan Cycle • Verification Link ₹50 + Second Link ₹100 ➔ 12-Hour Timer ➔ Auto Receive Link ₹200',
   complianceDisclaimerText: 'HELP150 operates strictly as a peer-to-peer voluntary community mutual assistance platform. It is not an investment scheme, bank, or MLM. No returns are guaranteed.',
   adminUpiId: 'help150.treasury@icici',
   autoDispatchMode: false,
@@ -749,12 +752,80 @@ function getSeedDatabase(): DatabaseState {
     },
   ];
 
+  const helpCycles: UserHelpCycle[] = [
+    {
+      id: 'CYC-H150-784920-1',
+      userId: 'H150-784920',
+      cycleNumber: 1,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: 'LNK-50-784901',
+        amount: 50,
+        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        status: 'pending',
+        matchedWithUserId: 'H150-918234',
+        matchedWithUserName: 'Priya Sharma',
+        matchedWithUpi: 'priyasharma@icici',
+        matchedWithMobile: '9876501234',
+        matchedWithEmail: 'priya.sharma@example.com',
+      },
+      secondLink: {
+        requestId: 'LNK-100-784902',
+        amount: 100,
+        title: 'सेकंड लिंक (₹100)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Community Treasury Pool',
+        matchedWithUpi: 'help150.treasury@icici',
+        matchedWithMobile: '9800000001',
+        matchedWithEmail: 'admin@help150.org',
+      },
+      timerDurationHours: 12,
+      createdAt: pastHours(2),
+    },
+    {
+      id: 'CYC-H150-918234-1',
+      userId: 'H150-918234',
+      cycleNumber: 1,
+      status: 'maturation_timer',
+      verificationLink: {
+        requestId: 'LNK-50-918201',
+        amount: 50,
+        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        status: 'completed',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Community Treasury Pool',
+        matchedWithUpi: 'help150.treasury@icici',
+        matchedWithMobile: '9800000001',
+        proofReference: 'UTR-50918201',
+        completedAt: pastHours(6),
+      },
+      secondLink: {
+        requestId: 'LNK-100-918202',
+        amount: 100,
+        title: 'सेकंड लिंक (₹100)',
+        status: 'completed',
+        matchedWithUserId: 'H150-784920',
+        matchedWithUserName: 'Ashok Kumar',
+        matchedWithUpi: 'ashok.kumar@okaxis',
+        matchedWithMobile: '9876543210',
+        proofReference: 'UTR-100918202',
+        completedAt: pastHours(5.5),
+      },
+      timerStartTime: Date.now() - 5.5 * 3600000,
+      timerExpiryTime: futureHours(6.5), // 6.5h remaining of 12h
+      timerDurationHours: 12,
+      createdAt: pastHours(7),
+    },
+  ];
+
   return {
     users,
     kycRecords,
     wallets,
     transactions,
     helpRequests,
+    helpCycles,
     referralLevels: DEFAULT_REFERRAL_LEVELS,
     withdrawals,
     supportTickets,
@@ -784,6 +855,9 @@ class DatabaseManager {
             ...getSeedDatabase(),
             ...parsed,
           };
+          if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
+            loadedState.helpCycles = getSeedDatabase().helpCycles;
+          }
           // Automatically migrate referral levels if they still reflect older configuration
           if (
             !loadedState.referralLevels ||
@@ -869,6 +943,267 @@ class DatabaseManager {
     }
     return false;
   }
+
+  // ---------------- PLAN CYCLE ENGINE (₹50 Verification + ₹100 Second ➔ 12h Timer ➔ ₹200 Receive) ----------------
+  public getUserHelpCycle(userId: string): UserHelpCycle {
+    if (!this.state.helpCycles) {
+      this.state.helpCycles = [];
+    }
+
+    // Find latest active cycle or most recent cycle
+    let userCycles = this.state.helpCycles.filter((c) => c.userId === userId);
+    let activeCycle = userCycles.find((c) => c.status !== 'completed');
+
+    if (!activeCycle) {
+      const nextCycleNum = userCycles.length > 0 ? Math.max(...userCycles.map((c) => c.cycleNumber)) + 1 : 1;
+      activeCycle = this.createNewCycle(userId, nextCycleNum);
+      this.state.helpCycles.unshift(activeCycle);
+      this.saveToStorage(this.state);
+      this.notifySubscribers();
+    }
+
+    // Auto-advance if in timer mode and 12 hours elapsed
+    if (activeCycle.status === 'maturation_timer' && activeCycle.timerExpiryTime && Date.now() >= activeCycle.timerExpiryTime) {
+      this.advanceTimerToReceiveHelp(activeCycle);
+    }
+
+    return activeCycle;
+  }
+
+  public getAllUserHelpCycles(userId: string): UserHelpCycle[] {
+    if (!this.state.helpCycles) this.state.helpCycles = [];
+    return this.state.helpCycles
+      .filter((c) => c.userId === userId)
+      .sort((a, b) => b.cycleNumber - a.cycleNumber);
+  }
+
+  public createNewCycle(userId: string, cycleNumber: number): UserHelpCycle {
+    const user = this.state.users.find((u) => u.id === userId);
+    const potentialPeers = this.state.users.filter((u) => u.id !== userId && u.role === 'user');
+    const peer1 = potentialPeers[0] || {
+      id: 'H150-918234',
+      fullName: 'Priya Sharma',
+      mobile: '9876501234',
+      email: 'priya.sharma@example.com',
+    };
+    const peer2 = potentialPeers[1] || {
+      id: 'H150-ADMIN01',
+      fullName: 'Community Assistance Treasury',
+      mobile: '9800000001',
+      email: 'admin@help150.org',
+    };
+
+    const now = new Date().toISOString();
+    const cycleId = `CYC-${userId.replace(/[^a-zA-Z0-9]/g, '')}-${cycleNumber}-${Date.now().toString().slice(-4)}`;
+
+    return {
+      id: cycleId,
+      userId,
+      cycleNumber,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 50,
+        title: 'प्रोवाइड वेरीफिकेशन लिंक (₹50)',
+        status: 'pending',
+        matchedWithUserId: peer1.id,
+        matchedWithUserName: peer1.fullName,
+        matchedWithUpi: `${peer1.fullName.toLowerCase().replace(/\s+/g, '')}@okaxis`,
+        matchedWithMobile: peer1.mobile || '9876501234',
+        matchedWithEmail: peer1.email || 'peer@help150.org',
+      },
+      secondLink: {
+        requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 100,
+        title: 'सेकंड लिंक (₹100)',
+        status: 'pending',
+        matchedWithUserId: peer2.id,
+        matchedWithUserName: peer2.fullName,
+        matchedWithUpi: peer2.id === 'H150-ADMIN01' ? 'help150.treasury@icici' : `${peer2.fullName.toLowerCase().replace(/\s+/g, '')}@icici`,
+        matchedWithMobile: peer2.mobile || '9800000001',
+        matchedWithEmail: peer2.email || 'admin@help150.org',
+      },
+      timerDurationHours: 12,
+      createdAt: now,
+    };
+  }
+
+  public submitCycleProvideLink(
+    userId: string,
+    linkType: 'verification' | 'second',
+    proofRef: string,
+    slipUrl?: string
+  ): UserHelpCycle {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (linkType === 'verification') {
+      cycle.verificationLink.status = 'completed';
+      cycle.verificationLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
+      cycle.verificationLink.slipUrl = slipUrl || sampleSlipUrl(50, proofRef);
+      cycle.verificationLink.completedAt = now;
+      cycle.status = 'provide_second';
+
+      // Update wallet total help given
+      if (this.state.wallets[userId]) {
+        this.state.wallets[userId].totalHelpedGiven += 50;
+      }
+    } else if (linkType === 'second') {
+      cycle.secondLink.status = 'completed';
+      cycle.secondLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
+      cycle.secondLink.slipUrl = slipUrl || sampleSlipUrl(100, proofRef);
+      cycle.secondLink.completedAt = now;
+
+      // Update wallet total help given
+      if (this.state.wallets[userId]) {
+        this.state.wallets[userId].totalHelpedGiven += 100;
+      }
+    }
+
+    // Check if BOTH links are now completed -> Start 12-Hour Timer!
+    if (cycle.verificationLink.status === 'completed' && cycle.secondLink.status === 'completed') {
+      cycle.status = 'maturation_timer';
+      cycle.timerStartTime = Date.now();
+      cycle.timerExpiryTime = Date.now() + 12 * 3600000; // 12 hours exactly
+      
+      this.state.notifications.unshift({
+        id: `NOTIF-CYC-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `साइकिल #${cycle.cycleNumber}: 12 घंटे का टाइमर शुरू!`,
+        message: 'वेरीफिकेशन लिंक ₹50 व सेकंड लिंक ₹100 पूरे हुए। 12 घंटे समाप्त होते ही ₹200 का रिसीव लिंक ऑटोमेटिक जनरेट होगा।',
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+      });
+    }
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+    return cycle;
+  }
+
+  public fastForwardCycleTimer(userId: string): UserHelpCycle {
+    const cycle = this.getUserHelpCycle(userId);
+    if (cycle.status === 'maturation_timer') {
+      cycle.timerExpiryTime = Date.now() - 1000; // expired
+      this.advanceTimerToReceiveHelp(cycle);
+      this.saveToStorage(this.state);
+      this.notifySubscribers();
+    }
+    return cycle;
+  }
+
+  private advanceTimerToReceiveHelp(cycle: UserHelpCycle): void {
+    const now = new Date().toISOString();
+    const potentialSenders = [
+      { name: 'Karan Mehra', id: 'H150-610492', mobile: '9812345678', email: 'karan.mehra@gmail.com' },
+      { name: 'Deepak Joshi', id: 'H150-592011', mobile: '9823456789', email: 'deepak.joshi@gmail.com' },
+      { name: 'Sunil Rao', id: 'H150-481920', mobile: '9834567890', email: 'sunil.rao@gmail.com' },
+      { name: 'Rajesh Nair', id: 'H150-719382', mobile: '9845678901', email: 'rajesh.nair@gmail.com' },
+    ];
+    const pickedSender = potentialSenders[(cycle.cycleNumber - 1) % potentialSenders.length];
+    const utrSample = `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+
+    cycle.status = 'receive_help';
+    cycle.receiveLink = {
+      requestId: `REC-200-${Math.floor(100000 + Math.random() * 900000)}`,
+      amount: 200,
+      title: 'रिसीव हेल्प लिंक (₹200)',
+      status: 'submitted', // Incoming peer already attached slip for user to review and confirm
+      matchedWithUserId: pickedSender.id,
+      matchedWithUserName: pickedSender.name,
+      matchedWithMobile: pickedSender.mobile,
+      matchedWithEmail: pickedSender.email,
+      matchedWithUpi: `${pickedSender.name.toLowerCase().replace(/\s+/g, '')}@upi`,
+      proofReference: utrSample,
+      slipUrl: sampleSlipUrl(200, utrSample, pickedSender.name),
+      submittedAt: now,
+    };
+
+    this.state.notifications.unshift({
+      id: `NOTIF-REC-${Date.now().toString().slice(-6)}`,
+      userId: cycle.userId,
+      title: `₹200 रिसीव लिंक प्राप्त! (साइकिल #${cycle.cycleNumber})`,
+      message: `${pickedSender.name} (${pickedSender.id}) ने ₹200 सहायता भेजी है। कृपया विवरण देखकर कन्फर्म करें।`,
+      type: 'success',
+      isRead: false,
+      createdAt: now,
+    });
+  }
+
+  public confirmCycleReceiveLink(userId: string): { completedCycle: UserHelpCycle; newCycle: UserHelpCycle } {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (cycle.receiveLink) {
+      cycle.receiveLink.status = 'completed';
+      cycle.receiveLink.completedAt = now;
+    }
+
+    cycle.status = 'completed';
+    cycle.completedAt = now;
+
+    // Credit ₹200 to User Wallet
+    let wallet = this.state.wallets[userId];
+    if (!wallet) {
+      wallet = {
+        userId,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalHelpedGiven: 0,
+        totalHelpedReceived: 0,
+        totalReferralRewards: 0,
+        totalWithdrawn: 0,
+        lastUpdated: now,
+      };
+      this.state.wallets[userId] = wallet;
+    }
+
+    wallet.availableBalance += 200;
+    wallet.totalHelpedReceived += 200;
+    wallet.lastUpdated = now;
+
+    // Log Transaction
+    this.state.transactions.unshift({
+      id: `TXN-CYC-${Date.now().toString().slice(-6)}`,
+      userId,
+      type: 'help_received',
+      amount: 200,
+      balanceAfter: wallet.availableBalance,
+      status: 'completed',
+      referenceId: cycle.receiveLink?.requestId || cycle.id,
+      remarks: `₹200 Help Received for Cycle #${cycle.cycleNumber} (Net Profit ₹50)`,
+      senderUserId: cycle.receiveLink?.matchedWithUserId || 'H150-COMMUNITY',
+      receiverUserId: userId,
+      senderName: cycle.receiveLink?.matchedWithUserName || 'Peer Member',
+      receiverName: this.state.users.find((u) => u.id === userId)?.fullName || 'User',
+      createdAt: now,
+    });
+
+    // Automatically create next cycle in loop: "यही लगातार चलता रहेगा"
+    const nextCycleNum = cycle.cycleNumber + 1;
+    const nextCycle = this.createNewCycle(userId, nextCycleNum);
+    this.state.helpCycles.unshift(nextCycle);
+
+    this.state.notifications.unshift({
+      id: `NOTIF-LOOP-${Date.now().toString().slice(-6)}`,
+      userId,
+      title: `बधाई हो! साइकिल #${cycle.cycleNumber} पूरी हुई ➔ साइकिल #${nextCycleNum} शुरू!`,
+      message: `₹200 आपके वॉलेट में जमा हो गए हैं (कुल लाभ: ₹50)। नई साइकिल #${nextCycleNum} शुरू हो चुकी है।`,
+      type: 'success',
+      isRead: false,
+      createdAt: now,
+    });
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return { completedCycle: cycle, newCycle: nextCycle };
+  }
+}
+
+function sampleSlipUrl(amount: number, utr: string, name = 'Peer Member') {
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380"><rect width="600" height="380" fill="%23090d16"/><rect x="16" y="16" width="568" height="348" rx="16" fill="%23131b2e" stroke="%2338bdf8" stroke-width="2"/><text x="40" y="60" fill="%2338bdf8" font-family="sans-serif" font-size="20" font-weight="bold">BANK / UPI TRANSACTION RECEIPT</text><text x="40" y="90" fill="%2394a3b8" font-family="sans-serif" font-size="13">HELP150 Community Plan • Cycle Payment Proof</text><line x1="40" y1="110" x2="560" y2="110" stroke="%23334155" stroke-width="1"/><text x="40" y="150" fill="%23cbd5e1" font-family="sans-serif" font-size="16">Amount: <tspan fill="%234ade80" font-weight="bold">₹${amount}.00</tspan></text><text x="40" y="190" fill="%23cbd5e1" font-family="sans-serif" font-size="15">Status: <tspan fill="%2322c55e" font-weight="bold">COMPLETED / SUCCESS</tspan></text><text x="40" y="230" fill="%23cbd5e1" font-family="sans-serif" font-size="15">UTR / Ref: <tspan fill="%23f8fafc" font-weight="bold">${utr}</tspan></text><text x="40" y="270" fill="%23cbd5e1" font-family="sans-serif" font-size="15">Payer/Sender: <tspan fill="%2338bdf8">${name}</tspan></text><text x="40" y="320" fill="%2364748b" font-family="sans-serif" font-size="11">Verified on Peer Network • 12-Hour Maturation Cycle</text></svg>`;
 }
 
 export const db = new DatabaseManager();

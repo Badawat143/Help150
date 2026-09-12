@@ -2118,20 +2118,26 @@ export const api = {
       // Collect all valid tokens for the current level sponsors
       const sponsorTokens = new Set<string>();
       currentLevelUsers.forEach((uid) => {
-        const uClean = uid.toUpperCase();
+        const uClean = uid.toUpperCase().trim();
         sponsorTokens.add(uClean);
-        if (uClean.startsWith('H150-')) {
-          sponsorTokens.add(uClean.replace('H150-', ''));
-        } else {
-          sponsorTokens.add(`H150-${uClean}`);
-        }
+        const withoutPrefix = uClean.replace(/^(H150-|HP-|HELP-|H-)/i, '');
+        sponsorTokens.add(withoutPrefix);
+        sponsorTokens.add(`H150-${withoutPrefix}`);
+        sponsorTokens.add(`HP-${withoutPrefix}`);
+        sponsorTokens.add(`HP${withoutPrefix}`);
+
         // Also look up this sponsor in state.users to include mobile & email
         const spObj = state.users.find(
-          (u) => u.id.toUpperCase() === uClean || `H150-${u.id.toUpperCase()}` === uClean
+          (u) =>
+            u.id.toUpperCase() === uClean ||
+            u.id.toUpperCase().replace(/^(H150-|HP-|HELP-|H-)/i, '') === withoutPrefix
         );
         if (spObj) {
-          if (spObj.mobile) sponsorTokens.add(spObj.mobile.replace(/\D/g, '').slice(-10));
-          if (spObj.email) sponsorTokens.add(spObj.email.toLowerCase());
+          if (spObj.mobile) {
+            const cleanM = spObj.mobile.replace(/\D/g, '').slice(-10);
+            sponsorTokens.add(cleanM);
+          }
+          if (spObj.email) sponsorTokens.add(spObj.email.toLowerCase().trim());
         }
       });
 
@@ -2139,13 +2145,15 @@ export const api = {
         if (!u.sponsorId) return false;
         const sRaw = String(u.sponsorId).trim();
         const sClean = sRaw.toUpperCase();
+        const sWithoutPrefix = sClean.replace(/^(H150-|HP-|HELP-|H-)/i, '');
         const sDigits = sRaw.replace(/\D/g, '');
         const sEmail = sRaw.toLowerCase();
 
         return (
           sponsorTokens.has(sClean) ||
-          (sClean.startsWith('H150-') && sponsorTokens.has(sClean.replace('H150-', ''))) ||
-          sponsorTokens.has(`H150-${sClean}`) ||
+          sponsorTokens.has(sWithoutPrefix) ||
+          sponsorTokens.has(`H150-${sWithoutPrefix}`) ||
+          sponsorTokens.has(`HP-${sWithoutPrefix}`) ||
           (sDigits.length >= 6 && sponsorTokens.has(sDigits)) ||
           (sDigits.length >= 10 && sponsorTokens.has(sDigits.slice(-10))) ||
           sponsorTokens.has(sEmail)

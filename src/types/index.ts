@@ -182,6 +182,39 @@ export interface HelpRequest {
   completedAt?: string;
 }
 
+export type CycleStepStatus = 'locked' | 'pending' | 'submitted' | 'completed';
+
+export interface CycleLinkDetails {
+  requestId: string;
+  amount: number; // 50, 100, or 200
+  title: string;
+  status: CycleStepStatus;
+  matchedWithUserId: string;
+  matchedWithUserName: string;
+  matchedWithUpi: string;
+  matchedWithMobile: string;
+  matchedWithEmail?: string;
+  proofReference?: string;
+  slipUrl?: string;
+  submittedAt?: string;
+  completedAt?: string;
+}
+
+export interface UserHelpCycle {
+  id: string; // e.g. "CYC-H150-784920-1"
+  userId: string;
+  cycleNumber: number; // 1, 2, 3...
+  status: 'provide_verification' | 'provide_second' | 'maturation_timer' | 'receive_help' | 'completed';
+  verificationLink: CycleLinkDetails; // 50 Rs
+  secondLink: CycleLinkDetails; // 100 Rs
+  timerStartTime?: number;
+  timerExpiryTime?: number; // 12 hours from completion
+  timerDurationHours: number; // 12
+  receiveLink?: CycleLinkDetails; // 200 Rs
+  createdAt: string;
+  completedAt?: string;
+}
+
 export interface ReferralLevelConfig {
   level: number; // 1 to 6
   name: string;

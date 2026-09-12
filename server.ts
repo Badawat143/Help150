@@ -180,11 +180,12 @@ function getInitialServerState() {
     transactions: [],
     kycRecords: [],
     notifications: [],
+    helpCycles: [],
     settings: {
       helpAmountDefault: 150,
       minWithdrawalAmount: 200,
       withdrawalMultiple: 200,
-      timerDurationHours: 24,
+      timerDurationHours: 12,
     },
   };
 }
@@ -225,6 +226,7 @@ app.get('/api/sync', (req, res) => {
     users: dbData.users || [],
     wallets: dbData.wallets || {},
     helpRequests: dbData.helpRequests || [],
+    helpCycles: dbData.helpCycles || [],
     transactions: dbData.transactions || [],
     kycRecords: dbData.kycRecords || [],
     notifications: dbData.notifications || [],
@@ -264,11 +266,15 @@ app.post('/api/register', async (req, res) => {
       const rawSponsor = String(sponsorId).trim();
       const cleanSponsor = rawSponsor.toUpperCase();
       const cleanDigits = rawSponsor.replace(/\D/g, '');
+      const withoutPrefix = cleanSponsor.replace(/^(H150-|HP-|HELP-|H-)/i, '');
       const sponsorUser = dbData.users.find((u: any) => {
-        if (u.id?.toUpperCase() === cleanSponsor) return true;
-        if (u.id?.toUpperCase() === `H150-${cleanSponsor}`) return true;
+        const uId = String(u.id || '').toUpperCase();
+        const uWithoutPrefix = uId.replace(/^(H150-|HP-|HELP-|H-)/i, '');
+        if (uId === cleanSponsor) return true;
+        if (uId === `H150-${cleanSponsor}`) return true;
+        if (withoutPrefix && uWithoutPrefix === withoutPrefix) return true;
         if (cleanDigits.length >= 10 && u.mobile?.slice(-10) === cleanDigits.slice(-10)) return true;
-        if (cleanDigits.length === 6 && u.id?.toUpperCase().endsWith(cleanDigits)) return true;
+        if (cleanDigits.length === 6 && (uId.endsWith(cleanDigits) || uWithoutPrefix === cleanDigits)) return true;
         if (u.email && u.email.toLowerCase() === rawSponsor.toLowerCase()) return true;
         return false;
       });
@@ -480,7 +486,7 @@ app.get('/api/sponsor/:id', (req, res) => {
 // Push client updates (e.g. slips, approvals) to server
 app.post('/api/sync/push', async (req, res) => {
   try {
-    const { users, wallets, helpRequests, transactions, kycRecords } = req.body;
+    const { users, wallets, helpRequests, helpCycles, transactions, kycRecords } = req.body;
     const dbData = readDb();
 
     if (Array.isArray(users)) {
@@ -500,6 +506,15 @@ app.post('/api/sync/push', async (req, res) => {
         const idx = dbData.helpRequests.findIndex((x: any) => x.id === hr.id);
         if (idx >= 0) dbData.helpRequests[idx] = { ...dbData.helpRequests[idx], ...hr };
         else dbData.helpRequests.unshift(hr);
+      });
+    }
+
+    if (Array.isArray(helpCycles)) {
+      if (!dbData.helpCycles) dbData.helpCycles = [];
+      helpCycles.forEach((hc: any) => {
+        const idx = dbData.helpCycles.findIndex((x: any) => x.id === hc.id);
+        if (idx >= 0) dbData.helpCycles[idx] = { ...dbData.helpCycles[idx], ...hc };
+        else dbData.helpCycles.unshift(hc);
       });
     }
 

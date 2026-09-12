@@ -105,6 +105,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   }
                 });
               }
+
+              // 4. Merge helpCycles (50/100/200 Plan Loop)
+              if (Array.isArray(data.helpCycles)) {
+                if (!draft.helpCycles) draft.helpCycles = [];
+                data.helpCycles.forEach((hc: any) => {
+                  const hcIdx = draft.helpCycles.findIndex((x) => x.id === hc.id);
+                  if (hcIdx < 0) {
+                    draft.helpCycles.unshift(hc);
+                    hasAnyUpdate = true;
+                  } else {
+                    if (
+                      draft.helpCycles[hcIdx].status !== hc.status ||
+                      draft.helpCycles[hcIdx].timerExpiryTime !== hc.timerExpiryTime ||
+                      draft.helpCycles[hcIdx].completedAt !== hc.completedAt
+                    ) {
+                      draft.helpCycles[hcIdx] = { ...draft.helpCycles[hcIdx], ...hc };
+                      hasAnyUpdate = true;
+                    }
+                  }
+                });
+              }
             });
 
             if (hasAnyUpdate && isMounted) {
