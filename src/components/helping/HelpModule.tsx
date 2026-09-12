@@ -21,6 +21,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   ListFilter,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -57,14 +58,27 @@ export const HelpModule: React.FC = () => {
       )
   );
 
-  // Active Receive Help Request (Current user is receiver)
-  const activeReceiveRequest = allUserRequests.find(
+  // Check if user has ANY completed Provide Help request
+  const hasCompletedProvideHelp = allUserRequests.some(
     (r) =>
-      r.matchedWithUserId === currentUser.id &&
-      ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'pending_match', 'matched', 'proof_submitted'].includes(
-        r.status
-      )
+      r.userId === currentUser.id &&
+      r.type === 'give_help' &&
+      ['COMPLETED', 'completed'].includes(r.status)
   );
+
+  // MANDATORY COMMUNITY RULE: Provide help link complete hone ke baad hi receive help link aayega!
+  const isProvideHelpIncomplete = Boolean(activeProvideRequest) || !hasCompletedProvideHelp;
+
+  // Active Receive Help Request (Current user is receiver) - ONLY if Provide Help is completed!
+  const activeReceiveRequest = !isProvideHelpIncomplete
+    ? allUserRequests.find(
+        (r) =>
+          r.matchedWithUserId === currentUser.id &&
+          ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'pending_match', 'matched', 'proof_submitted'].includes(
+            r.status
+          )
+      )
+    : undefined;
 
   const handleCreateProvideRequest = async () => {
     setErrorMsg(null);
@@ -209,6 +223,11 @@ export const HelpModule: React.FC = () => {
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
                 Incoming Assistance
               </span>
+            ) : isProvideHelpIncomplete ? (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                <span>🔒 Locked: Provide Help Incomplete</span>
+              </span>
             ) : (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/40">
                 Sky Blue Link Box
@@ -222,6 +241,37 @@ export const HelpModule: React.FC = () => {
               currentUser={currentUser}
               onRefresh={refreshUserData}
             />
+          ) : isProvideHelpIncomplete ? (
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-sky-950 via-sky-900 to-sky-950 border-2 border-amber-400/70 flex flex-col items-center justify-center text-center space-y-4 shadow-2xl shadow-sky-950/60 text-white">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-md">
+                <Lock className="h-7 w-7 text-amber-300 animate-pulse" />
+              </div>
+              <div className="max-w-md space-y-2">
+                <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/40 inline-flex items-center gap-1.5">
+                  <Lock className="h-3 w-3" />
+                  <span>🔒 Receive Help Link Locked</span>
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-white font-heading">
+                  Provide Help Link Complete होने के बाद ही Receive Help Link आएगा
+                </h3>
+                <p className="text-xs text-sky-100 font-medium leading-relaxed">
+                  कम्युनिटी नियमों के अनुसार, पहले आपको अपना active Provide Help पूरा करना होगा। जब आपका Provide Help पूर्ण व सत्यापित हो जाएगा, तभी आप सहायता प्राप्त (Receive Help) करने के पात्र होंगे।
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('btn-create-help-request');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
+                className="py-2.5 px-5 rounded-2xl bg-white hover:bg-sky-50 text-slate-950 font-black text-xs shadow-lg transition flex items-center gap-2 cursor-pointer"
+              >
+                <span>Complete Provide Help First ➔</span>
+              </button>
+            </div>
           ) : (
             <div className="p-8 rounded-3xl bg-gradient-to-b from-sky-950 via-sky-900 to-sky-950 border-2 border-sky-400 flex flex-col items-center justify-center text-center space-y-4 shadow-2xl shadow-sky-950/60 text-white">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white border border-sky-300/50 shadow-md">

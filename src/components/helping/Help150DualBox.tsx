@@ -749,11 +749,21 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-sky-200">
-                  {isReceiveActive ? 'Ready to Confirm' : 'Queued'}
+                <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                  isReceiveActive
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                    : isTimerActive
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                    : 'bg-red-500/20 text-red-300 border-red-500/40'
+                }`}>
+                  {isReceiveActive ? 'Ready to Confirm' : isTimerActive ? '⏳ 12h Maturing' : '🔒 Locked (Provide Help Pending)'}
                 </span>
-                <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-blue-950 shadow-md font-mono border border-sky-200">
-                  ₹200
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md font-mono border ${
+                  isReceiveActive
+                    ? 'bg-white text-blue-950 border-sky-200'
+                    : 'bg-slate-900/80 text-slate-300 border-slate-700'
+                }`}>
+                  {isReceiveActive ? '₹200' : '🔒 ₹200'}
                 </span>
               </div>
             </div>
@@ -894,44 +904,96 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             {/* B. SCENARIO 2: AWAITING PROVIDE HELP (STEP 1 OR STEP 2) */}
             {(isStep1Active || isStep2Active) && (
               <div className="space-y-4 py-2">
-                <div className="bg-sky-950/90 border border-sky-400/40 rounded-2xl p-5 text-center space-y-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-bold uppercase tracking-wider">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>Queued: Awaiting Provide Help Completion</span>
+                <div className="bg-sky-950/90 border-2 border-amber-400/60 rounded-2xl p-5 text-center space-y-3.5 shadow-2xl relative overflow-hidden">
+                  {/* Glowing padlock icon */}
+                  <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shadow-lg">
+                    <Lock className="w-6 h-6 animate-pulse" />
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="text-2xl sm:text-3xl font-black font-mono text-white">
-                      ₹200 Receive Help
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold uppercase tracking-wider">
+                      <Lock className="h-3 w-3" />
+                      <span>🔒 Locked: Provide Help Incomplete</span>
                     </div>
+
+                    <h4 className="text-base sm:text-lg font-black text-white font-heading leading-snug">
+                      Provide Help Link Complete होने के बाद ही Receive Help Link आएगा
+                    </h4>
+
                     <p className="text-xs text-sky-200/90 leading-relaxed font-medium">
-                      Complete your <strong>₹50 First Help Link</strong> and <strong>₹100 Second Help Link</strong> in the Red Box.
-                      Once both are confirmed, a 12-hour timer will run and your ₹200 Receive Help link will activate right here!
+                      Receive Help Link is currently <strong>locked</strong>. You must complete both <strong>₹50 First Help Link</strong> and <strong>₹100 Second Help Link</strong> in the Red Box first. Once verified, a 12-hour timer will run, and then your <strong>₹200 Receive Help Link</strong> will appear here automatically.
                     </p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-sky-900/60 border border-sky-500/30 text-left space-y-2 text-xs font-medium text-sky-100">
+                  {/* Step status roadmap */}
+                  <div className="p-3.5 rounded-xl bg-sky-900/70 border border-sky-400/30 text-left space-y-2 text-xs font-medium text-sky-100">
                     <div className="flex items-center justify-between">
-                      <span>Step 1: ₹50 Verification Link:</span>
-                      <strong className={step1.status === 'completed' ? 'text-emerald-300' : 'text-amber-300'}>
-                        {step1.status === 'completed' ? 'Completed ✓' : 'Pending in Red Box'}
+                      <span className="flex items-center gap-1.5">
+                        <span className={step1.status === 'completed' ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                          {step1.status === 'completed' ? '✓' : '●'}
+                        </span>
+                        <span>Step 1: ₹50 First Help (Verification):</span>
+                      </span>
+                      <strong className={step1.status === 'completed' ? 'text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse'}>
+                        {step1.status === 'completed' ? 'Completed ✓' : 'In Progress (Active in Red Box)'}
                       </strong>
                     </div>
+
                     <div className="flex items-center justify-between">
-                      <span>Step 2: ₹100 Second Link:</span>
-                      <strong className={step2.status === 'completed' ? 'text-emerald-300' : 'text-slate-400'}>
-                        {step2.status === 'completed' ? 'Completed ✓' : 'Locked until Step 1'}
+                      <span className="flex items-center gap-1.5">
+                        <span className={step2.status === 'completed' ? 'text-emerald-400 font-bold' : 'text-slate-400 font-bold'}>
+                          {step2.status === 'completed' ? '✓' : '●'}
+                        </span>
+                        <span>Step 2: ₹100 Second Help Link:</span>
+                      </span>
+                      <strong className={step2.status === 'completed' ? 'text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30' : (step1.status === 'completed' ? 'text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse' : 'text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded')}>
+                        {step2.status === 'completed' ? 'Completed ✓' : (step1.status === 'completed' ? 'In Progress (Active in Red Box)' : '🔒 Locked until Step 1')}
                       </strong>
                     </div>
+
                     <div className="flex items-center justify-between">
-                      <span>Step 3: 12-Hour Maturation:</span>
-                      <strong className="text-slate-400">Locked until Step 2</strong>
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-slate-400 font-bold">●</span>
+                        <span>Step 3: 12-Hour Maturation Timer:</span>
+                      </span>
+                      <strong className="text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded">
+                        🔒 Locked until Step 1 &amp; 2
+                      </strong>
                     </div>
-                    <div className="flex items-center justify-between pt-1 border-t border-sky-800">
-                      <span>Step 4: ₹200 Receive Help Link:</span>
-                      <strong className="text-emerald-300">Arrives after 12h Timer</strong>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-sky-800/80">
+                      <span className="flex items-center gap-1.5 font-bold text-white">
+                        <span>🔒</span>
+                        <span>Step 4: ₹200 Receive Help Link:</span>
+                      </span>
+                      <strong className="text-amber-300 font-black">
+                        Arrives ONLY After Provide Help Complete
+                      </strong>
                     </div>
                   </div>
+
+                  {/* Hindi & English Mandatory Rule Callout */}
+                  <div className="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-[11px] text-amber-200 text-left space-y-1">
+                    <span className="font-bold text-red-300 uppercase tracking-wider block">
+                      ⚠️ अनिवार्य नियम (Mandatory Platform Rule):
+                    </span>
+                    <p className="leading-relaxed">
+                      कम्युनिटी नियमों के अनुसार, जब तक आप अपने दोनों Provide Help (₹50 Verification + ₹100 Second Link) पूरा करके पेमेंट प्रूफ / UTR सबमिट नहीं कर देते और 12-घंटे की परिपक्वता अवधि पूरी नहीं होती, तब तक आपको Receive Help लिंक प्राप्त नहीं होगा।
+                    </p>
+                  </div>
+
+                  {/* Quick Scroll to Red Box Button */}
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('box-provide-help');
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el?.classList.add('ring-4', 'ring-red-500', 'ring-offset-2');
+                      setTimeout(() => el?.classList.remove('ring-4', 'ring-red-500', 'ring-offset-2'), 2500);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-950/60 transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>🔴 Complete Provide Help in Red Box First ➔</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -939,24 +1001,28 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             {/* C. SCENARIO 3: DURING 12-HOUR TIMER */}
             {isTimerActive && (
               <div className="space-y-4 py-2">
-                <div className="bg-sky-950/90 border border-sky-400/50 rounded-2xl p-5 text-center space-y-3">
+                <div className="bg-sky-950/90 border-2 border-sky-400/60 rounded-2xl p-5 text-center space-y-3.5 shadow-2xl">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold uppercase tracking-wider">
                     <Clock className="h-3.5 w-3.5 animate-spin" />
-                    <span>12-Hour Maturation Countdown in Progress</span>
+                    <span>Provide Help Completed — 12-Hour Maturation Running</span>
                   </div>
 
                   <div className="space-y-1">
                     <div className="text-3xl font-black font-mono text-white tracking-widest">
                       {timer12hString}
                     </div>
+                    <h4 className="text-sm font-bold text-emerald-300">
+                      Provide Help Links (₹50 + ₹100) पूरे हो चुके हैं!
+                    </h4>
                     <p className="text-xs text-sky-200 leading-relaxed font-medium">
-                      Your ₹200 Receive Help Link is maturing! As soon as the timer in the Red Box reaches <strong>00:00:00</strong>, the peer member details and payment proof for your <strong>₹200 assistance</strong> will appear here automatically.
+                      12-घंटे का टाइमर समाप्त होने के बाद ही <strong>₹200 Receive Help link</strong> यहाँ सक्रिय होगा।
+                      As soon as the timer reaches <strong>00:00:00</strong>, peer member details and payment proof for your <strong>₹200 assistance</strong> will appear here automatically.
                     </p>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-gradient-to-r from-sky-900/60 to-cyan-900/60 border border-sky-400/30 text-xs text-sky-100 flex items-center justify-between font-medium">
                     <span>Expected Payout:</span>
-                    <span className="text-base font-black font-mono text-amber-300">₹200</span>
+                    <span className="text-base font-black font-mono text-amber-300">₹200 (Net Gain: +₹50)</span>
                   </div>
                 </div>
               </div>
