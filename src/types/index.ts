@@ -34,6 +34,10 @@ export interface User {
   autoDeleteAt?: string;
   blockedReason?: string;
   
+  // Admin pool identification
+  isAdminAccount?: boolean;
+  accountType?: 'admin_pool' | 'registered_user';
+  
   // Banking & Payment Details (Direct in Profile)
   bankName?: string;
   accountHolderName?: string;

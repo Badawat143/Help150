@@ -1063,6 +1063,11 @@ export const AdminPanel: React.FC = () => {
                                 )}
                               </button>
                             </div>
+                            {(u.isAdminAccount || u.role === 'admin') && (
+                              <span className="text-[9px] font-black text-purple-700 bg-purple-100 border border-purple-200/80 px-1.5 py-0.2 rounded mt-0.5 inline-block">
+                                👑 Admin ID
+                              </span>
+                            )}
                           </td>
                           <td className="py-2.5 px-2">
                             <div className="font-bold text-slate-900 text-xs truncate max-w-[120px]">{u.fullName}</div>
@@ -1108,7 +1113,7 @@ export const AdminPanel: React.FC = () => {
                             </span>
                           </td>
                           <td className="py-2.5 px-2 text-right">
-                            {u.role !== 'admin' ? (
+                            {u.id !== 'H150-ADMIN01' ? (
                               <button
                                 onClick={() => handleToggleBlockUser(u)}
                                 className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
@@ -1483,6 +1488,24 @@ export const AdminPanel: React.FC = () => {
               </div>
             </div>
 
+            {/* ADMIN ID & AUTO-GENERATION DIRECTIVE BANNER */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border border-purple-700/60 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-md">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-purple-800/60 text-purple-200 text-sm">🛡️</span>
+                <div>
+                  <div className="font-black text-amber-300">
+                    ऑटोमैटिक यूजर ID जनरेशन: पूर्णतः बंद (Auto ID Generation: DISABLED)
+                  </div>
+                  <div className="text-[11px] text-purple-200">
+                    वर्तमान सभी आईडी एडमिन अकाउंट्स हैं। एडमिन ID केवल 'रिसीव हेल्प' लेने के लिए जाएगी जब रिसीवर ज्यादा/आवश्यक हों।
+                  </div>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black whitespace-nowrap">
+                ✓ ALL USER IDs & PASSWORDS UNLOCKED & CONTROLLABLE
+              </span>
+            </div>
+
             {/* Quick Stats & Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
               {/* Search input */}
@@ -1612,9 +1635,13 @@ export const AdminPanel: React.FC = () => {
                                 )}
                               </button>
                             </div>
-                            {u.role === 'admin' && (
-                              <span className="text-[9px] font-bold uppercase text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                                Administrator
+                            {(u.isAdminAccount || u.role === 'admin') ? (
+                              <span className="text-[9px] font-black uppercase text-purple-700 bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                👑 Admin ID (एडमिन आईडी)
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                Member Account
                               </span>
                             )}
                           </td>
@@ -1741,7 +1768,7 @@ export const AdminPanel: React.FC = () => {
 
                           {/* Action: Block / Unblock */}
                           <td className="py-3 px-3 text-right">
-                            {u.role !== 'admin' ? (
+                            {u.id !== 'H150-ADMIN01' ? (
                               <button
                                 onClick={() => handleToggleBlockUser(u)}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5 ${

@@ -444,6 +444,22 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
         </div>
       )}
 
+      {/* ADMIN ID RECEIVER POLICY BANNER */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border border-purple-800/60 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="p-2 rounded-xl bg-purple-800/60 text-purple-200 text-sm">🛡️</span>
+          <div>
+            <div className="font-black text-amber-300">Admin ID Dispatch Policy (एडमिन आईडी नीति):</div>
+            <div className="text-[11px] text-purple-200">
+              एडमिन ID केवल 'रिसीव हेल्प' (Receiver) के रूप में कार्य करेगी जब रिसीवर ज्यादा/आवश्यक हों। ऑटोमैटिक यूजर ID जनरेशन पूर्णतः बंद है।
+            </div>
+          </div>
+        </div>
+        <span className="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono text-[10px] font-bold whitespace-nowrap">
+          Receiver Mode: ADMIN BACKUP READY
+        </span>
+      </div>
+
       {/* TOP HEADER & NAVIGATION TABS */}
       <div className="bg-gradient-to-r from-[#0C1E4A] via-[#102E6C] to-[#1D4492] rounded-3xl p-5 sm:p-6 text-white shadow-lg space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -617,14 +633,14 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                 <select
                   value={queueBatchReceiver}
                   onChange={(e) => setQueueBatchReceiver(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white max-w-[180px] sm:max-w-[220px]"
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white max-w-[200px] sm:max-w-[260px]"
                 >
-                  <option value="ADMIN_TREASURY">👑 Central Treasury</option>
+                  <option value="ADMIN_TREASURY">👑 Central Treasury (Admin ID - Excess Receiver Pool)</option>
                   {allUsers
-                    .filter((u) => u.status === 'active' && u.role === 'user')
+                    .filter((u) => u.status === 'active')
                     .map((u) => (
                       <option key={u.id} value={u.id}>
-                        👥 {u.fullName} ({u.id})
+                        {u.isAdminAccount ? '👑 [Admin ID] ' : '👥 '} {u.fullName} ({u.id})
                       </option>
                     ))}
                 </select>
@@ -813,7 +829,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                 >
                   <option value="">-- Choose Sender Member --</option>
                   {filteredSenders
-                    .filter((u) => u.role === 'user')
+                    .filter((u) => u.id !== 'H150-ADMIN01')
                     .map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.fullName} ({u.id}) • {u.mobile}
@@ -865,12 +881,12 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                   className="w-full px-3 py-2.5 rounded-xl border border-emerald-300 text-xs font-bold text-slate-900 bg-white"
                   required
                 >
-                  <option value="ADMIN_TREASURY">👑 HELP150 Central Treasury (Default Admin UPI)</option>
+                  <option value="ADMIN_TREASURY">👑 HELP150 Central Treasury (Admin ID - Excess Receiver Pool)</option>
                   {filteredReceivers
-                    .filter((u) => u.id !== senderUserId && u.role === 'user')
+                    .filter((u) => u.id !== senderUserId)
                     .map((u) => (
                       <option key={u.id} value={u.id}>
-                        {u.fullName} ({u.id}) • {u.mobile}
+                        {u.isAdminAccount ? '👑 [Admin ID] ' : '👥 '} {u.fullName} ({u.id}) • {u.mobile}
                       </option>
                     ))}
                 </select>

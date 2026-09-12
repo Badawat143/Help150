@@ -93,6 +93,8 @@ function getSeedDatabase(): DatabaseState {
       password: 'Admin@150',
       passwordHash: btoa('Admin@150'),
       role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: null,
       status: 'active',
       kycStatus: 'verified',
@@ -111,7 +113,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'compliance@help150.org',
       password: 'Comp@150',
       passwordHash: btoa('Comp@150'),
-      role: 'compliance_officer',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: null,
       status: 'active',
       kycStatus: 'verified',
@@ -130,7 +134,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'ashuk2968@gmail.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'user',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: 'H150-ADMIN01',
       status: 'active',
       kycStatus: 'verified',
@@ -140,7 +146,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(2),
       deviceInfo: 'Samsung Galaxy S23 (Mobile Web)',
       ipAddress: '157.34.120.44',
-      internalNotes: ['Active verified community leader', 'Verified KYC on 05 Sep'],
+      internalNotes: ['Community Admin Leader', 'Verified KYC on 05 Sep'],
     },
     {
       id: 'H150-918234',
@@ -149,7 +155,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'priya.sharma@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'user',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: 'H150-784920',
       status: 'active',
       kycStatus: 'verified',
@@ -159,7 +167,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(5),
       deviceInfo: 'iPhone 15 / Safari',
       ipAddress: '157.34.120.45',
-      internalNotes: ['Referred by Ashok Kumar'],
+      internalNotes: ['Admin System Account - Peer Pool'],
     },
     {
       id: 'H150-449102',
@@ -168,7 +176,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'rahul.verma@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'user',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: 'H150-784920',
       status: 'active',
       kycStatus: 'pending',
@@ -178,7 +188,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(6),
       deviceInfo: 'OnePlus 11 / Chrome',
       ipAddress: '157.34.120.46',
-      internalNotes: ['KYC submitted, pending review'],
+      internalNotes: ['Admin System Account - Peer Pool'],
     },
     {
       id: 'H150-610293',
@@ -187,7 +197,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'sunita.patel@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'user',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: 'H150-918234',
       status: 'active',
       kycStatus: 'verified',
@@ -197,7 +209,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(4),
       deviceInfo: 'Redmi Note 12 / Chrome',
       ipAddress: '157.34.120.47',
-      internalNotes: ['Level 2 referral under Ashok'],
+      internalNotes: ['Admin System Account - Peer Pool'],
     },
     {
       id: 'H150-338291',
@@ -206,7 +218,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'manoj.tiwari@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'user',
+      role: 'admin',
+      isAdminAccount: true,
+      accountType: 'admin_pool',
       sponsorId: 'H150-610293',
       status: 'active',
       kycStatus: 'not_submitted',
@@ -216,6 +230,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(1),
       deviceInfo: 'Vivo V27 / Chrome',
       ipAddress: '157.34.120.48',
+      internalNotes: ['Admin System Account - Peer Pool'],
     },
   ];
 
@@ -876,9 +891,16 @@ class DatabaseManager {
           if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
           }
-          // Ensure all users have valid passwords and hashes populated
+          // Ensure all users have valid passwords, hashes, and designate pre-existing IDs as Admin IDs
           if (Array.isArray(loadedState.users)) {
             loadedState.users.forEach((u) => {
+              // Rule: "अभी तक जितना id है वो सब एडमिन का है"
+              // All existing accounts up to this point belong to Admin system pool
+              if (u.accountType !== 'registered_user') {
+                u.isAdminAccount = true;
+                u.accountType = 'admin_pool';
+                u.role = 'admin';
+              }
               if (!u.password) {
                 if (u.passwordHash) {
                   try {
@@ -1084,18 +1106,16 @@ class DatabaseManager {
 
   public createNewCycle(userId: string, cycleNumber: number): UserHelpCycle {
     const user = this.state.users.find((u) => u.id === userId);
-    const potentialPeers = this.state.users.filter((u) => u.id !== userId && u.role === 'user');
-    const peer1 = potentialPeers[0] || {
-      id: 'H150-918234',
-      fullName: 'Priya Sharma',
-      mobile: '9876501234',
-      email: 'priya.sharma@example.com',
-    };
-    const peer2 = potentialPeers[1] || {
+    
+    // User Directive: "अभी तक जितना id है वो सब एडमिन का है एडमिन id सिर्फ रिसीव हेल्प लेने के लिए जाएगी रिसीवर ज्यादा हो तो"
+    // When a member provides help (₹50 Verification + ₹100 Second Link), the Admin ID (Central Treasury)
+    // is the primary receiver designated to receive the help.
+    const adminReceiver = {
       id: 'H150-ADMIN01',
-      fullName: 'Community Assistance Treasury',
+      fullName: 'HELP150 Central Treasury (Admin ID)',
       mobile: '9800000001',
       email: 'admin@help150.org',
+      upi: this.state.settings.adminUpiId || 'help150.treasury@icici',
     };
 
     const now = new Date().toISOString();
@@ -1111,11 +1131,11 @@ class DatabaseManager {
         amount: 50,
         title: 'Provide Verification Link (₹50)',
         status: 'pending',
-        matchedWithUserId: peer1.id,
-        matchedWithUserName: peer1.fullName,
-        matchedWithUpi: `${peer1.fullName.toLowerCase().replace(/\s+/g, '')}@okaxis`,
-        matchedWithMobile: peer1.mobile || '9876501234',
-        matchedWithEmail: peer1.email || 'peer@help150.org',
+        matchedWithUserId: adminReceiver.id,
+        matchedWithUserName: adminReceiver.fullName,
+        matchedWithUpi: adminReceiver.upi,
+        matchedWithMobile: adminReceiver.mobile,
+        matchedWithEmail: adminReceiver.email,
         deadlineTime: Date.now() + 24 * 3600000, // 24-hour countdown deadline for ₹50 link
       },
       secondLink: {
@@ -1123,11 +1143,11 @@ class DatabaseManager {
         amount: 100,
         title: 'Second Link (₹100)',
         status: 'pending',
-        matchedWithUserId: peer2.id,
-        matchedWithUserName: peer2.fullName,
-        matchedWithUpi: peer2.id === 'H150-ADMIN01' ? 'help150.treasury@icici' : `${peer2.fullName.toLowerCase().replace(/\s+/g, '')}@icici`,
-        matchedWithMobile: peer2.mobile || '9800000001',
-        matchedWithEmail: peer2.email || 'admin@help150.org',
+        matchedWithUserId: adminReceiver.id,
+        matchedWithUserName: 'Community Treasury (Admin ID)',
+        matchedWithUpi: adminReceiver.upi,
+        matchedWithMobile: adminReceiver.mobile,
+        matchedWithEmail: adminReceiver.email,
       },
       timerDurationHours: 12,
       createdAt: now,
@@ -1201,13 +1221,10 @@ class DatabaseManager {
 
   private advanceTimerToReceiveHelp(cycle: UserHelpCycle): void {
     const now = new Date().toISOString();
-    const potentialSenders = [
-      { name: 'Karan Mehra', id: 'H150-610492', mobile: '9812345678', email: 'karan.mehra@gmail.com' },
-      { name: 'Deepak Joshi', id: 'H150-592011', mobile: '9823456789', email: 'deepak.joshi@gmail.com' },
-      { name: 'Sunil Rao', id: 'H150-481920', mobile: '9834567890', email: 'sunil.rao@gmail.com' },
-      { name: 'Rajesh Nair', id: 'H150-719382', mobile: '9845678901', email: 'rajesh.nair@gmail.com' },
-    ];
-    const pickedSender = potentialSenders[(cycle.cycleNumber - 1) % potentialSenders.length];
+    // User Directive: "अब कोई ऑटोमेटिक यूजर id जनरेट नहीं होना चाहिए"
+    // No automatic mock user IDs (e.g. H150-610492) are generated or added to database.
+    // User Directive: "एडमिन id सिर्फ रिसीव हेल्प लेने के लिए जाएगी"
+    // Admin ID only receives help, so the ₹200 incoming assistance is provided by the Community Peer Pool.
     const utrSample = `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`;
 
     cycle.status = 'receive_help';
@@ -1216,13 +1233,13 @@ class DatabaseManager {
       amount: 200,
       title: 'Receive Help Link (₹200)',
       status: 'submitted', // Incoming peer already attached slip for user to review and confirm
-      matchedWithUserId: pickedSender.id,
-      matchedWithUserName: pickedSender.name,
-      matchedWithMobile: pickedSender.mobile,
-      matchedWithEmail: pickedSender.email,
-      matchedWithUpi: `${pickedSender.name.toLowerCase().replace(/\s+/g, '')}@upi`,
+      matchedWithUserId: 'COMMUNITY-PEER',
+      matchedWithUserName: 'Community Peer Member',
+      matchedWithMobile: '9876500000',
+      matchedWithEmail: 'peer.help@help150.org',
+      matchedWithUpi: 'communitypeer@okaxis',
       proofReference: utrSample,
-      slipUrl: sampleSlipUrl(200, utrSample, pickedSender.name),
+      slipUrl: sampleSlipUrl(200, utrSample, 'Community Peer Member'),
       submittedAt: now,
     };
 
@@ -1230,7 +1247,7 @@ class DatabaseManager {
       id: `NOTIF-REC-${Date.now().toString().slice(-6)}`,
       userId: cycle.userId,
       title: `₹200 Receive Help Link Assigned! (Cycle #${cycle.cycleNumber})`,
-      message: `${pickedSender.name} (${pickedSender.id}) has sent ₹200 peer assistance. Please review payment proof and confirm.`,
+      message: `A Community Peer Member has sent ₹200 peer assistance. Please review payment proof and confirm receipt.`,
       type: 'success',
       isRead: false,
       createdAt: now,
