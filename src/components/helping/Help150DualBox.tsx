@@ -224,7 +224,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       });
       setFeedback({
         type: 'success',
-        message: `₹200 received & credited! Cycle #${result.completedCycle.cycleNumber} completed. Starting Cycle #${result.newCycle.cycleNumber} from the beginning!`,
+        message: `₹200 प्राप्त और कन्फर्म हो गया! साइकिल #${result.completedCycle.cycleNumber} पूर्ण। अब नई साइकिल #${result.newCycle.cycleNumber} का Provide Help (₹50) अनलॉक हो गया है!`,
       });
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error confirming payment' });
@@ -446,11 +446,31 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-red-200">
-                  {isStep1Active ? 'Step 1 of 2' : isStep2Active ? 'Step 2 of 2' : isTimerActive ? 'Maturation' : 'Completed'}
+                <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
+                  isReceiveActive
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                    : 'text-red-200 border-transparent'
+                }`}>
+                  {isStep1Active
+                    ? 'Step 1 of 2'
+                    : isStep2Active
+                    ? 'Step 2 of 2'
+                    : isTimerActive
+                    ? 'Maturation (12h)'
+                    : '🔒 Provide Help Locked'}
                 </span>
-                <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-red-700 shadow-md font-mono border border-red-200">
-                  {isStep1Active ? '₹50' : isStep2Active ? '₹100' : isTimerActive ? '12h Timer' : 'Done'}
+                <span className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md font-mono border ${
+                  isReceiveActive
+                    ? 'bg-amber-400 text-slate-950 border-amber-300'
+                    : 'bg-white text-red-700 border-red-200'
+                }`}>
+                  {isStep1Active
+                    ? '₹50'
+                    : isStep2Active
+                    ? '₹100'
+                    : isTimerActive
+                    ? '12h Timer'
+                    : '🔒 ₹50 Locked'}
                 </span>
               </div>
             </div>
@@ -676,43 +696,81 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
 
                   <p className="text-xs text-red-100 font-medium leading-relaxed">
-                    Both ₹50 and ₹100 Provide Help payments are confirmed! Your 12-hour maturation timer is running in Provide Help.
-                    Upon completion, your <strong>₹200 Receive Help link</strong> will appear automatically in the Sky Blue Box!
+                    Provide Help के दोनों लिंक (₹50 + ₹100) सफलतापूर्वक पूरे हो चुके हैं! आपका 12-घंटे का परिपक्वता टाइमर चल रहा है।
+                    टाइमर समाप्त होते ही दाएँ बॉक्स में केवल <strong>₹200 Receive Help का लिंक</strong> आएगा।
                   </p>
 
-                  {/* Fast Forward Demo Button */}
-                  <button
-                    onClick={handleFastForwardTimer}
-                    className="mt-2 py-2 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow cursor-pointer transition inline-flex items-center gap-1.5"
-                  >
-                    <Zap className="h-3.5 w-3.5 text-slate-950 fill-current" />
-                    <span>Fast-Forward 12h (Demo Instant Unlock)</span>
-                  </button>
+                  {/* Explicit Rule Callout: Both links never arrive together */}
+                  <div className="p-3 rounded-xl bg-red-900/80 border border-red-400/50 text-[11px] text-amber-200 text-left space-y-1">
+                    <span className="font-bold text-amber-300 uppercase tracking-wider block flex items-center gap-1.5">
+                      <Lock className="h-3.5 w-3.5" />
+                      <span>🔒 प्लेटफ़ॉर्म नियम (Strict Cycle Rule):</span>
+                    </span>
+                    <p className="leading-relaxed">
+                      Provide Help और Receive Help दोनों लिंक कभी भी एक साथ नहीं आएंगे। 12-घंटे का टाइमर पूरा होने पर पहले केवल <strong>Receive Help का ₹200 लिंक</strong> आएगा। जब आप वह ₹200 कन्फर्म करेंगे, उसके बाद ही अगला Provide Help अनलॉक होगा।
+                    </p>
+                  </div>
+
+                  {/* Admin-only Simulation Control (Hidden for regular users) */}
+                  {currentUser.role === 'admin' && (
+                    <div className="pt-1">
+                      <button
+                        onClick={handleFastForwardTimer}
+                        className="py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-bold cursor-pointer transition inline-flex items-center gap-1.5"
+                        title="Visible only to System Admin for verification"
+                      >
+                        <Zap className="h-3 w-3 text-amber-300" />
+                        <span>[Admin Dev Tool: Advance 12h Timer]</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* C. SCENARIO 3: RECEIVE HELP IS CURRENTLY ACTIVE */}
+            {/* C. SCENARIO 3: RECEIVE HELP IS CURRENTLY ACTIVE (PROVIDE HELP IS STRICTLY LOCKED!) */}
             {isReceiveActive && (
-              <div className="p-5 rounded-2xl bg-red-950/80 border border-emerald-500/50 text-center space-y-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Provide Help Cycle Completed</span>
+              <div className="p-5 sm:p-6 rounded-2xl bg-red-950/90 border-2 border-amber-400/70 text-center space-y-3.5 shadow-2xl relative overflow-hidden">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shadow-lg">
+                  <Lock className="w-6 h-6 animate-pulse" />
                 </div>
-                <h4 className="text-base font-black text-white">
-                  12 Hours Completed! Receive Help ₹200 is Ready
-                </h4>
-                <p className="text-xs text-red-100 font-medium">
-                  Your ₹50 and ₹100 Provide Help steps have matured. Please proceed to the <strong>Sky Blue Receive Help Box</strong> on the right to review the payment and confirm your ₹200.
-                </p>
+
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold uppercase tracking-wider">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span>🔒 Provide Help अभी लॉक है</span>
+                  </div>
+
+                  <h4 className="text-base sm:text-lg font-black text-white font-heading">
+                    रिसीव हेल्प का ₹200 कन्फर्म होने पर ही प्रोवाइड हेल्प खुलेगा
+                  </h4>
+
+                  <p className="text-xs text-red-100/90 leading-relaxed font-medium">
+                    12 घंटे की परिपक्वता पूरी हो चुकी है। नियमानुसार दोनों लिंक एक साथ नहीं आते हैं, इसलिए अभी दाएँ (Sky Blue) बॉक्स में केवल <strong>Receive Help (₹200) का लिंक</strong> सक्रिय है।
+                    Provide Help का अगला ऑप्शन तभी अनलॉक होगा जब आप दाएँ बॉक्स में ₹200 प्राप्त करके <strong>कन्फर्म</strong> करेंगे।
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-red-900/80 border border-red-500/50 text-[11px] text-emerald-300 text-left space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    <span>Provide Help (₹50 + ₹100) इस साइकिल का पूरा हो चुका है।</span>
+                  </div>
+                  <p className="text-red-200">
+                    अब केवल दाएँ बॉक्स में ₹200 रिसीव करें। जैसे ही आप ₹200 कन्फर्म करेंगे, तुरंत साइकिल #{cycle.cycleNumber + 1} का Provide Help (₹50) अनलॉक हो जाएगा।
+                  </p>
+                </div>
+
                 <button
                   onClick={() => {
                     const el = document.getElementById('box-receive-help');
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el?.classList.add('ring-4', 'ring-sky-400', 'ring-offset-2');
+                    setTimeout(() => el?.classList.remove('ring-4', 'ring-sky-400', 'ring-offset-2'), 2500);
                   }}
-                  className="px-4 py-2 rounded-xl bg-white text-red-700 font-black text-xs uppercase tracking-wider shadow cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 via-teal-500 to-sky-500 hover:from-sky-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-sky-950/60 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Go to Receive Help Box ➔
+                  <span>👉 दाएँ बॉक्स में ₹200 पेमेंट कन्फर्म करें ➔</span>
                 </button>
               </div>
             )}
@@ -891,11 +949,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     className="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm sm:text-base uppercase tracking-wider shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <CheckCircle2 className="h-5 w-5 stroke-[2.5]" />
-                    <span>[ Confirm ₹200 Payment Received ]</span>
+                    <span>[ ✅ Confirm ₹200 Payment Received (₹200 कन्फर्म करें) ]</span>
                   </button>
 
-                  <p className="text-[11px] text-sky-200 text-center font-medium">
-                    Confirming this payment will credit ₹200 to your wallet (Net profit +₹50) and <strong>automatically restart the cycle from the beginning</strong>!
+                  <p className="text-[11px] text-sky-200 text-center font-medium leading-relaxed">
+                    ₹200 कन्फर्म करते ही राशि आपके वॉलेट में जमा हो जाएगी (+₹50 शुद्ध लाभ) और <strong>बाएँ बॉक्स में अगला Provide Help (₹50) तुरंत अनलॉक हो जाएगा</strong>!
                   </p>
                 </div>
               </>
@@ -1183,14 +1241,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             </div>
 
             <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs text-emerald-200 font-medium">
-              🔄 <strong>Continuous Loop Active:</strong> Cycle #{showCelebrationModal.cycleNum + 1} has now started from the beginning with your next ₹50 First Help Link!
+              🔓 <strong>Provide Help Unlocked:</strong> ₹200 रिसीव कन्फर्म हो चुका है! अब साइकिल #{showCelebrationModal.cycleNum + 1} का Provide Help (₹50 First Help Link) अनलॉक हो गया है।
             </div>
 
             <button
               onClick={() => setShowCelebrationModal(null)}
               className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-950/50 cursor-pointer transition"
             >
-              Continue to Cycle #{showCelebrationModal.cycleNum + 1} ➔
+              Start Provide Help for Cycle #{showCelebrationModal.cycleNum + 1} ➔
             </button>
           </div>
         </div>

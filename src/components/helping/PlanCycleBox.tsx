@@ -384,16 +384,18 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 />
               </div>
 
-              {/* Fast Forward Test Button */}
-              <button
-                id="btn-fast-forward-timer"
-                onClick={handleFastForward12h}
-                className="mt-4 w-full py-2 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-400/50 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                title="Fast-forward 12 hours for instant testing"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>⚡ Fast-Forward 12h (Demo)</span>
-              </button>
+              {/* Admin Test Tool (Hidden for standard members) */}
+              {currentUser.role === 'admin' && (
+                <button
+                  id="btn-fast-forward-timer"
+                  onClick={handleFastForward12h}
+                  className="mt-4 w-full py-1.5 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-400/50 font-mono text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Admin test tool only"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>[Admin Test: Advance 12h Timer]</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -901,8 +903,8 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
 
                 <p className="text-xs text-sky-200/90 max-w-sm leading-relaxed font-medium">
                   {isTimerPhase
-                    ? `Once the 12-hour maturation timer reaches zero, the system automatically assigns your ₹200 receive help link. You can use the "⚡ Fast-Forward 12h (Demo)" button above for instant testing.`
-                    : 'First complete Provide Verification Link (₹50) and Second Link (₹100). The 12-hour timer will start immediately after, followed by your ₹200 receive link.'}
+                    ? '12 घंटे का टाइमर समाप्त होने के बाद यहाँ ₹200 का Receive Help लिंक सक्रिय होगा। दोनों लिंक एक साथ नहीं आएंगे। ₹200 कन्फर्म करने के बाद ही अगला Provide Help अनलॉक होगा।'
+                    : 'पहले Provide Help के दोनों लिंक (₹50 और ₹100) पूरे करें। उसके बाद 12-घंटे का टाइमर चलेगा, और फिर ₹200 का Receive Help लिंक आएगा।'}
                 </p>
               </div>
 
