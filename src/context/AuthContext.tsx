@@ -50,9 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Multi-device server state synchronization
+  // Multi-device server & Firestore cloud synchronization
   useEffect(() => {
     let isMounted = true;
+
+    // Immediately connect to Firestore cloud database for real-time downline & team sync across devices
+    firestoreSync.initSync();
+
     const syncWithServer = async () => {
       try {
         const res = await fetch('/api/sync');

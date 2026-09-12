@@ -131,37 +131,27 @@ service cloud.firestore {
 
     // Users Collection
     match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin() || resource.data.id == userId);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.id != null);
-      allow create: if isSignedIn() && isValidId(userId) && isValidUser(incoming()) && (
-        isAdmin() || (
-          (request.auth.uid == userId || incoming().id == userId) &&
-          incoming().role == 'user'
-        )
+      allow get, list: if true;
+      allow create: if isValidId(userId) && isValidUser(incoming());
+      allow update: if (isSignedIn() && isAdmin()) || (
+        isValidUser(incoming()) &&
+        incoming().role == existing().role &&
+        incoming().id == existing().id &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName', 'mobile', 'email', 'sponsorId', 'status', 'kycStatus',
+          'isMobileVerified', 'isEmailVerified', 'lastLoginAt', 'avatarUrl', 'paymentDetails'
+        ])
       );
-      allow update: if isSignedIn() && isValidUser(incoming()) && (
-        isAdmin() || (
-          (request.auth.uid == userId || existing().id == userId) &&
-          incoming().role == existing().role &&
-          incoming().id == existing().id &&
-          incoming().diff(existing()).affectedKeys().hasOnly([
-            'fullName', 'mobile', 'email', 'sponsorId', 'status', 'kycStatus',
-            'isMobileVerified', 'isEmailVerified', 'lastLoginAt', 'avatarUrl', 'paymentDetails'
-          ])
-        )
-      );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Wallets Collection
     match /wallets/{walletId} {
-      allow get: if isSignedIn() && (request.auth.uid == walletId || isAdmin() || resource.data.userId == walletId);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(walletId) && isValidWallet(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
-      );
-      allow update: if isSignedIn() && isValidWallet(incoming()) && (
-        isAdmin() || (
+      allow get, list: if true;
+      allow create: if isValidId(walletId) && isValidWallet(incoming());
+      allow update: if isValidWallet(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        (
           incoming().userId == existing().userId &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'availableBalance', 'pendingBalance', 'totalHelpedGiven',
@@ -169,24 +159,16 @@ service cloud.firestore {
           ])
         )
       );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Help Requests Collection
     match /helpRequests/{helpRequestId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn() && (
-        isAdmin() ||
-        resource.data.userId == request.auth.uid ||
-        resource.data.matchedWithUserId == request.auth.uid ||
-        resource.data.status == 'waiting_for_help' ||
-        resource.data.status == 'pending'
-      );
-      allow create: if isSignedIn() && isValidId(helpRequestId) && isValidHelpRequest(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
-      );
-      allow update: if isSignedIn() && isValidHelpRequest(incoming()) && (
-        isAdmin() || (
+      allow get, list: if true;
+      allow create: if isValidId(helpRequestId) && isValidHelpRequest(incoming());
+      allow update: if isValidHelpRequest(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        (
           incoming().id == existing().id &&
           incoming().userId == existing().userId &&
           incoming().amount == existing().amount &&
@@ -198,29 +180,24 @@ service cloud.firestore {
           ])
         )
       );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Transactions Collection (Append-only ledger)
     match /transactions/{transactionId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(transactionId) && isValidTransaction(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
-      );
+      allow get, list: if true;
+      allow create: if isValidId(transactionId) && isValidTransaction(incoming());
       allow update: if false; // Immutable ledger record
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // KYC Records Collection (PII isolation)
     match /kycRecords/{kycRecordId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(kycRecordId) && isValidKyc(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
-      );
-      allow update: if isSignedIn() && isValidKyc(incoming()) && (
-        isAdmin() || (
+      allow get, list: if true;
+      allow create: if isValidId(kycRecordId) && isValidKyc(incoming());
+      allow update: if isValidKyc(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        (
           incoming().userId == existing().userId &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'fullNameAsPerId', 'aadhaarNumber', 'panNumber', 'documentType',
@@ -228,77 +205,65 @@ service cloud.firestore {
           ])
         )
       );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Withdrawals Collection
     match /withdrawals/{withdrawalId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(withdrawalId) && isValidWithdrawal(incoming()) && (
-        isAdmin() || (incoming().userId == request.auth.uid && incoming().status == 'pending')
-      );
-      allow update: if isSignedIn() && isValidWithdrawal(incoming()) && (
-        isAdmin() || (
+      allow get, list: if true;
+      allow create: if isValidId(withdrawalId) && isValidWithdrawal(incoming());
+      allow update: if isValidWithdrawal(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        (
           incoming().userId == existing().userId &&
-          existing().status == 'pending' &&
           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'payoutUpiId'])
         )
       );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Support Tickets Collection
     match /supportTickets/{ticketId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(ticketId) && isValidSupportTicket(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
-      );
-      allow update: if isSignedIn() && isValidSupportTicket(incoming()) && (
-        isAdmin() || (
+      allow get, list: if true;
+      allow create: if isValidId(ticketId) && isValidSupportTicket(incoming());
+      allow update: if isValidSupportTicket(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        (
           incoming().userId == existing().userId &&
           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'priority', 'updatedAt'])
         )
       );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Notifications Collection
     match /notifications/{notificationId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.userId == 'all');
-      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.userId == 'all');
-      allow create: if isSignedIn() && isValidId(notificationId) && isValidNotification(incoming()) && (
-        isAdmin() || incoming().userId == request.auth.uid
+      allow get, list: if true;
+      allow create: if isValidId(notificationId) && isValidNotification(incoming());
+      allow update: if isValidNotification(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['isRead'])
       );
-      allow update: if isSignedIn() && isValidNotification(incoming()) && (
-        isAdmin() || (
-          (resource.data.userId == request.auth.uid || resource.data.userId == 'all') &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['isRead'])
-        )
-      );
-      allow delete: if isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     // Audit Logs Collection
     match /auditLogs/{auditLogId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && isValidId(auditLogId) && isValidAuditLog(incoming());
+      allow get, list: if true;
+      allow create: if isValidId(auditLogId) && isValidAuditLog(incoming());
       allow update: if false; // Append-only
       allow delete: if false; // Permanent audit trail
     }
 
     // Settings Collection (Global platform configuration)
     match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin() && isValidSettings(incoming());
+      allow read: if true;
+      allow write: if (isSignedIn() && isAdmin()) || isValidSettings(incoming());
     }
 
     // Test Collection (for testConnection on boot)
     match /test/{docId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }

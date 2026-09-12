@@ -1,6 +1,22 @@
 {
   "users": [
     {
+      "id": "H150-779184",
+      "fullName": "Suresh Kumar Verma",
+      "mobile": "9811223344",
+      "email": "suresh.kumar@example.com",
+      "password": "password123",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "role": "user",
+      "sponsorId": "H150-784920",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "joinedAt": "2026-09-12T01:44:46.763Z",
+      "lastLoginAt": "2026-09-12T01:44:46.763Z"
+    },
+    {
       "id": "H150-240211",
       "fullName": "Test Referral User",
       "mobile": "9899112233",
@@ -163,9 +179,33 @@
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
       "lastUpdated": "2026-09-11T18:52:05.820Z"
+    },
+    "H150-779184": {
+      "userId": "H150-779184",
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-12T01:44:46.763Z"
     }
   },
   "helpRequests": [
+    {
+      "id": "HP-99720310",
+      "userId": "H150-779184",
+      "userName": "Suresh Kumar Verma",
+      "userMobile": "9811223344",
+      "userEmail": "suresh.kumar@example.com",
+      "userUpi": "h150-779184@upi",
+      "amount": 150,
+      "type": "give_help",
+      "status": "pending_match",
+      "adminApproved": false,
+      "timerStatus": "pending",
+      "createdAt": "2026-09-12T01:44:46.763Z"
+    },
     {
       "id": "HP-38098864",
       "userId": "H150-240211",
@@ -184,6 +224,24 @@
   "transactions": [],
   "kycRecords": [],
   "notifications": [
+    {
+      "id": "NOTIF-486763",
+      "userId": "H150-784920",
+      "title": "New Direct Referral Joined!",
+      "message": "Suresh Kumar Verma (H150-779184) has joined your direct team (Level 1).",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-12T01:44:46.763Z"
+    },
+    {
+      "id": "NOTIF-486763",
+      "userId": "H150-779184",
+      "title": "Welcome to HELP150 Community",
+      "message": "Your User ID is H150-779184. Your registration is complete!",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-12T01:44:46.763Z"
+    },
     {
       "id": "NOTIF-725821",
       "userId": "H150-784920",

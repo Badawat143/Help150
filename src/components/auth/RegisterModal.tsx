@@ -66,7 +66,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   // Sync sponsor ID on open or prop change
   useEffect(() => {
     if (isOpen) {
-      const tracked = initialSponsorId || referralTracker.extractReferralFromUrl() || '';
+      const tracked =
+        initialSponsorId ||
+        referralTracker.extractReferralFromUrl() ||
+        referralTracker.getStoredReferral() ||
+        '';
       if (tracked) {
         setSponsorId(tracked.toUpperCase());
         setIsAutoTracked(true);

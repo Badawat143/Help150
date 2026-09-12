@@ -2,11 +2,27 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// Initialize Firebase Cloud Firestore on Server for real-time cross-device sync
+let serverFirestore: any = null;
+try {
+  const cfgPath = path.join(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(cfgPath)) {
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
+    const fbApp = initializeApp(cfg, 'help150-backend-server');
+    serverFirestore = getFirestore(fbApp, cfg.firestoreDatabaseId);
+    console.log('[SERVER] Cloud Firestore initialized for instant cross-device referral syncing.');
+  }
+} catch (e) {
+  console.warn('[SERVER] Could not initialize Firestore:', e);
+}
 
 // Ensure server data directory exists
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -217,7 +233,7 @@ app.get('/api/sync', (req, res) => {
 });
 
 // Register endpoint (Centralized Multi-Device Registration)
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   try {
     const { fullName, mobile, email, password, sponsorId } = req.body;
 
@@ -357,6 +373,18 @@ app.post('/api/register', (req, res) => {
 
     writeDb(dbData);
 
+    // Sync directly to Cloud Firestore so all other devices receive onSnapshot notification immediately
+    if (serverFirestore) {
+      try {
+        await setDoc(doc(serverFirestore, 'users', newUser.id), newUser);
+        await setDoc(doc(serverFirestore, 'wallets', newUserId), initialWallet);
+        await setDoc(doc(serverFirestore, 'helpRequests', initialHelpRequestId), initialProvideHelpRequest);
+        console.log(`[SERVER CLOUD FIRESTORE] Synced new user ${newUser.id} & wallet to Firestore!`);
+      } catch (fErr) {
+        console.warn('[SERVER CLOUD FIRESTORE] Sync warning:', fErr);
+      }
+    }
+
     console.log(`[SERVER REGISTRATION] New user registered: ${newUser.id} (${newUser.fullName}), Sponsor: ${validSponsorId || 'None'}`);
 
     return res.json({
@@ -450,7 +478,7 @@ app.get('/api/sponsor/:id', (req, res) => {
 });
 
 // Push client updates (e.g. slips, approvals) to server
-app.post('/api/sync/push', (req, res) => {
+app.post('/api/sync/push', async (req, res) => {
   try {
     const { users, wallets, helpRequests, transactions, kycRecords } = req.body;
     const dbData = readDb();
@@ -492,6 +520,24 @@ app.post('/api/sync/push', (req, res) => {
     }
 
     writeDb(dbData);
+
+    if (serverFirestore) {
+      try {
+        if (Array.isArray(users)) {
+          for (const u of users) {
+            await setDoc(doc(serverFirestore, 'users', u.id), u, { merge: true });
+          }
+        }
+        if (wallets && typeof wallets === 'object') {
+          for (const uid of Object.keys(wallets)) {
+            await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
+          }
+        }
+      } catch (fErr) {
+        console.warn('[SERVER PUSH] Cloud Firestore sync warning:', fErr);
+      }
+    }
+
     res.json({ success: true });
   } catch (err: any) {
     console.error('Push sync error:', err);

@@ -55,6 +55,7 @@ import { useToast } from '../../context/ToastContext';
 import { db } from '../../services/db';
 import { api } from '../../services/api';
 import { referralTracker } from '../../services/referralTracker';
+import { firestoreSync } from '../../services/firestoreSync';
 import { PaymentSlipUploadModal } from '../helping/PaymentSlipUploadModal';
 import { ProfileModal } from './ProfileModal';
 
@@ -83,6 +84,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const handleSyncReferrals = async () => {
     setIsSyncing(true);
     try {
+      await firestoreSync.fetchAllFromCloud();
       const res = await fetch('/api/sync');
       if (res.ok) {
         const data = await res.json();

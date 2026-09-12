@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { ReferralBox } from '../common/ReferralBox';
 import { db } from '../../services/db';
+import { firestoreSync } from '../../services/firestoreSync';
 
 export const ReferralModule: React.FC = () => {
   const { currentUser } = useAuth();
@@ -40,6 +41,7 @@ export const ReferralModule: React.FC = () => {
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
+      await firestoreSync.fetchAllFromCloud();
       const res = await fetch('/api/sync');
       if (res.ok) {
         const data = await res.json();
