@@ -812,6 +812,326 @@ app.get('/api/referrals/:userId', (req, res) => {
   });
 });
 
+// =========================================================================
+// BREVO (SENDINBLUE) EMAIL CAMPAIGN & TRANSACTIONAL API ROUTES
+// =========================================================================
+
+// In-memory campaign log backup if API key is not yet set or for history
+const campaignHistoryLog: any[] = [];
+
+// Helper to get Brevo API key from env or header
+function getBrevoApiKey(req: express.Request): string | undefined {
+  return (
+    process.env.BREVO_API_KEY ||
+    (req.headers['x-brevo-api-key'] as string) ||
+    undefined
+  );
+}
+
+// 1. Get Brevo Account Status & Connection Verification
+app.get('/api/brevo/status', async (req, res) => {
+  const apiKey = getBrevoApiKey(req);
+  if (!apiKey) {
+    return res.json({
+      configured: false,
+      message: 'BREVO_API_KEY environment variable is not configured. Set it in Settings/Secrets panel or provide via headers.',
+    });
+  }
+
+  try {
+    const resp = await fetch('https://api.brevo.com/v3/account', {
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+      },
+    });
+
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      return res.status(resp.status).json({
+        configured: true,
+        valid: false,
+        error: errData.message || `Brevo API returned status ${resp.status}`,
+      });
+    }
+
+    const accountData = await resp.json();
+    return res.json({
+      configured: true,
+      valid: true,
+      account: accountData,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      configured: true,
+      valid: false,
+      error: err.message || 'Failed to connect to Brevo API',
+    });
+  }
+});
+
+// 2. Fetch Existing Email Campaigns from Brevo
+app.get('/api/brevo/campaigns', async (req, res) => {
+  const apiKey = getBrevoApiKey(req);
+  if (!apiKey) {
+    return res.json({
+      campaigns: campaignHistoryLog,
+      isSimulated: true,
+      message: 'BREVO_API_KEY not configured. Showing local campaign logs.',
+    });
+  }
+
+  try {
+    const resp = await fetch('https://api.brevo.com/v3/emailCampaigns?limit=25&offset=0&sort=desc', {
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+      },
+    });
+
+    if (!resp.ok) {
+      return res.json({
+        campaigns: campaignHistoryLog,
+        isSimulated: true,
+      });
+    }
+
+    const data = await resp.json();
+    return res.json({
+      campaigns: data.campaigns || [],
+      count: data.count || 0,
+      isSimulated: false,
+    });
+  } catch (err) {
+    return res.json({
+      campaigns: campaignHistoryLog,
+      isSimulated: true,
+    });
+  }
+});
+
+// 3. Create a Campaign (Matching user's cURL command specification)
+app.post('/api/brevo/campaign', async (req, res) => {
+  const apiKey = getBrevoApiKey(req);
+  const {
+    name,
+    subject,
+    sender,
+    type = 'classic',
+    htmlContent,
+    recipients,
+    scheduledAt,
+    sendNow = false,
+  } = req.body;
+
+  if (!name || !subject || !htmlContent) {
+    return res.status(400).json({
+      error: 'Missing required parameters: name, subject, and htmlContent are required.',
+    });
+  }
+
+  const senderPayload = sender || {
+    name: 'HELP150 Community',
+    email: 'admin@help150.org',
+  };
+
+  const payload: any = {
+    name,
+    subject,
+    sender: senderPayload,
+    type,
+    htmlContent,
+  };
+
+  if (recipients) {
+    payload.recipients = recipients;
+  }
+
+  if (scheduledAt && !sendNow) {
+    payload.scheduledAt = scheduledAt;
+  }
+
+  // If no API key configured, store in local log and simulate success
+  if (!apiKey) {
+    const simulatedCampaign = {
+      id: Math.floor(1000 + Math.random() * 9000),
+      name,
+      subject,
+      sender: senderPayload,
+      type,
+      status: sendNow ? 'sent' : scheduledAt ? 'scheduled' : 'draft',
+      createdAt: new Date().toISOString(),
+      scheduledAt: scheduledAt || null,
+      htmlContent,
+      recipients,
+      simulated: true,
+    };
+    campaignHistoryLog.unshift(simulatedCampaign);
+
+    return res.json({
+      success: true,
+      simulated: true,
+      campaignId: simulatedCampaign.id,
+      campaign: simulatedCampaign,
+      message: 'Campaign recorded in HELP150 local log. To send live through Brevo, please configure BREVO_API_KEY in environment secrets.',
+    });
+  }
+
+  try {
+    const resp = await fetch('https://api.brevo.com/v3/emailCampaigns', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await resp.json();
+
+    if (!resp.ok) {
+      return res.status(resp.status).json({
+        success: false,
+        error: result.message || 'Failed to create campaign in Brevo.',
+        details: result,
+      });
+    }
+
+    const campaignId = result.id;
+    let sendNowResult = null;
+
+    // If immediate send requested
+    if (sendNow && campaignId) {
+      const sendResp = await fetch(`https://api.brevo.com/v3/emailCampaigns/${campaignId}/sendNow`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json',
+        },
+      });
+      sendNowResult = await sendResp.json().catch(() => ({}));
+    }
+
+    const createdRecord = {
+      id: campaignId,
+      name,
+      subject,
+      sender: senderPayload,
+      type,
+      status: sendNow ? 'queued_for_sending' : scheduledAt ? 'scheduled' : 'draft',
+      createdAt: new Date().toISOString(),
+      scheduledAt: scheduledAt || null,
+      htmlContent,
+      recipients,
+      simulated: false,
+    };
+    campaignHistoryLog.unshift(createdRecord);
+
+    return res.json({
+      success: true,
+      simulated: false,
+      campaignId,
+      sendNowResult,
+      message: sendNow
+        ? `Campaign #${campaignId} created and queued for immediate delivery via Brevo!`
+        : `Campaign #${campaignId} successfully created in Brevo!`,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Network error communicating with Brevo API',
+    });
+  }
+});
+
+// 4. Send Instant Broadcast to HELP150 Registered Members (via Brevo Transactional SMTP /v3/smtp/email)
+app.post('/api/brevo/send-broadcast', async (req, res) => {
+  const apiKey = getBrevoApiKey(req);
+  const { subject, htmlContent, sender, recipientEmails, recipientUserIds } = req.body;
+
+  if (!subject || !htmlContent) {
+    return res.status(400).json({ error: 'Subject and htmlContent are required' });
+  }
+
+  // Collect recipient emails from dbData if not explicitly provided
+  const dbData = readDb();
+  let targetRecipients: Array<{ email: string; name?: string }> = [];
+
+  if (Array.isArray(recipientEmails) && recipientEmails.length > 0) {
+    targetRecipients = recipientEmails.map((email: string) => ({ email }));
+  } else if (Array.isArray(recipientUserIds) && recipientUserIds.length > 0) {
+    targetRecipients = dbData.users
+      .filter((u: any) => recipientUserIds.includes(u.id) && u.email)
+      .map((u: any) => ({ email: u.email, name: u.fullName }));
+  } else {
+    // Send to all active users with valid email
+    targetRecipients = dbData.users
+      .filter((u: any) => u.status === 'active' && u.email && u.email.includes('@'))
+      .map((u: any) => ({ email: u.email, name: u.fullName }));
+  }
+
+  if (targetRecipients.length === 0) {
+    return res.status(400).json({ error: 'No valid recipient email addresses found to send to.' });
+  }
+
+  const senderObj = sender || {
+    name: 'HELP150 Community',
+    email: 'admin@help150.org',
+  };
+
+  if (!apiKey) {
+    return res.json({
+      success: true,
+      simulated: true,
+      recipientCount: targetRecipients.length,
+      recipients: targetRecipients,
+      message: `Simulated broadcast: ${targetRecipients.length} emails prepared. To send live via Brevo, set BREVO_API_KEY in environment secrets.`,
+    });
+  }
+
+  try {
+    // Send via Brevo Transactional Email Endpoint /v3/smtp/email
+    const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: senderObj,
+        to: targetRecipients,
+        subject,
+        htmlContent,
+      }),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      return res.status(resp.status).json({
+        success: false,
+        error: data.message || 'Failed to send transactional broadcast via Brevo',
+        details: data,
+      });
+    }
+
+    return res.json({
+      success: true,
+      simulated: false,
+      messageId: data.messageId,
+      recipientCount: targetRecipients.length,
+      message: `Successfully broadcasted to ${targetRecipients.length} members via Brevo!`,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Error executing broadcast via Brevo API',
+    });
+  }
+});
+
 // ---------------- VITE MIDDLEWARE SETUP ----------------
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

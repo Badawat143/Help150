@@ -76,6 +76,7 @@ import {
   ArrowUpRight,
   Shield,
   Sparkles,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
@@ -83,6 +84,7 @@ import { api } from '../../services/api';
 import { User, HelpRequest, WithdrawalRequest, KycRecord } from '../../types';
 import { PaymentVerificationDesk } from './PaymentVerificationDesk';
 import { MemberToMemberLinkBox } from './MemberToMemberLinkBox';
+import { BrevoCampaignDesk } from './BrevoCampaignDesk';
 import { FirebaseConnectionModal } from '../common/FirebaseConnectionModal';
 
 export const AdminPanel: React.FC = () => {
@@ -153,6 +155,7 @@ export const AdminPanel: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, hasArrow: false },
     { id: 'member_link_box', label: 'Member-to-Member Link Box', icon: Send, hasArrow: true, badge: 'P2P' },
+    { id: 'email_campaigns', label: 'Brevo Email Campaigns', icon: Mail, hasArrow: true, badge: 'Brevo' },
     { id: 'users', label: 'Users', icon: Users, hasArrow: true },
     { id: 'user_details', label: 'User Details', icon: UserCheck, hasArrow: true },
     { id: 'kyc', label: 'KYC', icon: ShieldCheck, hasArrow: true },
@@ -933,6 +936,16 @@ export const AdminPanel: React.FC = () => {
                   <span className="truncate uppercase tracking-wide">Member to Member Send Link Box</span>
                 </button>
 
+                {/* Brevo Email Campaigns (Vibrant Indigo & Blue Gradient) */}
+                <button
+                  onClick={() => handleQuickAction('email_campaigns')}
+                  className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 text-white font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition cursor-pointer"
+                >
+                  <Mail className="h-4 w-4 shrink-0 text-amber-300" />
+                  <span className="truncate uppercase tracking-wide">Brevo Email Campaigns (API v3)</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-400/30 text-white text-[9px] font-mono">NEW</span>
+                </button>
+
                 {/* 1. Manage Users (Royal Blue) */}
                 <button
                   onClick={() => handleQuickAction('users')}
@@ -1430,6 +1443,18 @@ export const AdminPanel: React.FC = () => {
             <MemberToMemberLinkBox
               currentUser={currentUser || ({ id: 'ADMIN-1', fullName: 'Super Admin', role: 'admin' } as any)}
               onRefresh={refreshUserData}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: BREVO EMAIL CAMPAIGNS & BROADCAST DESK */}
+      {activeModal === 'email_campaigns' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-6xl w-full shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in">
+            <BrevoCampaignDesk
+              onClose={() => setActiveModal(null)}
+              onToast={showToast}
             />
           </div>
         </div>
