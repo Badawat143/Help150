@@ -77,6 +77,7 @@ import {
   Shield,
   Sparkles,
   Mail,
+  MoreVertical,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
@@ -95,7 +96,7 @@ export const AdminPanel: React.FC = () => {
 
   // Active navigation state
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'English' | 'Hindi'>('English');
 
   // Modals and interactive views
@@ -333,13 +334,16 @@ export const AdminPanel: React.FC = () => {
       {/* 1. TOP GLOBAL HEADER BAR                                                 */}
       {/* ========================================================================= */}
       <header className="bg-[#0B1528] border-b border-slate-800 text-white sticky top-0 z-40 px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-md">
-        {/* Left: Hamburger + Admin Title */}
-        <div className="flex items-center gap-4">
+        {/* Left: 3-Dots Button + Admin Title */}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 md:hidden cursor-pointer"
+            id="btn-admin-header-3dots"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-white border border-slate-700 hover:border-amber-400/50 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="3 डॉट: एडमिन ऑप्शन्स मेन्यू खोलें"
           >
-            <Menu className="h-5 w-5" />
+            <MoreVertical className="h-4 w-4" />
+            <span className="text-[11px] font-bold text-amber-300">मेन्यू</span>
           </button>
           
           <div className="flex items-center gap-2">
@@ -417,38 +421,58 @@ export const AdminPanel: React.FC = () => {
       </header>
 
       {/* ========================================================================= */}
-      {/* 2. MAIN LAYOUT: LEFT SIDEBAR + DASHBOARD CANVAS                          */}
+      {/* 2. MAIN LAYOUT: LEFT SIDEBAR DRAWER + DASHBOARD CANVAS                   */}
       {/* ========================================================================= */}
-      <div className="flex w-full">
-        {/* ----------------------------------------------------------------------- */}
-        {/* LEFT DARK NAVY 22-MENU SIDEBAR                                          */}
-        {/* ----------------------------------------------------------------------- */}
+      <div className="flex w-full relative">
+        {/* Backdrop for the Admin Sidebar Drawer */}
+        {isSidebarOpen && (
+          <div
+            id="admin-sidebar-backdrop"
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 transition-opacity animate-fadeIn cursor-pointer"
+            title="Click to close sidebar"
+          />
+        )}
+
+        {/* LEFT DARK NAVY 22-MENU SIDEBAR (COLLAPSED INSIDE, OPENS ON 3-DOTS CLICK) */}
         <aside
           id="admin-left-sidebar"
-          className={`w-64 shrink-0 bg-[#091325] min-h-screen p-3.5 text-slate-300 select-none border-r border-slate-800/80 flex flex-col justify-between ${
-            isMobileMenuOpen ? 'block fixed inset-y-0 left-0 z-50 shadow-2xl' : 'hidden md:flex'
+          className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 bg-[#091325] min-h-screen p-4 text-slate-300 select-none border-r border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
           <div className="space-y-4">
-            {/* Top Logo in Sidebar */}
-            <div className="flex items-center gap-2.5 px-2 py-2 border-b border-slate-800/60 pb-3">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/20">
-                <img
-                  src="/logo.png"
-                  alt="HELP150 Official Logo"
-                  referrerPolicy="no-referrer"
-                  className="h-full w-full object-contain rounded-full"
-                />
-              </div>
-              <div>
-                <div className="text-base font-black text-white tracking-tight flex items-center">
-                  <span>HELP</span>
-                  <span className="text-amber-400">150</span>
+            {/* Top Logo in Sidebar with Close (X) Button */}
+            <div className="flex items-center justify-between px-1 py-1 border-b border-slate-800/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/20">
+                  <img
+                    src="/logo.png"
+                    alt="HELP150 Official Logo"
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-contain rounded-full"
+                  />
                 </div>
-                <div className="text-[9px] text-amber-200/70 font-medium whitespace-nowrap">
-                  Together For A Better Tomorrow
+                <div>
+                  <div className="text-base font-black text-white tracking-tight flex items-center">
+                    <span>HELP</span>
+                    <span className="text-amber-400">150</span>
+                  </div>
+                  <div className="text-[9px] text-amber-200/70 font-medium whitespace-nowrap">
+                    Together For A Better Tomorrow
+                  </div>
                 </div>
               </div>
+
+              {/* Close Button */}
+              <button
+                id="btn-close-admin-sidebar"
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                title="मेन्यू बंद करें (Close Menu)"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Sidebar Navigation Items (22 items) */}
@@ -461,9 +485,9 @@ export const AdminPanel: React.FC = () => {
                     key={item.id}
                     onClick={() => {
                       handleNavClick(item.id);
-                      setIsMobileMenuOpen(false);
+                      setIsSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition cursor-pointer ${
                       isActive
                         ? 'bg-[#1877F2] text-white font-bold shadow-md shadow-blue-900/30'
                         : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -515,6 +539,45 @@ export const AdminPanel: React.FC = () => {
         {/* MAIN ADMIN DASHBOARD CONTENT CANVAS                                     */}
         {/* ----------------------------------------------------------------------- */}
         <main className="flex-1 p-4 sm:p-6 lg:p-7 space-y-6 max-w-[1440px] mx-auto overflow-x-hidden">
+          
+          {/* Floating 3-Dots Button (Fixed on left edge so admin can always open menu) */}
+          <button
+            id="btn-admin-floating-3dots-menu"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            className="fixed left-3 sm:left-4 top-24 z-40 flex items-center justify-center h-11 w-11 rounded-2xl bg-[#091325] text-amber-400 hover:text-white border-2 border-amber-400/60 shadow-2xl shadow-slate-950/80 hover:scale-110 transition cursor-pointer backdrop-blur-md group"
+            title="3 डॉट: एडमिन मेन्यू ऑप्शन्स खोलें"
+            aria-label="Open Admin Options Menu"
+          >
+            <MoreVertical className="h-6 w-6 group-hover:scale-110 transition-transform" />
+          </button>
+
+          {/* Top Bar with Prominent 3-Dots Button & Menu Trigger */}
+          <div className="w-full flex items-center justify-between gap-3 pb-1">
+            <button
+              id="btn-admin-3dots-menu"
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#091325] text-white hover:bg-slate-900 border border-slate-700 hover:border-amber-400/70 shadow-md transition cursor-pointer group"
+              title="3 डॉट पर क्लिक करें - सभी 22 ऑप्शन्स खुलेंगे"
+            >
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-slate-950 transition">
+                <MoreVertical className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-black text-amber-300 group-hover:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>एडमिन मेन्यू ऑप्शन्स</span>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">3 डॉट</span>
+                </div>
+                <div className="text-[10px] text-slate-400">क्लिक करके सभी 22 विकल्प खोलें</div>
+              </div>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs">
+                <ShieldCheck className="h-3.5 w-3.5 text-red-400" />
+                <span>Master Admin Console (Restricted)</span>
+              </span>
+            </div>
+          </div>
           
           {/* ===================================================================== */}
           {/* 1. TOP WELCOME BACK HERO BANNER                                       */}

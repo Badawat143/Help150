@@ -367,6 +367,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
               </div>
             )}
 
+            {/* Direct Admin Portal Trigger */}
+            <button
+              id="btn-header-admin-portal"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-admin-login'))}
+              className="px-2.5 py-1.5 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+              title="Admin Login Portal (Direct Link: ?admin=login)"
+            >
+              <Lock className="h-3.5 w-3.5 text-amber-400" />
+              <span className="hidden md:inline">Admin Login</span>
+            </button>
+
             {/* Header Search Button */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -532,6 +543,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
               </button>
             </div>
           )}
+
+          <div className="mt-3 pt-2 border-t border-slate-800">
+            <button
+              id="mobile-btn-admin-portal"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-admin-login'));
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Lock className="h-4 w-4 text-amber-400" />
+              <span>Admin Login Portal (सीधा एडमिन लिंक)</span>
+            </button>
+          </div>
         </div>
       )}
 

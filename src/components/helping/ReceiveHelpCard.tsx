@@ -96,6 +96,9 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
       )
   );
 
+  // Crucial Community Helping Rule: ONLY Receiver can Accept or Reject
+  const isReceiver = currentUser.id === request.matchedWithUserId || currentUser.role === 'admin';
+
   const isSlipUploaded = Boolean(
     request.paymentSlipUrl ||
       request.proofReference ||
@@ -327,24 +330,44 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
           </div>
         </div>
 
-        {/* 2. Action Buttons (ACCEPT, REJECT) if pending acceptance */}
-        {!isAccepted && !isCompleted && !isRejected && !isExpired && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <button
-              onClick={() => setShowAcceptModal(true)}
-              className="py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 text-slate-950 font-black text-xs shadow-lg shadow-sky-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>🟢 ACCEPT</span>
-            </button>
+        {/* 2. Action Buttons (ACCEPT, REJECT) - STRICTLY VISIBLE ONLY TO RECEIVER */}
+        {isReceiver && !isAccepted && !isCompleted && !isRejected && !isExpired && (
+          <div className="space-y-2 pt-1">
+            <div className="p-2 rounded-xl bg-sky-950/80 border border-sky-400/30 text-center">
+              <span className="text-[11px] font-bold text-amber-300">
+                👤 आप रिसीवर हैं: बैंक/UPI में ₹{amount} प्राप्त होने की पुष्टि करने के बाद ही निर्णय लें
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowAcceptModal(true)}
+                className="py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <CheckCircle2 className="h-4 w-4 stroke-[2.5]" />
+                <span>🟢 ACCEPT (स्वीकार करें)</span>
+              </button>
 
-            <button
-              onClick={() => setShowRejectModal(true)}
-              className="py-3 px-4 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <XCircle className="h-4 w-4" />
-              <span>🔴 REJECT</span>
-            </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="py-3 px-4 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <XCircle className="h-4 w-4 stroke-[2.5]" />
+                <span>🔴 REJECT (अस्वीकार करें)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Notice for Provider: Provider cannot accept/reject */}
+        {!isReceiver && !isAccepted && !isCompleted && !isRejected && !isExpired && (
+          <div className="p-3.5 rounded-2xl bg-amber-950/50 border border-amber-500/40 text-center space-y-1">
+            <div className="text-xs font-bold text-amber-300 flex items-center justify-center gap-1.5">
+              <Clock className="h-4 w-4 text-amber-400" />
+              <span>प्रदाता स्थिति: केवल रिसीवर द्वारा स्वीकार/अस्वीकार किया जाएगा</span>
+            </div>
+            <p className="text-[11px] text-amber-200/90 leading-relaxed">
+              आपने सहायता भेजी है। रिसीवर (<strong className="text-white">{request.matchedWithUserName || 'Receiver'}</strong>) अपने खाते में ₹{amount} प्राप्त होने की पुष्टि करने के बाद एक्सेप्ट या रिजेक्ट करेगा।
+            </p>
           </div>
         )}
 
