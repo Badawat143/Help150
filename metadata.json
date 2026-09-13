@@ -1,6 +1,6 @@
 {
   "name": "HELP150",
-  "description": "Community Help • Transparent System • Secure Dashboard. A professional, compliant community helping and referral platform.",
+  "description": "Together For A Better Tomorrow • Community Help. A transparent, community-focused mutual assistance platform with real-time peer matching, 12-hour countdown, and bank-grade KYC security.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

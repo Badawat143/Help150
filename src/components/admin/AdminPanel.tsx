@@ -344,9 +344,16 @@ export const AdminPanel: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setActiveSidebarItem('dashboard'); setActiveModal(null); }}
-              className="flex items-center gap-2 text-slate-200 hover:text-white transition cursor-pointer"
+              className="flex items-center gap-2.5 text-slate-200 hover:text-white transition cursor-pointer"
             >
-              <Menu className="h-5 w-5 text-slate-400 hidden md:block" />
+              <div className="relative h-8 w-8 rounded-full p-0.5 bg-gradient-to-br from-amber-400 to-amber-700 shrink-0">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
+              </div>
               <div className="flex items-center gap-1.5 font-black text-sm sm:text-base tracking-tight text-white">
                 <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
                 <span>Admin Panel</span>
@@ -424,16 +431,21 @@ export const AdminPanel: React.FC = () => {
           <div className="space-y-4">
             {/* Top Logo in Sidebar */}
             <div className="flex items-center gap-2.5 px-2 py-2 border-b border-slate-800/60 pb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md">
-                <HeartHandshake className="h-5 w-5" />
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/20">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Official Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
               </div>
               <div>
                 <div className="text-base font-black text-white tracking-tight flex items-center">
                   <span>HELP</span>
                   <span className="text-amber-400">150</span>
                 </div>
-                <div className="text-[9px] text-slate-400 font-medium whitespace-nowrap">
-                  Community Help • Together We Grow
+                <div className="text-[9px] text-amber-200/70 font-medium whitespace-nowrap">
+                  Together For A Better Tomorrow
                 </div>
               </div>
             </div>

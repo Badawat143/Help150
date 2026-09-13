@@ -1268,6 +1268,9 @@ app.post('/api/smtp/verify', async (req, res) => {
   }
 });
 
+// Serve static files from /public directory (logos, social share images, favicons)
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // ---------------- VITE MIDDLEWARE SETUP ----------------
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

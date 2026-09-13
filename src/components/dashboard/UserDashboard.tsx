@@ -392,15 +392,22 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           <div className="space-y-6">
             {/* Top Logo in Sidebar */}
             <div className="flex items-center gap-2.5 px-2 pt-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md">
-                <HeartHandshake className="h-6 w-6" />
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/25">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Official Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
               </div>
               <div>
                 <div className="text-lg font-black text-white tracking-tight flex items-center">
                   <span>HELP</span>
                   <span className="text-amber-400">150</span>
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium">Community Help</div>
+                <div className="text-[10px] text-amber-200/70 font-medium whitespace-nowrap">
+                  Together For A Better Tomorrow
+                </div>
               </div>
             </div>
 
@@ -580,16 +587,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
           {/* Bottom Sidebar Promotional / Vision Card */}
           <div className="mt-6 p-4 rounded-2xl bg-gradient-to-b from-[#0F1E3D] to-[#081225] border border-blue-900/40 text-center relative overflow-hidden shadow-inner">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-lg">
-              <Users className="h-6 w-6" />
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-lg shadow-amber-500/20">
+              <img
+                src="/logo.png"
+                alt="HELP150"
+                referrerPolicy="no-referrer"
+                className="h-full w-full object-contain rounded-full"
+              />
             </div>
-            <h4 className="text-xs font-black text-white">Help Each Other Grow Together</h4>
-            <p className="text-[10px] text-slate-400 mt-1">Small Help Creates Big Changes</p>
-            <div className="mt-3 flex justify-center">
-              <div className="h-6 w-6 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xs">
-                💛
-              </div>
-            </div>
+            <h4 className="text-xs font-black text-white">Together For A Better Tomorrow</h4>
+            <p className="text-[10px] text-amber-200/80 mt-1 font-medium">Voluntary Peer Community</p>
           </div>
         </aside>
 

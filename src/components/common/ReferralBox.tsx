@@ -124,8 +124,13 @@ export const ReferralBox: React.FC<ReferralBoxProps> = ({ customUserId, showStat
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-red-500 to-blue-600 text-white shadow-lg shadow-red-500/25">
-                <Sparkles className="h-5 w-5" />
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-lg shadow-amber-500/25">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -250,8 +255,13 @@ export const ReferralBox: React.FC<ReferralBoxProps> = ({ customUserId, showStat
             </button>
 
             <div className="mb-4">
-              <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-red-500 to-blue-600 text-white mb-2 shadow-lg">
-                <QrCode className="h-6 w-6" />
+              <div className="relative mx-auto mb-2 h-16 w-16 rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-xl shadow-amber-500/25">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
               </div>
               <h3 className="text-lg font-bold text-white font-heading">Scan to Join HELP150</h3>
               <p className="text-xs text-amber-400 font-mono mt-0.5">Sponsor ID: {userId}</p>

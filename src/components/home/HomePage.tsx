@@ -90,20 +90,35 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-gradient-to-tr from-amber-500/10 via-blue-600/15 to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 text-center max-w-3xl mx-auto">
+          {/* Official Emblem Logo Badge */}
+          <div className="flex justify-center mb-6">
+            <div className="relative group">
+              <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-600 opacity-75 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all" />
+              <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full p-1 bg-gradient-to-b from-amber-300 via-amber-600 to-amber-900 shadow-2xl shadow-amber-500/30">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Official Community Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full shadow-inner"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/30 text-xs font-semibold text-amber-300 shadow-lg mb-6 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/30 text-xs font-semibold text-amber-300 shadow-lg mb-4 backdrop-blur-md">
             <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping" />
             <span>Community Help • Transparent System • Secure Dashboard</span>
           </div>
 
           {/* Main Brand Title */}
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight sm:leading-none font-heading mb-4">
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight sm:leading-none font-heading mb-3">
             HELP<span className="gradient-gold-text">150</span>
           </h1>
 
           {/* Tagline */}
-          <p className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-amber-200 to-slate-200 font-heading mb-4">
-            “A transparent and community-focused helping platform”
+          <p className="text-lg sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-300 to-amber-100 font-heading mb-4">
+            “Together For A Better Tomorrow”
           </p>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">

@@ -80,11 +80,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
             <button
               id="brand-logo-btn"
               onClick={() => setActiveTab('home')}
-              className="flex items-center gap-2.5 text-left group cursor-pointer"
+              className="flex items-center gap-2.5 sm:gap-3 text-left group cursor-pointer"
             >
-              <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                <ShieldCheck className="h-6 w-6 text-slate-950" />
-                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-500 ring-2 ring-slate-900 text-[8px] font-bold text-white">
+              <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-lg shadow-amber-500/25 group-hover:scale-105 group-hover:shadow-amber-500/40 transition-all">
+                <img
+                  src="/logo.png"
+                  alt="HELP150 Official Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain rounded-full"
+                />
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-slate-900 text-[9px] font-bold text-white shadow">
                   ✓
                 </span>
               </div>
@@ -97,8 +102,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
                     HELPING PLAN
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 hidden sm:inline font-medium">
-                  Community Help • Together We Grow
+                <span className="text-[11px] text-amber-200/80 hidden sm:inline font-medium">
+                  Together For A Better Tomorrow
                 </span>
               </div>
             </button>

@@ -76,13 +76,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 shadow-md">
-            <LogIn className="h-6 w-6" />
+        <div className="flex items-center gap-3.5 mb-5">
+          <div className="relative h-12 w-12 shrink-0 rounded-full p-0.5 bg-gradient-to-br from-amber-400 to-amber-700 shadow-md shadow-amber-500/20">
+            <img
+              src="/logo.png"
+              alt="HELP150 Logo"
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-contain rounded-full"
+            />
           </div>
           <div>
-            <h3 className="text-xl font-black text-white font-heading tracking-tight">
-              Member & Admin Login
+            <h3 className="text-xl font-black text-white font-heading tracking-tight flex items-center gap-1.5">
+              <span>HELP150</span>
+              <span className="text-amber-400 text-sm font-semibold">Login</span>
             </h3>
             <p className="text-xs text-slate-400">
               Cross-browser & all-device secure access
