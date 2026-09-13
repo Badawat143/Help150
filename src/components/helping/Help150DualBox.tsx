@@ -439,44 +439,42 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         </div>
       )}
 
-      {/* THE TWO MAIN BOXES GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* THE TWO MAIN BOXES GRID (COMPACT HEIGHT - FITS TO AMOUNT LEVEL) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* ========================================================================= */}
-        {/* 🔴 PROVIDE HELP BOX (RED THEMED CARD)                                     */}
+        {/* 🔴 PROVIDE HELP BOX (COMPACT RED THEMED CARD)                             */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-3xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-red-500 shadow-2xl shadow-red-950/60 p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden group hover:border-red-400 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-red-500 shadow-xl p-4 sm:p-4.5 flex flex-col justify-between relative overflow-hidden group hover:border-red-400 transition-all text-white min-h-[330px]"
         >
-          {/* Decorative glowing red background element */}
-          <div className="absolute top-0 right-0 h-48 w-48 bg-red-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 h-32 w-32 bg-rose-600/15 rounded-full blur-2xl pointer-events-none" />
+          {/* Decorative glowing red ambient */}
+          <div className="absolute top-0 right-0 h-36 w-36 bg-red-500/15 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 space-y-4">
-            {/* 1. Header: 🔥 PROVIDE HELP (Red Pill Style) */}
-            <div className="flex items-center justify-between border-b border-red-500/40 pb-3.5">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600 border border-red-400 shadow-md">
-                <span className="text-base">🔥</span>
-                <h3 className="text-sm sm:text-base font-black text-emerald-300 font-heading uppercase tracking-wider">
-                  PROVIDE HELP
-                </h3>
+          <div className="relative z-10 space-y-3">
+            {/* Header: 🔥 PROVIDE HELP + Step + Live Timer + Amount */}
+            <div className="flex items-center justify-between border-b border-red-500/40 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600 border border-red-400 shadow-sm">
+                  <span className="text-sm">🔥</span>
+                  <h3 className="text-xs sm:text-sm font-black text-emerald-300 font-heading uppercase tracking-wider">
+                    PROVIDE HELP
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold text-red-200">
+                  {isStep1Active ? 'Step 1' : isStep2Active ? 'Step 2' : ''}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
-                  isReceiveActive
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
-                    : 'text-red-200 border-transparent'
-                }`}>
-                  {isStep1Active
-                    ? 'Step 1 of 2'
-                    : isStep2Active
-                    ? 'Step 2 of 2'
-                    : isTimerActive
-                    ? 'Maturation (12h)'
-                    : '🔒 Provide Help Locked'}
-                </span>
-                <span className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md font-mono border ${
+                {/* Live Countdown Timer Badge */}
+                {(isStep1Active || isStep2Active) && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-900/90 border border-red-400/50 text-amber-300 font-mono font-bold text-[11px] shadow-sm">
+                    <Clock className="h-3 w-3 animate-pulse" />
+                    <span>{isStep1Active ? timerStep1String : '11:59:59'}</span>
+                  </span>
+                )}
+                <span className={`px-3 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
                   isReceiveActive
                     ? 'bg-amber-400 text-slate-950 border-amber-300'
                     : 'bg-white text-red-700 border-red-200'
@@ -486,330 +484,229 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     : isStep2Active
                     ? '₹100'
                     : isTimerActive
-                    ? '12h Timer'
-                    : '🔒 ₹50 Locked'}
+                    ? '12h'
+                    : '🔒 ₹50'}
                 </span>
               </div>
             </div>
 
             {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE */}
             {(isStep1Active || isStep2Active) && (
-              <>
-                {/* Step Context Title */}
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-bold text-red-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    {activeProvideBeneficiary.title}
-                  </span>
-                  {isStep2Active && (
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
-                      ✓ ₹50 Link Confirmed
-                    </span>
-                  )}
-                </div>
-
-                {/* Beneficiary Details List */}
-                <div className="bg-red-950/90 border border-red-500/50 rounded-2xl p-4 space-y-2.5 shadow-inner">
-                  {/* User Name */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-red-900/60">
-                    <div className="flex items-center gap-2 text-red-200 font-semibold">
-                      <span className="text-base">👤</span>
-                      <span>User Name</span>
-                    </div>
-                    <span className="font-black text-white text-sm sm:text-base tracking-wide">
+              <div className="bg-red-950/80 border border-red-500/50 rounded-xl p-3 space-y-2.5 shadow-inner">
+                {/* Row 1: Beneficiary Name & ID + Amount Option */}
+                <div className="flex items-center justify-between text-xs pb-1.5 border-b border-red-900/60">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-sm">
                       {activeProvideBeneficiary.name}
                     </span>
-                  </div>
-
-                  {/* User ID */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-red-900/60">
-                    <div className="flex items-center gap-2 text-red-200 font-semibold">
-                      <span className="text-base">🆔</span>
-                      <span>User ID</span>
-                    </div>
-                    <span className="font-mono font-bold text-white bg-red-900/80 px-2.5 py-0.5 rounded text-xs">
+                    <span className="font-mono text-[10px] text-red-200 bg-red-900/80 px-1.5 py-0.5 rounded font-bold">
                       {activeProvideBeneficiary.id}
                     </span>
                   </div>
-
-                  {/* Mobile */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-red-900/60">
-                    <div className="flex items-center gap-2 text-red-200 font-semibold">
-                      <span className="text-base">📱</span>
-                      <span>Mobile</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-white text-xs sm:text-sm">
-                        {activeProvideBeneficiary.mobile}
-                      </span>
-                      <button
-                        onClick={() => handleCopyText(activeProvideBeneficiary.mobile, 'mobile', 'Mobile')}
-                        className="p-1 rounded bg-red-800 hover:bg-red-700 text-white transition cursor-pointer"
-                        title="Copy Mobile"
-                      >
-                        {copiedKey === 'mobile' ? (
-                          <Check className="h-3 w-3 text-emerald-300" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-red-900/60">
-                    <div className="flex items-center gap-2 text-red-200 font-semibold">
-                      <span className="text-base">📧</span>
-                      <span>Email</span>
-                    </div>
-                    <span className="font-mono text-red-100 text-xs sm:text-sm truncate max-w-[180px] sm:max-w-[240px]">
-                      {activeProvideBeneficiary.email}
-                    </span>
-                  </div>
-
-                  {/* Amount */}
-                  <div className="flex items-center justify-between text-sm pt-1">
-                    <div className="flex items-center gap-2 text-red-200 font-semibold">
-                      <span className="text-base">💰</span>
-                      <span>Amount</span>
-                    </div>
-                    <span className="font-black text-white text-base sm:text-lg font-mono bg-white/10 px-3 py-0.5 rounded-lg border border-red-400/40">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-red-300 font-semibold">Amount:</span>
+                    <span className="font-mono font-black text-sm sm:text-base text-amber-300 bg-white/10 px-2 py-0.5 rounded border border-red-400/40">
                       ₹{activeProvideBeneficiary.amount}
                     </span>
                   </div>
                 </div>
 
-                {/* ⏱ Center Live Action Timer */}
-                <div className="bg-red-950 border-2 border-red-500/60 rounded-2xl py-3 px-4 text-center shadow-lg">
-                  <div className="flex items-center justify-center gap-2.5">
-                    <span className="text-2xl animate-pulse">⏱</span>
-                    <span className="font-mono font-black text-2xl sm:text-3xl text-white tracking-widest drop-shadow">
-                      {isStep1Active ? timerStep1String : '11:59:59'}
-                    </span>
+                {/* Row 2: Mobile & UPI with 1-click Copy and QR */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {/* Mobile with Copy */}
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-red-900/40 border border-red-900/60">
+                    <div className="flex items-center gap-1.5 text-red-200 truncate">
+                      <Phone className="h-3 w-3 text-red-300 shrink-0" />
+                      <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.mobile}</span>
+                    </div>
+                    <button
+                      onClick={() => handleCopyText(activeProvideBeneficiary.mobile, 'mobile', 'Mobile')}
+                      className="p-1 rounded bg-red-800 hover:bg-red-700 text-white transition cursor-pointer text-[10px]"
+                      title="Copy Mobile"
+                    >
+                      {copiedKey === 'mobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
+                    </button>
                   </div>
-                  <p className="text-[10px] text-red-200 uppercase tracking-widest mt-1 font-semibold">
-                    {isStep1Active ? '24-Hour Strict Payment Deadline' : 'Action Window Countdown'}
-                  </p>
-                  {isStep1Active && (
-                    <div className="mt-2 text-[11px] font-medium text-amber-200 bg-red-900/90 py-1.5 px-3 rounded-lg border border-red-400/50">
-                      ⚠️ <strong>Rule:</strong> Unpaid ₹50 links will result in account ID <strong>BLOCK</strong> and automatic permanent <strong>DELETION</strong> in 24 hours.
-                    </div>
-                  )}
-                </div>
 
-                {/* Primary Upload Button: 📤 Upload Payment Slip (Provider transfers & uploads proof) */}
-                <button
-                  onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl border border-red-400/40 transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span className="text-base">📤</span>
-                  <span>Upload Payment Slip (₹{activeProvideBeneficiary.amount})</span>
-                </button>
-
-                {/* Quick UPI / Pay / QR Assistance */}
-                <div className="pt-2 border-t border-red-900/60 space-y-2">
-                  <div className="p-2.5 rounded-xl bg-red-900/70 border border-red-500/40 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <CreditCard className="h-4 w-4 text-amber-300 shrink-0" />
-                      <span className="font-mono font-bold text-white truncate">
-                        {activeProvideBeneficiary.upi}
-                      </span>
+                  {/* UPI ID with Copy & QR */}
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-red-900/40 border border-red-900/60">
+                    <div className="flex items-center gap-1.5 text-red-200 truncate">
+                      <CreditCard className="h-3 w-3 text-amber-300 shrink-0" />
+                      <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.upi}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleCopyText(activeProvideBeneficiary.upi, 'upi', 'UPI ID')}
-                        className="px-2 py-1 rounded bg-white text-red-700 text-[10px] font-black cursor-pointer shadow"
+                        className="px-1.5 py-0.5 rounded bg-white text-red-700 font-black text-[9px] cursor-pointer"
+                        title="Copy UPI"
                       >
-                        {copiedKey === 'upi' ? 'Copied' : 'Copy UPI'}
+                        {copiedKey === 'upi' ? '✓' : 'Copy'}
                       </button>
                       <button
-                        onClick={() =>
-                          setShowQrModal({
-                            name: activeProvideBeneficiary.name,
-                            upi: activeProvideBeneficiary.upi,
-                            amount: activeProvideBeneficiary.amount,
-                            title: activeProvideBeneficiary.title,
-                          })
-                        }
+                        onClick={() => setShowQrModal({
+                          name: activeProvideBeneficiary.name,
+                          upi: activeProvideBeneficiary.upi,
+                          amount: activeProvideBeneficiary.amount,
+                          title: activeProvideBeneficiary.title,
+                        })}
                         className="p-1 rounded bg-red-950 text-white border border-red-500/50 cursor-pointer"
                         title="Scan QR Code"
                       >
-                        <QrCode className="h-3.5 w-3.5" />
+                        <QrCode className="h-3 w-3" />
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* Inline 12-Digit UTR Input */}
+                {/* Row 3: Action Buttons right up to amount level (Upload Slip & QR + Inline UTR) */}
+                <div className="pt-0.5 space-y-1.5">
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
+                      className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>📤 Upload Slip (₹{activeProvideBeneficiary.amount})</span>
+                    </button>
+                    <button
+                      onClick={() => setShowQrModal({
+                        name: activeProvideBeneficiary.name,
+                        upi: activeProvideBeneficiary.upi,
+                        amount: activeProvideBeneficiary.amount,
+                        title: activeProvideBeneficiary.title,
+                      })}
+                      className="py-2 px-3 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      <span>Pay QR</span>
+                    </button>
+                  </div>
+
+                  {/* Inline 12-Digit UTR */}
+                  <div className="flex gap-1.5">
                     <input
                       type="text"
                       value={inlineUtr}
                       onChange={(e) => setInlineUtr(e.target.value)}
-                      placeholder="Enter 12-digit UPI UTR number"
-                      className="flex-1 p-2.5 rounded-xl bg-red-950 border border-red-400/50 text-white text-xs font-mono placeholder:text-red-300/40 focus:outline-none focus:border-red-300"
+                      placeholder="Enter 12-digit UPI UTR"
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-red-950 border border-red-400/50 text-white text-[11px] font-mono placeholder:text-red-300/40 focus:outline-none focus:border-red-300"
                     />
                     <button
                       onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
                       disabled={isSubmittingUtr || !inlineUtr.trim()}
-                      className="px-4 py-2 rounded-xl bg-white text-red-700 font-black text-xs cursor-pointer shadow disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-white text-red-700 font-black text-[11px] cursor-pointer shadow disabled:opacity-50"
                     >
-                      {isSubmittingUtr ? 'Submitting...' : 'Submit UTR'}
+                      {isSubmittingUtr ? '...' : 'Submit UTR'}
                     </button>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* B. SCENARIO 2: 12-HOUR MATURATION TIMER ACTIVE */}
-            {isTimerActive && (
-              <div className="space-y-4 py-2">
-                {/* Completed steps badge */}
-                <div className="p-3 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between">
-                  <span>✅ Step 1: ₹50 Paid</span>
-                  <span>✅ Step 2: ₹100 Paid</span>
-                </div>
-
-                {/* Center 12-Hour Maturation Clock */}
-                <div className="bg-red-950 border-2 border-amber-400/80 rounded-2xl p-5 text-center shadow-2xl space-y-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold uppercase tracking-widest">
-                    <Clock className="h-3.5 w-3.5 animate-spin" />
-                    <span>12-Hour Maturation Timer Running</span>
-                  </div>
-
-                  <div className="font-mono font-black text-3xl sm:text-4xl text-white tracking-widest drop-shadow">
-                    {timer12hString}
-                  </div>
-
-                  {/* Animated Progress Bar */}
-                  <div className="w-full bg-red-950/90 rounded-full h-3 border border-red-500/50 overflow-hidden p-0.5">
-                    <div
-                      className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${timer12h.percent}%` }}
-                    />
-                  </div>
-
-                  <p className="text-xs text-red-100 font-medium leading-relaxed">
-                    Provide Help के दोनों लिंक (₹50 + ₹100) सफलतापूर्वक पूरे हो चुके हैं! आपका 12-घंटे का परिपक्वता टाइमर चल रहा है।
-                    टाइमर समाप्त होते ही दाएँ बॉक्स में केवल <strong>₹200 Receive Help का लिंक</strong> आएगा।
-                  </p>
-
-                  {/* Explicit Rule Callout: Both links never arrive together */}
-                  <div className="p-3 rounded-xl bg-red-900/80 border border-red-400/50 text-[11px] text-amber-200 text-left space-y-1">
-                    <span className="font-bold text-amber-300 uppercase tracking-wider block flex items-center gap-1.5">
-                      <Lock className="h-3.5 w-3.5" />
-                      <span>🔒 प्लेटफ़ॉर्म नियम (Strict Cycle Rule):</span>
-                    </span>
-                    <p className="leading-relaxed">
-                      Provide Help और Receive Help दोनों लिंक कभी भी एक साथ नहीं आएंगे। 12-घंटे का टाइमर पूरा होने पर पहले केवल <strong>Receive Help का ₹200 लिंक</strong> आएगा। जब आप वह ₹200 कन्फर्म करेंगे, उसके बाद ही अगला Provide Help अनलॉक होगा।
-                    </p>
-                  </div>
-
-                  {/* Admin-only Simulation Control (Hidden for regular users) */}
-                  {currentUser.role === 'admin' && (
-                    <div className="pt-1">
-                      <button
-                        onClick={handleFastForwardTimer}
-                        className="py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-bold cursor-pointer transition inline-flex items-center gap-1.5"
-                        title="Visible only to System Admin for verification"
-                      >
-                        <Zap className="h-3 w-3 text-amber-300" />
-                        <span>[Admin Dev Tool: Advance 12h Timer]</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* C. SCENARIO 3: RECEIVE HELP IS CURRENTLY ACTIVE (PROVIDE HELP IS STRICTLY LOCKED!) */}
+            {/* B. SCENARIO 2: 12-HOUR MATURATION TIMER ACTIVE (COMPACT) */}
+            {isTimerActive && (
+              <div className="bg-red-950/80 border border-amber-400/60 rounded-xl p-3.5 text-center space-y-2 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
+                  <Clock className="h-3 w-3 animate-spin" />
+                  <span>12-Hour Maturation Running</span>
+                </div>
+                <div className="font-mono font-black text-2xl sm:text-3xl text-white tracking-widest drop-shadow">
+                  {timer12hString}
+                </div>
+                <div className="w-full bg-red-950 rounded-full h-2 border border-red-500/50 overflow-hidden p-0.5">
+                  <div
+                    className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${timer12h.percent}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-red-100 leading-relaxed font-medium">
+                  Provide Help (₹50 + ₹100) पूरा हो चुका है। टाइमर पूरा होते ही दाएँ बॉक्स में ₹200 रिसीव लिंक सक्रिय होगा।
+                </p>
+                {currentUser.role === 'admin' && (
+                  <button
+                    onClick={handleFastForwardTimer}
+                    className="py-1 px-2.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[9px] font-mono font-bold cursor-pointer transition inline-flex items-center gap-1"
+                  >
+                    <Zap className="h-2.5 w-2.5" />
+                    <span>[Admin Fast Forward]</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* C. SCENARIO 3: RECEIVE HELP IS ACTIVE (PROVIDE HELP IS LOCKED) */}
             {isReceiveActive && (
-              <div className="p-5 sm:p-6 rounded-2xl bg-red-950/90 border-2 border-amber-400/70 text-center space-y-3.5 shadow-2xl relative overflow-hidden">
-                <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shadow-lg">
-                  <Lock className="w-6 h-6 animate-pulse" />
+              <div className="bg-red-950/80 border border-amber-400/60 rounded-xl p-3.5 text-center space-y-2.5 shadow-inner">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="p-1 rounded-lg bg-amber-400/20 text-amber-300">
+                    <Lock className="h-4 w-4" />
+                  </span>
+                  <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                    Provide Help अभी लॉक है
+                  </span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold uppercase tracking-wider">
-                    <Lock className="h-3.5 w-3.5" />
-                    <span>🔒 Provide Help अभी लॉक है</span>
-                  </div>
-
-                  <h4 className="text-base sm:text-lg font-black text-white font-heading">
-                    रिसीव हेल्प का ₹200 कन्फर्म होने पर ही प्रोवाइड हेल्प खुलेगा
-                  </h4>
-
-                  <p className="text-xs text-red-100/90 leading-relaxed font-medium">
-                    12 घंटे की परिपक्वता पूरी हो चुकी है। नियमानुसार दोनों लिंक एक साथ नहीं आते हैं, इसलिए अभी दाएँ (Sky Blue) बॉक्स में केवल <strong>Receive Help (₹200) का लिंक</strong> सक्रिय है।
-                    Provide Help का अगला ऑप्शन तभी अनलॉक होगा जब आप दाएँ बॉक्स में ₹200 प्राप्त करके <strong>कन्फर्म</strong> करेंगे।
-                  </p>
+                <p className="text-[11px] text-red-100 leading-relaxed font-medium">
+                  दाएँ बॉक्स में <strong>₹200 Receive Help</strong> कन्फर्म होने के बाद ही अगला Provide Help (साइकिल #{cycle.cycleNumber + 1}) खुलेगा।
+                </p>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-red-900/60 border border-red-500/40 text-xs">
+                  <span className="text-red-200">Next Provide Help:</span>
+                  <span className="font-mono font-bold text-white">₹50 (Locked)</span>
                 </div>
-
-                <div className="p-3 rounded-xl bg-red-900/80 border border-red-500/50 text-[11px] text-emerald-300 text-left space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                    <span>Provide Help (₹50 + ₹100) इस साइकिल का पूरा हो चुका है।</span>
-                  </div>
-                  <p className="text-red-200">
-                    अब केवल दाएँ बॉक्स में ₹200 रिसीव करें। जैसे ही आप ₹200 कन्फर्म करेंगे, तुरंत साइकिल #{cycle.cycleNumber + 1} का Provide Help (₹50) अनलॉक हो जाएगा।
-                  </p>
-                </div>
-
                 <button
                   onClick={() => {
                     const el = document.getElementById('box-receive-help');
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el?.classList.add('ring-4', 'ring-sky-400', 'ring-offset-2');
-                    setTimeout(() => el?.classList.remove('ring-4', 'ring-sky-400', 'ring-offset-2'), 2500);
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 via-teal-500 to-sky-500 hover:from-sky-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-sky-950/60 transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-sky-500 to-teal-500 text-slate-950 font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1.5"
                 >
-                  <span>👉 दाएँ बॉक्स में ₹200 पेमेंट कन्फर्म करें ➔</span>
+                  <span>👉 दाएँ बॉक्स में ₹200 कन्फर्म करें ➔</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Box 1 Footer Stats */}
-          <div className="mt-4 pt-3 border-t border-red-500/30 flex items-center justify-between text-xs text-red-200 relative z-10 font-medium">
+          {/* Compact Box Footer Stats */}
+          <div className="mt-3 pt-2 border-t border-red-500/30 flex items-center justify-between text-[11px] text-red-200 relative z-10 font-medium">
             <span>Cycle Provide Completed:</span>
-            <strong className="text-white font-black font-mono text-sm">
+            <strong className="text-white font-mono font-bold">
               ₹{(step1.status === 'completed' ? 50 : 0) + (step2.status === 'completed' ? 100 : 0)} / ₹150
             </strong>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* 🔵 RECEIVE HELP BOX (SKY BLUE THEMED CARD)                                */}
+        {/* 🔵 RECEIVE HELP BOX (COMPACT SKY BLUE THEMED CARD)                        */}
         {/* ========================================================================= */}
         <div
           id="box-receive-help"
-          className="rounded-3xl bg-gradient-to-b from-sky-950 via-sky-900 to-cyan-950 border-2 border-sky-400 shadow-2xl shadow-sky-950/60 p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden group hover:border-sky-300 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-sky-950 via-sky-900 to-cyan-950 border-2 border-sky-400 shadow-xl p-4 sm:p-4.5 flex flex-col justify-between relative overflow-hidden group hover:border-sky-300 transition-all text-white min-h-[330px]"
         >
-          {/* Decorative glowing sky blue background element */}
-          <div className="absolute top-0 right-0 h-48 w-48 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 h-32 w-32 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+          {/* Decorative glowing sky blue ambient */}
+          <div className="absolute top-0 right-0 h-36 w-36 bg-sky-400/15 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 space-y-4">
-            {/* 1. Header: 🔁 RECEIVED HELP (Amber Pill Style) */}
-            <div className="flex items-center justify-between border-b border-sky-400/40 pb-3.5">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400 border border-amber-300 shadow-md">
-                <RotateCw className="w-4 h-4 text-blue-950 font-black stroke-[2.5]" />
-                <h3 className="text-sm sm:text-base font-black text-blue-950 font-heading uppercase tracking-wider">
-                  RECEIVED HELP
-                </h3>
+          <div className="relative z-10 space-y-3">
+            {/* Header: 🔁 RECEIVED HELP + Status + Live Timer + Amount */}
+            <div className="flex items-center justify-between border-b border-sky-400/40 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 border border-amber-300 shadow-sm">
+                  <RotateCw className="w-3.5 h-3.5 text-blue-950 font-black stroke-[2.5]" />
+                  <h3 className="text-xs sm:text-sm font-black text-blue-950 font-heading uppercase tracking-wider">
+                    RECEIVED HELP
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold text-sky-200">
+                  {isReceiveActive ? 'Slip Submitted' : ''}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                  isReceiveActive
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
-                    : isTimerActive
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
-                    : 'bg-red-500/20 text-red-300 border-red-500/40'
-                }`}>
-                  {isReceiveActive ? 'Ready to Confirm' : isTimerActive ? '⏳ 12h Maturing' : '🔒 Locked (Provide Help Pending)'}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md font-mono border ${
+                {/* Live Action Timer Badge */}
+                {isReceiveActive && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-900/90 border border-sky-400/50 text-amber-300 font-mono font-bold text-[11px] shadow-sm">
+                    <Clock className="h-3 w-3 animate-pulse" />
+                    <span>23:59:59</span>
+                  </span>
+                )}
+                <span className={`px-3 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
                   isReceiveActive
                     ? 'bg-white text-blue-950 border-sky-200'
                     : 'bg-slate-900/80 text-slate-300 border-slate-700'
@@ -821,315 +718,171 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* A. SCENARIO 1: RECEIVE HELP IS ACTIVE (₹200 LINK READY TO CONFIRM) */}
             {isReceiveActive && receiveLink && (
-              <>
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-bold text-sky-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Incoming ₹200 Assistance From Peer
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
-                    Slip Submitted
-                  </span>
-                </div>
-
-                {/* Sender Details List */}
-                <div className="bg-sky-950/90 border border-sky-400/50 rounded-2xl p-4 space-y-2.5 shadow-inner">
-                  {/* User Name */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-sky-900/60">
-                    <div className="flex items-center gap-2 text-sky-200 font-semibold">
-                      <span className="text-base">👤</span>
-                      <span>Sender Member</span>
-                    </div>
-                    <span className="font-black text-white text-sm sm:text-base tracking-wide">
+              <div className="bg-sky-950/80 border border-sky-400/50 rounded-xl p-3 space-y-2.5 shadow-inner">
+                {/* Row 1: Sender Member Name & ID + Amount Option */}
+                <div className="flex items-center justify-between text-xs pb-1.5 border-b border-sky-900/60">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-sm">
                       {receiveLink.matchedWithUserName}
                     </span>
-                  </div>
-
-                  {/* User ID */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-sky-900/60">
-                    <div className="flex items-center gap-2 text-sky-200 font-semibold">
-                      <span className="text-base">🆔</span>
-                      <span>User ID</span>
-                    </div>
-                    <span className="font-mono font-bold text-white bg-sky-900/80 px-2.5 py-0.5 rounded text-xs">
+                    <span className="font-mono text-[10px] text-sky-200 bg-sky-900/80 px-1.5 py-0.5 rounded font-bold">
                       {receiveLink.matchedWithUserId}
                     </span>
                   </div>
-
-                  {/* Mobile */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-sky-900/60">
-                    <div className="flex items-center gap-2 text-sky-200 font-semibold">
-                      <span className="text-base">📱</span>
-                      <span>Mobile</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-white text-xs sm:text-sm">
-                        {receiveLink.matchedWithMobile}
-                      </span>
-                      <button
-                        onClick={() => handleCopyText(receiveLink.matchedWithMobile, 'recMobile', 'Sender Mobile')}
-                        className="p-1 rounded bg-sky-800 hover:bg-sky-700 text-white transition cursor-pointer"
-                        title="Copy Mobile"
-                      >
-                        {copiedKey === 'recMobile' ? (
-                          <Check className="h-3 w-3 text-emerald-300" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* UTR / Proof Ref */}
-                  <div className="flex items-center justify-between text-sm py-1 border-b border-sky-900/60">
-                    <div className="flex items-center gap-2 text-sky-200 font-semibold">
-                      <span className="text-base">🧾</span>
-                      <span>UTR Number</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-amber-300 text-xs sm:text-sm">
-                        {receiveLink.proofReference || 'UTR-VERIFIED'}
-                      </span>
-                      {receiveLink.slipUrl && (
-                        <button
-                          onClick={() =>
-                            setShowProofModal({
-                              url: receiveLink.slipUrl!,
-                              ref: receiveLink.proofReference || '',
-                              amount: 200,
-                              name: receiveLink.matchedWithUserName,
-                            })
-                          }
-                          className="px-2 py-0.5 rounded bg-sky-800 hover:bg-sky-700 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="h-3 w-3" />
-                          <span>View Proof</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Amount */}
-                  <div className="flex items-center justify-between text-sm pt-1">
-                    <div className="flex items-center gap-2 text-sky-200 font-semibold">
-                      <span className="text-base">💰</span>
-                      <span>Amount</span>
-                    </div>
-                    <span className="font-black text-white text-base sm:text-lg font-mono bg-white/10 px-3 py-0.5 rounded-lg border border-sky-300/40">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-sky-300 font-semibold">Amount:</span>
+                    <span className="font-mono font-black text-sm sm:text-base text-amber-300 bg-white/10 px-2 py-0.5 rounded border border-sky-300/40">
                       ₹{receiveLink.amount}
                     </span>
                   </div>
                 </div>
 
-                {/* Live Action Timer */}
-                <div className="bg-sky-950 border-2 border-sky-400/60 rounded-2xl py-3 px-4 text-center shadow-lg">
-                  <div className="flex items-center justify-center gap-2.5">
-                    <span className="text-2xl animate-pulse">⏱</span>
-                    <span className="font-mono font-black text-2xl sm:text-3xl text-white tracking-widest drop-shadow">
-                      23:59:59
-                    </span>
+                {/* Row 2: Mobile with Copy & UTR Number with View Proof Slip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {/* Sender Mobile */}
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-sky-900/40 border border-sky-900/60">
+                    <div className="flex items-center gap-1.5 text-sky-200 truncate">
+                      <Phone className="h-3 w-3 text-sky-300 shrink-0" />
+                      <span className="font-mono font-semibold text-white truncate text-[11px]">{receiveLink.matchedWithMobile}</span>
+                    </div>
+                    <button
+                      onClick={() => handleCopyText(receiveLink.matchedWithMobile, 'recMobile', 'Sender Mobile')}
+                      className="p-1 rounded bg-sky-800 hover:bg-sky-700 text-white transition cursor-pointer text-[10px]"
+                      title="Copy Mobile"
+                    >
+                      {copiedKey === 'recMobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
+                    </button>
                   </div>
-                  <p className="text-[10px] text-sky-200 uppercase tracking-widest mt-1 font-semibold">
-                    Confirmation Window
-                  </p>
+
+                  {/* UTR & View Proof */}
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-sky-900/40 border border-sky-900/60">
+                    <div className="flex items-center gap-1.5 text-sky-200 truncate">
+                      <span className="text-[10px]">🧾</span>
+                      <span className="font-mono font-bold text-amber-300 truncate text-[11px]">
+                        {receiveLink.proofReference || 'UTR-VERIFIED'}
+                      </span>
+                    </div>
+                    {receiveLink.slipUrl && (
+                      <button
+                        onClick={() => setShowProofModal({
+                          url: receiveLink.slipUrl!,
+                          ref: receiveLink.proofReference || '',
+                          amount: 200,
+                          name: receiveLink.matchedWithUserName,
+                        })}
+                        className="px-1.5 py-0.5 rounded bg-sky-800 hover:bg-sky-700 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="h-2.5 w-2.5" />
+                        <span>View</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Receiver Action Panel: ACCEPT / REJECT incoming payment */}
+                {/* Row 3: Receiver Decision Buttons right up to amount level ([ ACCEPT ] & [ REJECT ]) */}
                 {receiveLink.status === 'rejected' ? (
-                  <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-500/70 text-rose-200 space-y-2.5 text-center shadow-lg">
-                    <div className="flex items-center justify-center gap-2 font-bold text-rose-300 text-sm">
-                      <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
-                      <span>आपने यह भुगतान अस्वीकृत (REJECT) कर दिया है</span>
+                  <div className="p-2 rounded-lg bg-rose-950/90 border border-rose-500/70 text-center space-y-1.5">
+                    <div className="text-[11px] font-bold text-rose-300 flex items-center justify-center gap-1">
+                      <AlertTriangle className="h-3 w-3 text-rose-400 shrink-0" />
+                      <span>आपने यह भुगतान अस्वीकृत (REJECT) किया है</span>
                     </div>
-                    <p className="text-xs text-rose-200 font-medium">
-                      कारण: <strong className="text-white">"{receiveLink.rejectionReason || rejectReason}"</strong>
-                    </p>
-                    <p className="text-[11px] text-rose-300/90">
-                      एडमिन सपोर्ट और प्रेषक सदस्य को जांच के लिए सूचित कर दिया गया है।
+                    <p className="text-[10px] text-rose-200">
+                      कारण: <strong>"{receiveLink.rejectionReason || rejectReason}"</strong>
                     </p>
                     <button
                       onClick={handleConfirmReceiveHelp}
                       disabled={isConfirmingReceive}
-                      className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider transition cursor-pointer shadow flex items-center justify-center gap-2"
+                      className="w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition cursor-pointer shadow flex items-center justify-center gap-1"
                     >
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>पुनः जांच कर ₹200 स्वीकार करें (यदि राशि आ गई हो)</span>
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>पुनः जांच कर ₹200 स्वीकार करें</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2.5 pt-1">
-                    <div className="flex items-center justify-between text-[11px] text-sky-200 px-1 font-bold">
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>रिसीवर पुष्टि (Receiver Decision):</span>
-                      </span>
-                      <span className="text-amber-300 text-[10px]">बैंक खाता जांचकर निर्णय लें</span>
-                    </div>
-
-                    {/* Receiver Decision Buttons: [ ACCEPT ] & [ REJECT ] */}
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="pt-0.5 space-y-1">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleConfirmReceiveHelp}
                         disabled={isConfirmingReceive}
-                        className="py-3.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        className="py-2.5 px-3 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                         title="राशि प्राप्त हो गई है, स्वीकार करें"
                       >
-                        <Check className="h-4 w-4 stroke-[3] text-slate-950" />
-                        <span>[ ACCEPT ]</span>
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        <span>[ ACCEPT ₹200 ]</span>
                       </button>
-
                       <button
                         onClick={() => setShowRejectModal(true)}
                         disabled={isConfirmingReceive}
-                        className="py-3.5 px-3 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-rose-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                        title="राशि प्राप्त नहीं हुई या गलत स्लिप है, अस्वीकार करें"
+                        className="py-2.5 px-3 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        title="राशि प्राप्त नहीं हुई, अस्वीकार करें"
                       >
-                        <X className="h-4 w-4 stroke-[3] text-white" />
+                        <X className="h-3.5 w-3.5 stroke-[3]" />
                         <span>[ REJECT ]</span>
                       </button>
                     </div>
-
-                    <p className="text-[11px] text-sky-200 text-center font-medium leading-relaxed pt-0.5">
-                      ✅ <strong>ACCEPT:</strong> ₹200 आपके वॉलेट में जमा होगा (+₹50 शुद्ध लाभ) और अगला Provide Help अनलॉक होगा। <br />
-                      ❌ <strong>REJECT:</strong> यदि बैंक में पैसा न आया हो या गलत स्लिप हो तो तुरंत अस्वीकार करें।
-                    </p>
+                    <div className="text-[10px] text-sky-200 text-center font-medium">
+                      बैंक खाता जांचकर निर्णय लें (स्वीकार करने पर +₹50 शुद्ध लाभ)
+                    </div>
                   </div>
                 )}
-              </>
-            )}
-
-            {/* B. SCENARIO 2: AWAITING PROVIDE HELP (STEP 1 OR STEP 2) */}
-            {(isStep1Active || isStep2Active) && (
-              <div className="space-y-4 py-2">
-                <div className="bg-sky-950/90 border-2 border-amber-400/60 rounded-2xl p-5 text-center space-y-3.5 shadow-2xl relative overflow-hidden">
-                  {/* Glowing padlock icon */}
-                  <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shadow-lg">
-                    <Lock className="w-6 h-6 animate-pulse" />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold uppercase tracking-wider">
-                      <Lock className="h-3 w-3" />
-                      <span>🔒 Locked: Provide Help Incomplete</span>
-                    </div>
-
-                    <h4 className="text-base sm:text-lg font-black text-white font-heading leading-snug">
-                      Provide Help Link Complete होने के बाद ही Receive Help Link आएगा
-                    </h4>
-
-                    <p className="text-xs text-sky-200/90 leading-relaxed font-medium">
-                      Receive Help Link is currently <strong>locked</strong>. You must complete both <strong>₹50 First Help Link</strong> and <strong>₹100 Second Help Link</strong> in the Red Box first. Once verified, a 12-hour timer will run, and then your <strong>₹200 Receive Help Link</strong> will appear here automatically.
-                    </p>
-                  </div>
-
-                  {/* Step status roadmap */}
-                  <div className="p-3.5 rounded-xl bg-sky-900/70 border border-sky-400/30 text-left space-y-2 text-xs font-medium text-sky-100">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className={step1.status === 'completed' ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                          {step1.status === 'completed' ? '✓' : '●'}
-                        </span>
-                        <span>Step 1: ₹50 First Help (Verification):</span>
-                      </span>
-                      <strong className={step1.status === 'completed' ? 'text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse'}>
-                        {step1.status === 'completed' ? 'Completed ✓' : 'In Progress (Active in Red Box)'}
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className={step2.status === 'completed' ? 'text-emerald-400 font-bold' : 'text-slate-400 font-bold'}>
-                          {step2.status === 'completed' ? '✓' : '●'}
-                        </span>
-                        <span>Step 2: ₹100 Second Help Link:</span>
-                      </span>
-                      <strong className={step2.status === 'completed' ? 'text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30' : (step1.status === 'completed' ? 'text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse' : 'text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded')}>
-                        {step2.status === 'completed' ? 'Completed ✓' : (step1.status === 'completed' ? 'In Progress (Active in Red Box)' : '🔒 Locked until Step 1')}
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-slate-400 font-bold">●</span>
-                        <span>Step 3: 12-Hour Maturation Timer:</span>
-                      </span>
-                      <strong className="text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded">
-                        🔒 Locked until Step 1 &amp; 2
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-sky-800/80">
-                      <span className="flex items-center gap-1.5 font-bold text-white">
-                        <span>🔒</span>
-                        <span>Step 4: ₹200 Receive Help Link:</span>
-                      </span>
-                      <strong className="text-amber-300 font-black">
-                        Arrives ONLY After Provide Help Complete
-                      </strong>
-                    </div>
-                  </div>
-
-                  {/* Hindi & English Mandatory Rule Callout */}
-                  <div className="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-[11px] text-amber-200 text-left space-y-1">
-                    <span className="font-bold text-red-300 uppercase tracking-wider block">
-                      ⚠️ अनिवार्य नियम (Mandatory Platform Rule):
-                    </span>
-                    <p className="leading-relaxed">
-                      कम्युनिटी नियमों के अनुसार, जब तक आप अपने दोनों Provide Help (₹50 Verification + ₹100 Second Link) पूरा करके पेमेंट प्रूफ / UTR सबमिट नहीं कर देते और 12-घंटे की परिपक्वता अवधि पूरी नहीं होती, तब तक आपको Receive Help लिंक प्राप्त नहीं होगा।
-                    </p>
-                  </div>
-
-                  {/* Quick Scroll to Red Box Button */}
-                  <button
-                    onClick={() => {
-                      const el = document.getElementById('box-provide-help');
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      el?.classList.add('ring-4', 'ring-red-500', 'ring-offset-2');
-                      setTimeout(() => el?.classList.remove('ring-4', 'ring-red-500', 'ring-offset-2'), 2500);
-                    }}
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-950/60 transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>🔴 Complete Provide Help in Red Box First ➔</span>
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* C. SCENARIO 3: DURING 12-HOUR TIMER */}
-            {isTimerActive && (
-              <div className="space-y-4 py-2">
-                <div className="bg-sky-950/90 border-2 border-sky-400/60 rounded-2xl p-5 text-center space-y-3.5 shadow-2xl">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold uppercase tracking-wider">
-                    <Clock className="h-3.5 w-3.5 animate-spin" />
-                    <span>Provide Help Completed — 12-Hour Maturation Running</span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-3xl font-black font-mono text-white tracking-widest">
-                      {timer12hString}
-                    </div>
-                    <h4 className="text-sm font-bold text-emerald-300">
-                      Provide Help Links (₹50 + ₹100) पूरे हो चुके हैं!
-                    </h4>
-                    <p className="text-xs text-sky-200 leading-relaxed font-medium">
-                      12-घंटे का टाइमर समाप्त होने के बाद ही <strong>₹200 Receive Help link</strong> यहाँ सक्रिय होगा।
-                      As soon as the timer reaches <strong>00:00:00</strong>, peer member details and payment proof for your <strong>₹200 assistance</strong> will appear here automatically.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-sky-900/60 to-cyan-900/60 border border-sky-400/30 text-xs text-sky-100 flex items-center justify-between font-medium">
-                    <span>Expected Payout:</span>
-                    <span className="text-base font-black font-mono text-amber-300">₹200 (Net Gain: +₹50)</span>
-                  </div>
+            {/* B. SCENARIO 2: AWAITING PROVIDE HELP (LOCKED COMPACT) */}
+            {(isStep1Active || isStep2Active) && (
+              <div className="bg-sky-950/80 border border-amber-400/50 rounded-xl p-3.5 text-center space-y-2.5 shadow-inner">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="p-1 rounded-lg bg-amber-400/20 text-amber-300">
+                    <Lock className="h-4 w-4" />
+                  </span>
+                  <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                    Receive Help अभी लॉक है
+                  </span>
                 </div>
+                <p className="text-[11px] text-sky-100 leading-relaxed font-medium">
+                  बाएँ लाल बॉक्स में Provide Help (₹50 + ₹100) पूरा होने और 12-घंटे टाइमर के बाद यहाँ <strong>₹200 लिंक</strong> आएगा।
+                </p>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-sky-900/60 border border-sky-400/30 text-xs">
+                  <span className="text-sky-200">Expected Assistance:</span>
+                  <span className="font-mono font-bold text-amber-300">₹200 (+₹50 Net Gain)</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('box-provide-help');
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1.5"
+                >
+                  <span>🔴 Complete Provide Help in Red Box First ➔</span>
+                </button>
+              </div>
+            )}
+
+            {/* C. SCENARIO 3: DURING 12-HOUR TIMER (COMPACT) */}
+            {isTimerActive && (
+              <div className="bg-sky-950/80 border border-sky-400/60 rounded-xl p-3.5 text-center space-y-2 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
+                  <Clock className="h-3 w-3 animate-spin" />
+                  <span>12-Hour Timer Running</span>
+                </div>
+                <div className="font-mono font-black text-2xl sm:text-3xl text-white tracking-widest">
+                  {timer12hString}
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-sky-900/60 border border-sky-400/30 text-xs">
+                  <span className="text-sky-200">Expected Payout:</span>
+                  <span className="font-mono font-bold text-amber-300">₹200 (+₹50 Net Gain)</span>
+                </div>
+                <p className="text-[11px] text-sky-100 font-medium">
+                  टाइमर 00:00:00 होते ही प्रेषक सदस्य का विवरण और पेमेंट स्लिप यहाँ सक्रिय हो जाएगी।
+                </p>
               </div>
             )}
           </div>
 
-          {/* Box 2 Footer Stats */}
-          <div className="mt-4 pt-3 border-t border-sky-400/30 flex items-center justify-between text-xs text-sky-200 relative z-10 font-medium">
+          {/* Compact Box Footer Stats */}
+          <div className="mt-3 pt-2 border-t border-sky-400/30 flex items-center justify-between text-[11px] text-sky-200 relative z-10 font-medium">
             <span>Cycle Receive Benefit:</span>
-            <strong className="text-emerald-300 font-black font-mono text-sm">
+            <strong className="text-emerald-300 font-mono font-bold">
               ₹200 (Net Profit: +₹50)
             </strong>
           </div>
