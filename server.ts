@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import nodemailer from 'nodemailer';
 import { createServer as createViteServer } from 'vite';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
@@ -819,13 +820,19 @@ app.get('/api/referrals/:userId', (req, res) => {
 // In-memory campaign log backup if API key is not yet set or for history
 const campaignHistoryLog: any[] = [];
 
-// Helper to get Brevo API key from env or header
+// Helper to get Brevo API key from header, body or env
 function getBrevoApiKey(req: express.Request): string | undefined {
-  return (
-    process.env.BREVO_API_KEY ||
-    (req.headers['x-brevo-api-key'] as string) ||
-    undefined
-  );
+  const headerKey = (req.headers['x-brevo-api-key'] as string)?.trim();
+  if (headerKey && headerKey.length > 8) return headerKey;
+
+  const bodyKey = (req.body?.apiKey as string)?.trim();
+  if (bodyKey && bodyKey.length > 8) return bodyKey;
+
+  const envKey = process.env.BREVO_API_KEY?.trim();
+  if (envKey && envKey.length > 8) return envKey;
+
+  // Fallback to any provided value
+  return headerKey || bodyKey || (envKey ? envKey : undefined);
 }
 
 // 1. Get Brevo Account Status & Connection Verification
@@ -1128,6 +1135,135 @@ app.post('/api/brevo/send-broadcast', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: err.message || 'Error executing broadcast via Brevo API',
+    });
+  }
+});
+
+// 5. Standard SMTP Direct Relay Endpoint (Nodemailer)
+app.post('/api/smtp/send', async (req, res) => {
+  const {
+    host = process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    port = Number(process.env.SMTP_PORT) || 587,
+    secure = false,
+    user = process.env.SMTP_USER,
+    pass = process.env.SMTP_PASS,
+    from,
+    to,
+    subject,
+    html,
+  } = req.body;
+
+  if (!to || !subject || !html) {
+    return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
+  }
+
+  const senderFrom = from || process.env.SMTP_FROM || '"HELP150 Community" <admin@help150.org>';
+
+  if (!user || !pass) {
+    // Record simulated dispatch
+    const simRecord = {
+      id: 'smtp-sim-' + Date.now(),
+      name: `Direct Mail to ${to}`,
+      subject,
+      sender: { name: 'HELP150 Community', email: 'admin@help150.org' },
+      status: 'simulated_sent',
+      createdAt: new Date().toISOString(),
+      simulated: true,
+      recipient: to,
+    };
+    campaignHistoryLog.unshift(simRecord);
+
+    return res.json({
+      success: true,
+      simulated: true,
+      message: `Email to ${to} recorded in dispatch log. To deliver live, please enter your SMTP User & Password (or set SMTP_USER and SMTP_PASS in environment).`,
+      record: simRecord,
+    });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number(port),
+      secure: Boolean(secure || Number(port) === 465),
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: senderFrom,
+      to,
+      subject,
+      html,
+    });
+
+    const record = {
+      id: info.messageId || 'smtp-' + Date.now(),
+      name: `Direct Mail to ${to}`,
+      subject,
+      sender: { name: 'HELP150 Community', email: 'admin@help150.org' },
+      status: 'delivered',
+      createdAt: new Date().toISOString(),
+      simulated: false,
+      recipient: to,
+    };
+    campaignHistoryLog.unshift(record);
+
+    return res.json({
+      success: true,
+      simulated: false,
+      messageId: info.messageId,
+      message: `Email successfully sent to ${to} via SMTP Relay (${host})!`,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'SMTP delivery failed',
+    });
+  }
+});
+
+// 6. Test/Verify SMTP Credentials Endpoint
+app.post('/api/smtp/verify', async (req, res) => {
+  const {
+    host = 'smtp-relay.brevo.com',
+    port = 587,
+    secure = false,
+    user = 'b65b27001@smtp-brevo.com',
+    pass = 'CUtThC',
+  } = req.body;
+
+  if (!user || !pass) {
+    return res.status(400).json({
+      success: false,
+      error: 'SMTP User and Password/Key are required.',
+    });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number(port),
+      secure: Boolean(secure || Number(port) === 465),
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    await transporter.verify();
+
+    return res.json({
+      success: true,
+      message: `SMTP connection to ${host}:${port} verified successfully! Server is ready to send emails.`,
+    });
+  } catch (err: any) {
+    return res.status(401).json({
+      success: false,
+      error: err.message || 'SMTP Authentication failed',
+      details: 'Please ensure you copied the complete Master SMTP Key from Brevo (Brevo keys are usually full length strings starting with xsmtpsib- or a 16+ char token).',
     });
   }
 });
