@@ -61,6 +61,40 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
   const [isConfirmingReceive, setIsConfirmingReceive] = useState(false);
 
+  // Direct inline attached slip state (user attaches slip directly to the link box)
+  const [inlineAttachedSlip, setInlineAttachedSlip] = useState<{
+    file: File | null;
+    previewUrl: string | null;
+    fileName: string | null;
+  }>({ file: null, previewUrl: null, fileName: null });
+  const inlineFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleInlineFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setInlineAttachedSlip({
+          file: selectedFile,
+          previewUrl: ev.target?.result as string,
+          fileName: selectedFile.name,
+        });
+        setFeedback({
+          type: 'success',
+          message: `स्लिप "${selectedFile.name}" अटैच हो गई! सिग्नल हरी लाइट (✅) में बदल गया है। अब सबमिट करें।`,
+        });
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const handleClearInlineSlip = () => {
+    setInlineAttachedSlip({ file: null, previewUrl: null, fileName: null });
+    if (inlineFileInputRef.current) {
+      inlineFileInputRef.current.value = '';
+    }
+  };
+
   // Clipboard copy indicators
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -163,7 +197,8 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     setFeedback(null);
     try {
       const finalUtr = utr || inlineUtr || `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`;
-      db.submitCycleProvideLink(currentUser.id, type, finalUtr, slipUrl);
+      const finalSlip = slipUrl || inlineAttachedSlip.previewUrl || undefined;
+      db.submitCycleProvideLink(currentUser.id, type, finalUtr, finalSlip);
 
       // If user was previously blocked for late payment, unblock them on successful submission
       if (currentUser.status === 'blocked') {
@@ -179,6 +214,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       }
 
       setInlineUtr('');
+      setInlineAttachedSlip({ file: null, previewUrl: null, fileName: null });
+      if (inlineFileInputRef.current) {
+        inlineFileInputRef.current.value = '';
+      }
       setShowUploadModal(null);
       syncCycle();
       refreshUserData();
@@ -186,12 +225,12 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (type === 'verification') {
         setFeedback({
           type: 'success',
-          message: 'Step 1 (₹50) submitted successfully! Second Provide Help Link (₹100) is now active.',
+          message: 'Step 1 (₹50) स्लिप व यूटीआर सबमिट हो गया! सिग्नल में पहली लाइट हरी (✅) हो गई है।',
         });
       } else {
         setFeedback({
           type: 'success',
-          message: 'Step 2 (₹100) submitted! The 12-Hour Maturation Timer has started in your Provide Help dashboard.',
+          message: 'Step 2 (₹100) स्लिप व यूटीआर सबमिट हो गया! दोनों लाइटें हरी (✅) हो गई हैं। 12 घंटे का टाइमर शुरू हो गया है।',
         });
       }
     } catch (err: any) {
@@ -292,6 +331,77 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const timerDeletionString = `${String(deletionTimer.hours).padStart(2, '0')}:${String(deletionTimer.minutes).padStart(2, '0')}:${String(deletionTimer.seconds).padStart(2, '0')}`;
 
   const isUserBlocked = currentUser.status === 'blocked';
+
+  // Provide Help Slip verification states
+  const isStep1SlipUploaded =
+    step1.status === 'completed' ||
+    Boolean(step1.slipUrl && step1.slipUrl.trim().length > 0) ||
+    Boolean(step1.proofReference && step1.proofReference.trim().length > 0) ||
+    (isStep1Active && Boolean(inlineAttachedSlip.previewUrl));
+
+  const isStep2SlipUploaded =
+    step2.status === 'completed' ||
+    Boolean(step2.slipUrl && step2.slipUrl.trim().length > 0) ||
+    Boolean(step2.proofReference && step2.proofReference.trim().length > 0) ||
+    (isStep2Active && Boolean(inlineAttachedSlip.previewUrl));
+
+  // Current active Provide Help link amount and slip status
+  const currentProvideLinkAmount = isStep1Active ? 50 : isStep2Active ? 100 : 0;
+  const isCurrentLinkSlipUploaded = isStep1Active
+    ? isStep1SlipUploaded
+    : isStep2Active
+    ? isStep2SlipUploaded
+    : false;
+
+  // Compact Traffic Signal for ONLY the active link amount
+  const renderActiveLinkSignal = () => {
+    if (!isStep1Active && !isStep2Active) return null;
+    return (
+      <div
+        id="active-provide-traffic-signal"
+        className="inline-flex items-center gap-1.5 bg-slate-950/95 border border-slate-700/80 rounded-full px-2 py-0.5 shadow-inner"
+        title={`₹${currentProvideLinkAmount} स्लिप: ${isCurrentLinkSlipUploaded ? 'हरी लाइट ✅' : 'संतरी लाइट 🟠'}`}
+      >
+        <span className="text-xs select-none">🚦</span>
+        <div
+          className={`h-4.5 w-4.5 rounded-full flex items-center justify-center font-black border transition-all duration-300 ${
+            isCurrentLinkSlipUploaded
+              ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-200 text-white shadow-[0_0_10px_rgba(16,185,129,0.95)]'
+              : 'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-300 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.9)] animate-pulse'
+          }`}
+        >
+          {isCurrentLinkSlipUploaded ? (
+            <span className="text-[10px]">✅</span>
+          ) : (
+            <span className="text-[9px] font-black">{currentProvideLinkAmount}</span>
+          )}
+        </div>
+        <span
+          className={`font-mono font-black text-[10px] ${
+            isCurrentLinkSlipUploaded ? 'text-emerald-300' : 'text-amber-300'
+          }`}
+        >
+          ₹{currentProvideLinkAmount}
+        </span>
+      </div>
+    );
+  };
+
+  // Completed Provide Help Signal (₹150 ✅) for 12h Timer / Receive Help stage
+  const renderCompletedProvideSignal = () => (
+    <div
+      className="inline-flex items-center gap-1.5 bg-slate-950/95 border border-emerald-500/50 rounded-full px-2 py-0.5 shadow-inner"
+      title="Provide Help (₹50 + ₹100) दोनों स्लिप सत्यापित हैं ✅"
+    >
+      <span className="text-xs select-none">🚦</span>
+      <span className="text-[10px] text-emerald-300 font-mono font-bold flex items-center gap-1">
+        <span className="h-4 w-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black shadow-[0_0_8px_rgba(16,185,129,0.9)]">
+          ✅
+        </span>
+        <span>₹150 Verified</span>
+      </span>
+    </div>
+  );
 
   return (
     <div id="help150-dual-boxes-container" className="space-y-4">
@@ -465,21 +575,21 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       )}
 
       {/* THE TWO MAIN BOXES GRID (COMPACT HEIGHT - FITS TO AMOUNT LEVEL) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
         {/* 🔴 PROVIDE HELP BOX (COMPACT CARD - HALKA HARA RANG BORDER)               */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-emerald-400 shadow-md shadow-emerald-500/15 p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-300 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-emerald-400 shadow-md shadow-emerald-500/15 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-emerald-300 transition-all text-white"
         >
           {/* Decorative glowing ambient */}
           <div className="absolute top-0 right-0 h-28 w-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔥 PROVIDE HELP + Step + Live Timer + Amount Badge */}
-            <div className="flex items-center justify-between border-b border-red-500/40 pb-2">
-              <div className="flex items-center gap-2">
+            {/* Header: 🔥 PROVIDE HELP + Step + 🚦 Active Link Signal + Live Timer + Amount Badge */}
+            <div className="flex flex-wrap items-center justify-between border-b border-red-500/40 pb-2 gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600 border border-emerald-400/60 shadow-sm">
                   <span className="text-xs">🔥</span>
                   <h3 className="text-xs font-black text-emerald-300 font-heading uppercase tracking-wider">
@@ -489,6 +599,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <span className="text-[11px] font-bold text-red-200">
                   {isStep1Active ? 'Step 1' : isStep2Active ? 'Step 2' : ''}
                 </span>
+
+                {/* 🚦 Signal for current active link (₹50 or ₹100) */}
+                {renderActiveLinkSignal()}
+                {(isTimerActive || isReceiveActive) && renderCompletedProvideSignal()}
               </div>
 
               <div className="flex items-center gap-2">
@@ -515,10 +629,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
             </div>
 
-            {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (COMPACT TO AMOUNT) */}
+            {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (TIGHT TO SLIP UPLOAD BUTTON) */}
             {(isStep1Active || isStep2Active) && (
               <div className="bg-red-950/80 border border-emerald-400/40 rounded-xl p-2.5 space-y-2 shadow-inner">
-                {/* Row 1: Beneficiary Name & ID + Amount Option */}
+                {/* Row 1: Beneficiary Name & ID + Amount */}
                 <div className="flex items-center justify-between text-xs pb-1 border-b border-red-900/60">
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="font-bold text-white text-xs sm:text-sm truncate">
@@ -583,14 +697,100 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
                 </div>
 
+                {/* Inline attached slip status preview if user chose a file */}
+                {inlineAttachedSlip.previewUrl && (
+                  <div className="p-1.5 px-2 rounded-lg bg-emerald-950/80 border border-emerald-400/60 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="text-emerald-400 font-bold text-[11px]">✅ स्लिप चुनी गई:</span>
+                      <span className="font-mono text-white text-[10px] truncate max-w-[170px]">
+                        {inlineAttachedSlip.fileName || 'slip_preview.jpg'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setShowProofModal({
+                          url: inlineAttachedSlip.previewUrl!,
+                          ref: inlineUtr || 'Pending UTR',
+                          amount: activeProvideBeneficiary.amount,
+                          name: activeProvideBeneficiary.name,
+                        })}
+                        className="px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[9px] cursor-pointer"
+                      >
+                        देखें
+                      </button>
+                      <button
+                        onClick={handleClearInlineSlip}
+                        className="px-1.5 py-0.5 rounded bg-red-900/80 hover:bg-red-800 text-red-200 text-[9px] cursor-pointer"
+                        title="हटाएं"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Previously uploaded slip view if already submitted */}
+                {((isStep1Active && step1.slipUrl) || (isStep2Active && step2.slipUrl)) && !inlineAttachedSlip.previewUrl && (
+                  <div className="p-1 px-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-xs">
+                    <span className="text-emerald-300 text-[10px] font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                      <span>₹{activeProvideBeneficiary.amount} स्लिप अपलोड है (हरी लाइट ✅)</span>
+                    </span>
+                    <button
+                      onClick={() => setShowProofModal({
+                        url: (isStep1Active ? step1.slipUrl : step2.slipUrl)!,
+                        ref: (isStep1Active ? step1.proofReference : step2.proofReference) || 'Verified',
+                        amount: activeProvideBeneficiary.amount,
+                        name: activeProvideBeneficiary.name,
+                      })}
+                      className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[9px] cursor-pointer"
+                    >
+                      स्लिप देखें
+                    </button>
+                  </div>
+                )}
+
                 {/* Row 3: Action Buttons right up to amount level (Upload Slip & QR + Inline UTR) */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 pt-0.5">
+                  {/* Hidden file input for direct 1-click slip attach */}
+                  <input
+                    type="file"
+                    ref={inlineFileInputRef}
+                    onChange={handleInlineFileSelect}
+                    accept="image/*,.pdf"
+                    className="hidden"
+                  />
+
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
-                      className="flex-1 py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer"
+                      className={`flex-1 py-1.5 px-2 rounded-lg font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        isCurrentLinkSlipUploaded
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400'
+                          : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white'
+                      }`}
+                      title="स्लिप अपलोड मोडल खोलें"
                     >
-                      <span>📤 Upload Slip (₹{activeProvideBeneficiary.amount})</span>
+                      <UploadCloud className="h-3.5 w-3.5" />
+                      <span>Upload Slip (₹{activeProvideBeneficiary.amount})</span>
+                      <span
+                        className={`h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-black border ${
+                          isCurrentLinkSlipUploaded
+                            ? 'bg-emerald-400 border-emerald-100 text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.9)]'
+                            : 'bg-amber-400 border-amber-200 text-slate-950 shadow-[0_0_6px_rgba(245,158,11,0.9)] animate-pulse'
+                        }`}
+                        title={isCurrentLinkSlipUploaded ? 'हरी लाइट ✅' : 'संतरी लाइट 🟠'}
+                      >
+                        {isCurrentLinkSlipUploaded ? '✅' : '🟠'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => inlineFileInputRef.current?.click()}
+                      className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      title="सीधे डिवाइस से स्लिप चुनें"
+                    >
+                      <Paperclip className="h-3.5 w-3.5" />
+                      <span>Attach</span>
                     </button>
                     <button
                       onClick={() => setShowQrModal({
@@ -599,7 +799,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         amount: activeProvideBeneficiary.amount,
                         title: activeProvideBeneficiary.title,
                       })}
-                      className="py-1.5 px-2.5 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <QrCode className="h-3.5 w-3.5" />
                       <span>Pay QR</span>
@@ -617,10 +817,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     />
                     <button
                       onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
-                      disabled={isSubmittingUtr || !inlineUtr.trim()}
-                      className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-[11px] cursor-pointer shadow disabled:opacity-50"
+                      disabled={isSubmittingUtr || (!inlineUtr.trim() && !inlineAttachedSlip.previewUrl)}
+                      className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-[11px] cursor-pointer shadow disabled:opacity-50 flex items-center gap-1"
                     >
-                      {isSubmittingUtr ? '...' : 'Submit UTR'}
+                      <span>{isSubmittingUtr ? '...' : 'Submit UTR'}</span>
+                      {inlineAttachedSlip.previewUrl && <span className="text-[10px]">📎</span>}
                     </button>
                   </div>
                 </div>
@@ -630,10 +831,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             {/* B. SCENARIO 2: 12-HOUR MATURATION TIMER ACTIVE (COMPACT) */}
             {isTimerActive && (
               <div className="bg-red-950/80 border border-amber-400/60 rounded-xl p-3 text-center space-y-1.5 shadow-inner">
-                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
-                  <Clock className="h-3 w-3 animate-spin" />
-                  <span>12-Hour Maturation Running</span>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
+                    <Clock className="h-3 w-3 animate-spin" />
+                    <span>12-Hour Maturation Running</span>
+                  </div>
                 </div>
+
                 <div className="font-mono font-black text-2xl text-white tracking-widest drop-shadow">
                   {timer12hString}
                 </div>
@@ -644,7 +848,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   />
                 </div>
                 <p className="text-[10px] text-red-100 font-medium">
-                  Provide Help (₹50 + ₹100) पूरा हुआ। टाइमर पूरा होते ही दाएँ बॉक्स में ₹200 रिसीव लिंक सक्रिय होगा।
+                  Provide Help (₹50 + ₹100) पूरा हुआ और दोनों स्लिप सत्यापित हैं ✅। टाइमर पूरा होते ही दाएँ बॉक्स में ₹200 रिसीव लिंक सक्रिय होगा।
                 </p>
                 {currentUser.role === 'admin' && (
                   <button
@@ -669,6 +873,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     Provide Help अभी लॉक है
                   </span>
                 </div>
+
                 <p className="text-[10px] text-red-100 font-medium">
                   दाएँ बॉक्स में <strong>₹200 Receive Help</strong> कन्फर्म होने के बाद ही अगला Provide Help (साइकिल #{cycle.cycleNumber + 1}) खुलेगा।
                 </p>
@@ -685,13 +890,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             )}
           </div>
 
-          {/* Compact Box Footer Stats */}
-          <div className="mt-2 pt-1.5 border-t border-red-500/30 flex items-center justify-between text-[10px] text-red-200 relative z-10 font-medium">
-            <span>Cycle Provide Completed:</span>
-            <strong className="text-emerald-300 font-mono font-bold">
-              ₹{(step1.status === 'completed' ? 50 : 0) + (step2.status === 'completed' ? 100 : 0)} / ₹150
-            </strong>
-          </div>
+          {/* Compact Box Footer Stats (shown when not in active input to keep height fitted to slip upload button) */}
+          {(isTimerActive || isReceiveActive) && (
+            <div className="mt-2 pt-1.5 border-t border-red-500/30 flex items-center justify-between text-[10px] text-red-200 relative z-10 font-medium">
+              <span>Cycle Provide Completed:</span>
+              <strong className="text-emerald-300 font-mono font-bold">
+                ₹{(step1.status === 'completed' ? 50 : 0) + (step2.status === 'completed' ? 100 : 0)} / ₹150
+              </strong>
+            </div>
+          )}
         </div>
 
         {/* ========================================================================= */}

@@ -215,6 +215,48 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
                 🔄 Continuous Revolving Loop
               </span>
+
+              {/* 🚦 TRAFFIC SIGNAL IN PLAN HEADER */}
+              <div
+                id="plan-cycle-traffic-signal"
+                className="inline-flex items-center gap-1.5 bg-slate-950/90 border border-slate-700/80 px-2.5 py-1 rounded-full shadow-inner"
+                title="Provide Help स्लिप वेरिफिकेशन सिग्नल"
+              >
+                <span className="text-xs select-none">🚦</span>
+                {/* Light 1: ₹50 */}
+                <div className="flex items-center gap-1">
+                  <div
+                    className={`h-4.5 w-4.5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all duration-500 ${
+                      isStep1Done
+                        ? 'bg-emerald-500 border-emerald-200 text-white shadow-[0_0_8px_rgba(16,185,129,0.9)]'
+                        : 'bg-amber-500 border-amber-300 text-slate-950 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse'
+                    }`}
+                  >
+                    {isStep1Done ? '✅' : '50'}
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold ${isStep1Done ? 'text-emerald-300' : 'text-amber-300'}`}>
+                    ₹50
+                  </span>
+                </div>
+
+                <span className="text-slate-600 text-[10px]">•</span>
+
+                {/* Light 2: ₹100 */}
+                <div className="flex items-center gap-1">
+                  <div
+                    className={`h-4.5 w-4.5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all duration-500 ${
+                      isStep2Done
+                        ? 'bg-emerald-500 border-emerald-200 text-white shadow-[0_0_8px_rgba(16,185,129,0.9)]'
+                        : 'bg-amber-500 border-amber-300 text-slate-950 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse'
+                    }`}
+                  >
+                    {isStep2Done ? '✅' : '100'}
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold ${isStep2Done ? 'text-emerald-300' : 'text-amber-300'}`}>
+                    ₹100
+                  </span>
+                </div>
+              </div>
               {allCycles.filter((c) => c.status === 'completed').length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}

@@ -218,6 +218,34 @@ export const PaymentSlipUploadModal: React.FC<PaymentSlipUploadModalProps> = ({
             </div>
           )}
 
+          {/* 🚦 TRAFFIC SIGNAL PREVIEW FOR CURRENT LINK */}
+          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2 shadow-inner">
+            <div className="flex items-center gap-2">
+              <span className="text-lg select-none">🚦</span>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                <span>₹{amount} स्लिप स्टेटस:</span>
+                <span className={`text-[11px] font-semibold ${file ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {file ? 'हरी लाइट ✅' : 'संतरी लाइट 🟠'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
+              <div
+                className={`h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all duration-300 ${
+                  file
+                    ? 'bg-emerald-500 border-emerald-200 text-white shadow-[0_0_10px_rgba(16,185,129,0.9)]'
+                    : 'bg-amber-500 border-amber-300 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse'
+                }`}
+              >
+                {file ? '✅' : '🟠'}
+              </div>
+              <span className={`text-[11px] font-mono font-bold ${file ? 'text-emerald-300' : 'text-amber-300'}`}>
+                ₹{amount}
+              </span>
+            </div>
+          </div>
+
           {/* UTR Input */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">

@@ -31,7 +31,9 @@ import {
   Square,
   Building2,
   UserCircle2,
+  LogIn,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
 import { api } from '../../services/api';
 import { HelpRequest, User } from '../../types';
@@ -47,6 +49,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
   currentUser,
   onRefresh,
 }) => {
+  const { loginAs, setActiveTab: setAppActiveTab } = useAuth();
   const state = db.getState();
   const allUsers = state.users || [];
   const allHelpRequests = state.helpRequests || [];
@@ -222,6 +225,17 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
     setSenderUserId(user.id);
     setActiveTab('manual_dispatch');
     showToast(`Selected ${user.fullName} (${user.id}) in Manual Dispatch.`);
+  };
+
+  // Direct login as user from queue
+  const handleDirectLoginAsUser = (targetUser: User) => {
+    if (!targetUser) return;
+    const adminIdentifier = currentUser?.id || 'H150-ADMIN01';
+    sessionStorage.setItem('HELP150_ADMIN_IMPERSONATOR', adminIdentifier);
+    sessionStorage.setItem('HELP150_ADMIN_IMPERSONATOR_NAME', currentUser?.fullName || currentUser?.name || 'Super Admin');
+    loginAs(targetUser.id);
+    setAppActiveTab('dashboard');
+    showToast(`Logged into ${targetUser.fullName} (${targetUser.id}) account.`);
   };
 
   // BATCH DISPATCH FROM QUEUE (Dispatches exact link count as configured)
@@ -752,12 +766,22 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
 
                         {/* Quick Action */}
                         <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleQuickLinkForUser(user)}
-                            className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs transition cursor-pointer border border-blue-200"
-                          >
-                            ⚡ Send Link
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleDirectLoginAsUser(user)}
+                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 font-bold text-xs transition cursor-pointer border border-indigo-200 inline-flex items-center gap-1 shadow-xs"
+                              title={`Direct login into ${user.fullName} (${user.id})`}
+                            >
+                              <LogIn className="h-3.5 w-3.5" />
+                              <span>लॉगिन</span>
+                            </button>
+                            <button
+                              onClick={() => handleQuickLinkForUser(user)}
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs transition cursor-pointer border border-blue-200"
+                            >
+                              ⚡ Send Link
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

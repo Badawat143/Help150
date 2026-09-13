@@ -49,6 +49,7 @@ import {
   Scale,
   Ban,
   LogOut,
+  LogIn,
   TrendingUp,
   Download,
   Search,
@@ -90,7 +91,7 @@ import { FirebaseConnectionModal } from '../common/FirebaseConnectionModal';
 import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
 
 export const AdminPanel: React.FC = () => {
-  const { currentUser, refreshUserData, logout, setActiveTab } = useAuth();
+  const { currentUser, refreshUserData, logout, setActiveTab, loginAs } = useAuth();
   const state = db.getState();
   const settings = state.settings;
 
@@ -280,6 +281,26 @@ export const AdminPanel: React.FC = () => {
       }
     }
     refreshUserData();
+  };
+
+  // Direct login / impersonate into any user ID by Admin
+  const handleDirectLoginAsUser = (targetUser: User) => {
+    if (!targetUser) return;
+    if (targetUser.id === currentUser?.id) {
+      showToast('You are already logged into this account.', 'error');
+      return;
+    }
+    const adminIdentifier = currentUser?.id || 'H150-ADMIN01';
+    sessionStorage.setItem('HELP150_ADMIN_IMPERSONATOR', adminIdentifier);
+    sessionStorage.setItem('HELP150_ADMIN_IMPERSONATOR_NAME', currentUser?.fullName || 'Super Admin');
+
+    // Close modal if open
+    setActiveModal(null);
+
+    // Direct Login as User
+    loginAs(targetUser.id);
+    setActiveTab('dashboard');
+    showToast(`Logged into ${targetUser.fullName} (${targetUser.id}) account. Click 'Return to Admin' anytime from the top bar.`, 'success');
   };
 
   const handleCopyText = (text: string, key: string) => {
@@ -1209,26 +1230,36 @@ export const AdminPanel: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-2 text-right">
                             {u.id !== 'H150-ADMIN01' ? (
-                              <button
-                                onClick={() => handleToggleBlockUser(u)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
-                                  u.status === 'blocked'
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
-                                }`}
-                              >
-                                {u.status === 'blocked' ? (
-                                  <>
-                                    <Unlock className="h-3 w-3" />
-                                    <span>Unblock</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Ban className="h-3 w-3" />
-                                    <span>Block</span>
-                                  </>
-                                )}
-                              </button>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleDirectLoginAsUser(u)}
+                                  className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black transition shadow-xs cursor-pointer inline-flex items-center gap-1 shadow-blue-500/20"
+                                  title={`Direct login into ${u.fullName} (${u.id})`}
+                                >
+                                  <LogIn className="h-3 w-3" />
+                                  <span>लॉगिन करें</span>
+                                </button>
+                                <button
+                                  onClick={() => handleToggleBlockUser(u)}
+                                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
+                                    u.status === 'blocked'
+                                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                      : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                                  }`}
+                                >
+                                  {u.status === 'blocked' ? (
+                                    <>
+                                      <Unlock className="h-3 w-3" />
+                                      <span>Unblock</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Ban className="h-3 w-3" />
+                                      <span>Block</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             ) : (
                               <span className="text-[10px] font-bold text-slate-400 px-2 py-1">Superadmin</span>
                             )}
@@ -1682,6 +1713,7 @@ export const AdminPanel: React.FC = () => {
                     <th className="py-3 px-3">Member Details (नाम / ईमेल)</th>
                     <th className="py-3 px-3">Mobile (मोबाइल)</th>
                     <th className="py-3 px-3">Password (पासवर्ड)</th>
+                    <th className="py-3 px-3 text-center">Direct Login (सीधा यूजर लॉगिन)</th>
                     <th className="py-3 px-3">Sponsor ID</th>
                     <th className="py-3 px-3">KYC</th>
                     <th className="py-3 px-3">Status</th>
@@ -1824,6 +1856,24 @@ export const AdminPanel: React.FC = () => {
                                 <Key className="h-3.5 w-3.5" />
                               </button>
                             </div>
+                          </td>
+
+                          {/* Direct Login Button (सीधे यूजर ID में लॉगिन करें) */}
+                          <td className="py-3 px-3 text-center">
+                            {u.id !== currentUser?.id ? (
+                              <button
+                                onClick={() => handleDirectLoginAsUser(u)}
+                                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-blue-500/20 transition cursor-pointer inline-flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+                                title={`सीधे ${u.fullName} (${u.id}) की आईडी में लॉगिन करें`}
+                              >
+                                <LogIn className="h-3.5 w-3.5" />
+                                <span>लॉगिन करें</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-1 rounded-lg inline-block">
+                                वर्तमान एडमिन
+                              </span>
+                            )}
                           </td>
 
                           {/* Sponsor ID */}
@@ -2044,8 +2094,21 @@ export const AdminPanel: React.FC = () => {
               {state.kycRecords.map((k) => (
                 <div key={k.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-blue-600 font-bold">{k.userId}</span>
+                      {(() => {
+                        const targetUser = state.users.find((u) => u.id === k.userId);
+                        return targetUser ? (
+                          <button
+                            onClick={() => handleDirectLoginAsUser(targetUser)}
+                            className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-[10px] transition cursor-pointer border border-blue-200 inline-flex items-center gap-1"
+                            title={`Direct login into ${targetUser.fullName} (${k.userId})`}
+                          >
+                            <LogIn className="h-2.5 w-2.5" />
+                            <span>लॉगिन</span>
+                          </button>
+                        ) : null;
+                      })()}
                       <span className="font-bold text-slate-800 uppercase px-2 py-0.5 bg-slate-200 rounded">
                         {k.documentType}: {k.aadhaarNumber || k.panNumber}
                       </span>

@@ -25,11 +25,34 @@ import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { referralTracker } from './services/referralTracker';
 
 const AppContent: React.FC = () => {
-  const { activeTab, setActiveTab, currentUser } = useAuth();
+  const { activeTab, setActiveTab, currentUser, loginAs } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [sponsorParam, setSponsorParam] = useState('');
+  const [impersonatedAdminId, setImpersonatedAdminId] = useState<string | null>(() => {
+    return typeof window !== 'undefined' ? sessionStorage.getItem('HELP150_ADMIN_IMPERSONATOR') : null;
+  });
+
+  // Check if admin is currently impersonating / viewing as a member
+  useEffect(() => {
+    const checkImpersonation = () => {
+      const stored = sessionStorage.getItem('HELP150_ADMIN_IMPERSONATOR');
+      setImpersonatedAdminId(stored);
+    };
+    checkImpersonation();
+    const interval = setInterval(checkImpersonation, 800);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  const handleReturnToAdmin = () => {
+    const adminId = sessionStorage.getItem('HELP150_ADMIN_IMPERSONATOR') || 'H150-ADMIN01';
+    sessionStorage.removeItem('HELP150_ADMIN_IMPERSONATOR');
+    sessionStorage.removeItem('HELP150_ADMIN_IMPERSONATOR_NAME');
+    setImpersonatedAdminId(null);
+    loginAs(adminId);
+    setActiveTab('admin');
+  };
 
   // Detect direct admin login URL (?admin=login or #/admin/login)
   useEffect(() => {
@@ -78,6 +101,35 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
       {/* Mandatory Statutory Compliance Banner */}
       <ComplianceBanner />
+
+      {/* Admin Impersonation Notice Bar (जब एडमिन किसी यूजर की ID में लॉगिन हो) */}
+      {impersonatedAdminId && currentUser && currentUser.role !== 'admin' && (
+        <div
+          id="admin-impersonation-banner"
+          className="bg-gradient-to-r from-red-700 via-purple-900 to-indigo-900 text-white px-4 py-2.5 shadow-xl border-b border-amber-400/40 sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+            </span>
+            <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black text-[10px] uppercase tracking-wider shadow-xs">
+              👑 एडमिन सीधा लॉगिन मोड
+            </span>
+            <span className="font-medium text-slate-100">
+              आप इस समय सदस्य <strong>{currentUser.fullName}</strong> (<span className="font-mono text-amber-300 font-bold">{currentUser.id}</span>) के अकाउंट में लाइव लॉगिन हैं।
+            </span>
+          </div>
+          <button
+            id="btn-return-to-admin-console"
+            onClick={handleReturnToAdmin}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap ml-auto"
+            title="वापस एडमिन पैनल में लौटें"
+          >
+            <span>↩️ वापस एडमिन पैनल में जाएं (Return to Admin)</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Responsive Header */}
       <Header
