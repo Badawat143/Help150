@@ -68,6 +68,13 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   autoDispatchOnRegistration: false,
   defaultLinkReceiverType: 'admin_treasury',
   maxLinksPerReceiver: 1,
+  linkSystemEnabled: false, // Default to OFF for initial 4-day promotion
+  promotionMode: true,
+  promotionDaysTotal: 4,
+  promotionStartDate: new Date().toISOString(),
+  promotionEndDate: new Date(Date.now() + 4 * 24 * 3600000).toISOString(),
+  promotionNoticeTitle: '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (Pre-Launch Promotion Active)',
+  promotionNoticeText: 'वर्तमान में 4 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी टीम बनाएं और KYC पूरा करें। 4 दिन के बाद ऑटोमैटिक हेल्पिंग लिंक शुरू हो जाएंगे!',
   maintenanceMode: false,
   officialTelegramLink: 'https://t.me/help150_official',
   officialWhatsappNumber: '+91 98765 43210',
@@ -925,6 +932,11 @@ class DatabaseManager {
           ) {
             loadedState.referralLevels = DEFAULT_REFERRAL_LEVELS;
           }
+          // Ensure settings has all latest keys including linkSystemEnabled & promotionMode
+          loadedState.settings = {
+            ...DEFAULT_SETTINGS,
+            ...(loadedState.settings || {}),
+          };
           return loadedState;
         }
       }
@@ -1348,6 +1360,43 @@ class DatabaseManager {
     this.notifySubscribers();
 
     return { cycle };
+  }
+
+  public toggleLinkSystem(enabled: boolean, promotionDays: number = 4): WebsiteSettings {
+    const now = new Date();
+    this.updateState((draft) => {
+      draft.settings.linkSystemEnabled = enabled;
+      draft.settings.promotionMode = !enabled;
+      draft.settings.autoDispatchMode = enabled;
+      if (!enabled) {
+        draft.settings.promotionDaysTotal = promotionDays;
+        draft.settings.promotionStartDate = now.toISOString();
+        draft.settings.promotionEndDate = new Date(now.getTime() + promotionDays * 24 * 3600000).toISOString();
+      }
+      draft.notifications.unshift({
+        id: `NOTIF-LINK-${Date.now()}`,
+        userId: 'all',
+        title: enabled ? '🚀 ऑटोमैटिक हेल्पिंग लिंक्स शुरू!' : '⏸️ 4-दिन का प्री-लॉन्च प्रमोशन मोड सक्रिय',
+        message: enabled
+          ? 'एडमिन द्वारा हेल्पिंग लिंक सिस्टम को लाइव कर दिया गया है। अपने डैशबोर्ड में Provide Help और Receive Help लिंक्स चेक करें।'
+          : `प्लेटफार्म पर ${promotionDays} दिन का विशेष प्रमोशन मोड चालू किया गया है। लिंक्स अस्थायी रूप से विराम पर हैं। सभी सदस्य अपनी टीम बनाएं!`,
+        type: enabled ? 'success' : 'info',
+        isRead: false,
+        createdAt: now.toISOString(),
+        linkTab: enabled ? 'help' : 'referral',
+      });
+    });
+    return this.getState().settings;
+  }
+
+  public updatePromotionConfig(data: Partial<WebsiteSettings>): WebsiteSettings {
+    this.updateState((draft) => {
+      draft.settings = {
+        ...draft.settings,
+        ...data,
+      };
+    });
+    return this.getState().settings;
   }
 }
 

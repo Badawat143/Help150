@@ -36,6 +36,7 @@ import { db } from '../../services/db';
 import { api } from '../../services/api';
 import { HelpRequest, User } from '../../types';
 import { CountdownTimer } from '../common/CountdownTimer';
+import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
 
 interface MemberToMemberLinkBoxProps {
   currentUser: { id: string; name: string; role: string; fullName?: string };
@@ -443,6 +444,9 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
           <span>{toastMsg.text}</span>
         </div>
       )}
+
+      {/* MASTER LINK SYSTEM SWITCH & 4-DAY PROMOTION CONTROL */}
+      <MasterLinkSwitchCard onRefresh={onRefresh} />
 
       {/* ADMIN ID RECEIVER POLICY BANNER */}
       <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border border-purple-800/60 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shadow-sm">

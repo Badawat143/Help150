@@ -374,6 +374,14 @@ export interface WebsiteSettings {
   autoDispatchOnRegistration?: boolean;
   defaultLinkReceiverType?: 'admin_treasury' | 'fifo_queue';
   maxLinksPerReceiver?: number;
+  // Link System Master Control & 4-Day Promotion Mode
+  linkSystemEnabled: boolean; // true = links ON & automatic, false = links OFF (promotion mode)
+  promotionMode: boolean; // true = 4-day promotion running
+  promotionDaysTotal: number; // default 4
+  promotionStartDate: string; // ISO string
+  promotionEndDate: string; // ISO string
+  promotionNoticeTitle?: string;
+  promotionNoticeText?: string;
   maintenanceMode: boolean;
   officialTelegramLink: string;
   officialWhatsappNumber: string;

@@ -41,6 +41,14 @@ export const ComplianceBanner: React.FC = () => {
               <ExternalLink className="h-3 w-3" />
             </button>
             <button
+              id="btn-open-admin-portal-discreet"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-admin-login'))}
+              className="text-slate-400 hover:text-red-400 transition-colors font-medium flex items-center gap-1 cursor-pointer text-[11px]"
+              title="Admin Portal Access"
+            >
+              🔐 Admin
+            </button>
+            <button
               id="btn-dismiss-compliance-banner"
               onClick={() => setDismissed(true)}
               aria-label="Dismiss banner"

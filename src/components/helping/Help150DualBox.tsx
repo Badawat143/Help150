@@ -46,6 +46,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   // Cycle state
   const [cycle, setCycle] = useState<UserHelpCycle | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [settings, setSettings] = useState(() => db.getState().settings);
 
   // Modals
   const [showQrModal, setShowQrModal] = useState<{ title: string; upi: string; amount: number; name: string } | null>(null);
@@ -70,6 +71,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
   // Sync cycle data
   const syncCycle = () => {
+    setSettings(db.getState().settings);
     if (!currentUser?.id) return;
     const active = db.getUserHelpCycle(currentUser.id);
     setCycle({ ...active });
@@ -436,6 +438,29 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <button onClick={() => setFeedback(null)} className="p-1 text-slate-400 hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* 4-Day Promotion Mode Indicator */}
+      {!settings.linkSystemEnabled && (
+        <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 rounded-lg bg-amber-500/20 text-amber-300 items-center justify-center shrink-0">
+              ⏸️
+            </span>
+            <div>
+              <strong className="text-white">4-दिवसीय प्री-लॉन्च प्रमोशन जारी है:</strong>{' '}
+              हेल्पिंग लिंक अभी विराम पर हैं। 4 दिन पूरे होने पर या एडमिन द्वारा ऑन करने पर ऑटोमैटिक लिंक्स भेजे जाएंगे।
+            </div>
+          </div>
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('referral')}
+              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] shrink-0 self-start sm:self-auto cursor-pointer"
+            >
+              रेफरल टीम बनाएं ➔
+            </button>
+          )}
         </div>
       )}
 

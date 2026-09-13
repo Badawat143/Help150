@@ -157,25 +157,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         </form>
 
-        {/* Instant Role Persona Access for reviewer ease */}
+        {/* Member Quick Sign-In for testing */}
         <div className="mt-5 pt-3.5 border-t border-slate-800">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">
-            One-Click Quick Sign-In (For Testing)
+            Member Quick Sign-In (Demo Member)
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div>
             <button
               onClick={() => handleQuickLogin('H150-784920')}
-              className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 text-left text-xs transition cursor-pointer"
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 text-left text-xs transition cursor-pointer flex items-center justify-between"
             >
-              <div className="font-semibold text-amber-300">Ashok Kumar</div>
-              <div className="text-[10px] text-slate-400">Verified Member (₹400)</div>
-            </button>
-            <button
-              onClick={() => handleQuickLogin('H150-ADMIN01')}
-              className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-red-500/40 text-left text-xs transition cursor-pointer"
-            >
-              <div className="font-semibold text-red-400">Super Admin</div>
-              <div className="text-[10px] text-slate-400">Full 22 Admin Modules</div>
+              <div>
+                <div className="font-semibold text-amber-300">Ashok Kumar (Member ID: H150-784920)</div>
+                <div className="text-[10px] text-slate-400">Regular Active Community Member</div>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                Auto-Fill
+              </span>
             </button>
           </div>
         </div>

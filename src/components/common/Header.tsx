@@ -287,42 +287,34 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
                         </div>
                       </div>
 
-                      {/* Persona Quick Switcher for instant testing */}
-                      <div className="py-2">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1.5">
-                          Switch Role (For Review)
+                      {/* Admin Switcher (Visible strictly when currently an Admin) */}
+                      {isAdmin && (
+                        <div className="py-2">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1.5">
+                            Admin Roles
+                          </div>
+                          <button
+                            onClick={() => {
+                              loginAs('H150-ADMIN01');
+                              setUserMenuOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-800 text-red-300 flex items-center justify-between"
+                          >
+                            <span>Super Admin (Root)</span>
+                            {currentUser.id === 'H150-ADMIN01' && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
+                          </button>
+                          <button
+                            onClick={() => {
+                              loginAs('H150-COMP01');
+                              setUserMenuOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-800 text-amber-300 flex items-center justify-between"
+                          >
+                            <span>Compliance Officer</span>
+                            {currentUser.id === 'H150-COMP01' && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => {
-                            loginAs('H150-784920');
-                            setUserMenuOpen(false);
-                          }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-800 text-slate-300 flex items-center justify-between"
-                        >
-                          <span>Ashok Kumar (User)</span>
-                          {currentUser.id === 'H150-784920' && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            loginAs('H150-ADMIN01');
-                            setUserMenuOpen(false);
-                          }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-800 text-red-300 flex items-center justify-between"
-                        >
-                          <span>Super Admin (Root)</span>
-                          {currentUser.id === 'H150-ADMIN01' && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            loginAs('H150-COMP01');
-                            setUserMenuOpen(false);
-                          }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-800 text-amber-300 flex items-center justify-between"
-                        >
-                          <span>Compliance Officer</span>
-                          {currentUser.id === 'H150-COMP01' && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
-                        </button>
-                      </div>
+                      )}
 
                       <div className="pt-2 border-t border-slate-800">
                         <button

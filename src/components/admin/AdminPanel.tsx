@@ -86,6 +86,7 @@ import { PaymentVerificationDesk } from './PaymentVerificationDesk';
 import { MemberToMemberLinkBox } from './MemberToMemberLinkBox';
 import { BrevoCampaignDesk } from './BrevoCampaignDesk';
 import { FirebaseConnectionModal } from '../common/FirebaseConnectionModal';
+import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
 
 export const AdminPanel: React.FC = () => {
   const { currentUser, refreshUserData, logout, setActiveTab } = useAuth();
@@ -557,6 +558,12 @@ export const AdminPanel: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* ===================================================================== */}
+          {/* MASTER LINK SYSTEM SWITCH & 4-DAY PROMOTION CONTROL                   */}
+          {/* Controls whether automatic links are active or in 4-day promotion     */}
+          {/* ===================================================================== */}
+          <MasterLinkSwitchCard />
 
           {/* ===================================================================== */}
           {/* 2. ROW OF 7 KEY METRIC CARDS                                         */}

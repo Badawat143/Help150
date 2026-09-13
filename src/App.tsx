@@ -21,13 +21,46 @@ import { AdminPanel } from './components/admin/AdminPanel';
 import { BottomNav } from './components/common/BottomNav';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
+import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { referralTracker } from './services/referralTracker';
 
 const AppContent: React.FC = () => {
   const { activeTab, setActiveTab, currentUser } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [sponsorParam, setSponsorParam] = useState('');
+
+  // Detect direct admin login URL (?admin=login or #/admin/login)
+  useEffect(() => {
+    const checkAdminUrl = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.toLowerCase();
+      const isAdminQuery =
+        urlParams.get('admin') === 'login' ||
+        urlParams.get('admin') === 'true' ||
+        urlParams.get('portal') === 'admin' ||
+        hash.includes('admin/login') ||
+        hash.includes('#admin');
+
+      if (isAdminQuery) {
+        if (currentUser?.role === 'admin' || currentUser?.role === 'compliance_officer') {
+          setActiveTab('admin');
+        } else {
+          setIsAdminLoginOpen(true);
+        }
+      }
+    };
+
+    checkAdminUrl();
+
+    // Listen to custom event for opening admin login portal
+    const handleOpenAdminPortal = () => setIsAdminLoginOpen(true);
+    window.addEventListener('open-admin-login', handleOpenAdminPortal);
+    return () => {
+      window.removeEventListener('open-admin-login', handleOpenAdminPortal);
+    };
+  }, [currentUser, setActiveTab]);
 
   // Automatically track referral ID from URL, query parameters, hash, or saved session
   useEffect(() => {
@@ -101,6 +134,12 @@ const AppContent: React.FC = () => {
           setIsLoginOpen(true);
         }}
         initialSponsorId={sponsorParam}
+      />
+
+      {/* Dedicated Master Admin Login Portal (Separated from regular user flow) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
       />
     </div>
   );

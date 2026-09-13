@@ -62,6 +62,7 @@ import { ProfileModal } from './ProfileModal';
 import { DirectReferralsSection } from './DirectReferralsSection';
 import { DirectReferralsModal } from './DirectReferralsModal';
 import { Help150DualBox } from '../helping/Help150DualBox';
+import { PromotionNoticeBanner } from './PromotionNoticeBanner';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -747,6 +748,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </span>
             </div>
           </div>
+
+          {/* ======================================================================= */}
+          {/* 📢 4-DAY PRE-LAUNCH PROMOTION BANNER                                    */}
+          {/* Shows promotion countdown when links are OFF, or live indicator when ON */}
+          {/* ======================================================================= */}
+          <PromotionNoticeBanner />
 
           {/* ======================================================================= */}
           {/* 🔴 PROVIDE HELP BOX (Red) & 🔵 RECEIVE HELP BOX (Sky Blue)               */}
