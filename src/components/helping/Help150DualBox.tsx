@@ -446,7 +446,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-red-500 shadow-xl p-4 sm:p-4.5 flex flex-col justify-between relative overflow-hidden group hover:border-red-400 transition-all text-white min-h-[330px]"
+          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-emerald-400 shadow-xl shadow-emerald-950/20 p-4 sm:p-4.5 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-300 transition-all text-white min-h-[330px]"
         >
           {/* Decorative glowing red ambient */}
           <div className="absolute top-0 right-0 h-36 w-36 bg-red-500/15 rounded-full blur-2xl pointer-events-none" />

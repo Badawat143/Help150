@@ -259,7 +259,7 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
     : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
 
   return (
-    <div className="relative rounded-3xl bg-gradient-to-b from-red-950 via-slate-900 to-red-950 border-2 border-red-500 shadow-2xl shadow-red-950/50 overflow-hidden transition-all duration-300 hover:border-red-400">
+    <div className="relative rounded-3xl bg-gradient-to-b from-red-950 via-slate-900 to-red-950 border-2 border-emerald-400 shadow-2xl shadow-emerald-950/40 overflow-hidden transition-all duration-300 hover:border-emerald-300">
       {/* 🔴 PROVIDE HELP Header with Deep Red Theme */}
       <div className="p-5 sm:p-6 bg-gradient-to-r from-red-950 via-red-900 to-red-950 border-b border-red-500/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
