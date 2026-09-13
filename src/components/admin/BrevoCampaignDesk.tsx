@@ -26,6 +26,24 @@ interface BrevoCampaignDeskProps {
   onToast: (text: string, type?: 'success' | 'error') => void;
 }
 
+/**
+ * Robust JSON parser that handles non-JSON HTML error responses (e.g. 502/504 Bad Gateway,
+ * proxy restart pages, or 404s) cleanly without throwing "Unexpected token 'T'".
+ */
+async function parseJsonResponse(resp: Response): Promise<any> {
+  const text = await resp.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    if (!resp.ok) {
+      const cleaned = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const snippet = cleaned.length > 120 ? cleaned.slice(0, 120) + '...' : cleaned;
+      throw new Error(`Server returned HTTP ${resp.status} (${resp.statusText || 'Error'}): ${snippet || 'Server was busy or restarting. Please retry.'}`);
+    }
+    throw new Error('Received unexpected non-JSON response from server.');
+  }
+}
+
 export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, onToast }) => {
   const state = db.getState();
   const registeredUsers = state.users.filter((u) => u.email && u.email.includes('@'));
@@ -54,7 +72,9 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
     return localStorage.getItem('help150_smtp_user') || 'b65b27001@smtp-brevo.com';
   });
   const [smtpPass, setSmtpPass] = useState<string>(() => {
-    return localStorage.getItem('help150_smtp_pass') || 'CUtThC';
+    const saved = localStorage.getItem('help150_smtp_pass');
+    // If the saved value is the truncated test snippet 'CUtThC', ignore it so user isn't stuck with invalid creds
+    return saved && saved !== 'CUtThC' ? saved : '';
   });
   const [smtpSender, setSmtpSender] = useState<string>(() => {
     return localStorage.getItem('help150_smtp_from') || 'HELP150 Community <admin@help150.org>';
@@ -131,7 +151,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
       }
 
       const resp = await fetch('/api/brevo/status', { headers });
-      const data = await resp.json();
+      const data = await parseJsonResponse(resp);
       setIsConfigured(Boolean(data.configured && data.valid));
       if (data.account) {
         setAccountInfo(data.account);
@@ -154,7 +174,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
         headers['x-brevo-api-key'] = customApiKey;
       }
       const resp = await fetch('/api/brevo/campaigns', { headers });
-      const data = await resp.json();
+      const data = await parseJsonResponse(resp);
       if (Array.isArray(data.campaigns)) {
         setCampaignsList(data.campaigns);
       }
@@ -190,6 +210,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
     if (preset === 'brevo') {
       setSmtpHost('smtp-relay.brevo.com');
       setSmtpPort(587);
+      setSmtpUser('b65b27001@smtp-brevo.com');
       setSmtpSender('HELP150 Community <admin@help150.org>');
     } else if (preset === 'outlook') {
       setSmtpHost('smtp-mail.outlook.com');
@@ -208,25 +229,47 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
   const handleVerifySmtp = async () => {
     setIsTestingSmtp(true);
     setSmtpVerifyResult(null);
+
+    const hostClean = smtpHost.trim();
+    const userClean = smtpUser.trim();
+    const passClean = smtpPass.trim();
+
+    if (!userClean || !passClean) {
+      const msg = 'कृपया SMTP User और Password/Master Key दोनों भरें।';
+      setSmtpVerifyResult({ success: false, message: msg });
+      onToast(msg, 'error');
+      setIsTestingSmtp(false);
+      return;
+    }
+
+    if (hostClean.includes('brevo') && passClean.length < 15) {
+      const msg = '⚠️ अधूरा Brevo SMTP Key (' + passClean.length + ' अक्षरों का दर्ज है): Brevo SMTP Relay के लिए Brevo Dashboard > Settings > "SMTP & API" > "SMTP Keys" से जनरेट किया गया Master SMTP Key (जो 60+ अक्षरों का xsmtpsib-... से शुरू होता है) आवश्यक है। अधूरा पासवर्ड काम नहीं करेगा।';
+      setSmtpVerifyResult({ success: false, message: msg });
+      onToast('Brevo SMTP Key अधूरा है। कृपया पूरा Key दर्ज करें।', 'error');
+      setIsTestingSmtp(false);
+      return;
+    }
+
     try {
       const resp = await fetch('/api/smtp/verify', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          host: smtpHost.trim(),
+          host: hostClean,
           port: smtpPort,
-          user: smtpUser.trim(),
-          pass: smtpPass.trim(),
+          user: userClean,
+          pass: passClean,
         }),
       });
-      const data = await resp.json();
+      const data = await parseJsonResponse(resp);
       if (data.success) {
         setSmtpVerifyResult({ success: true, message: data.message });
         onToast(data.message);
       } else {
+        const errorDesc = data.error + (data.details ? ` (${data.details})` : '');
         setSmtpVerifyResult({
           success: false,
-          message: data.error + (data.details ? ` (${data.details})` : ''),
+          message: errorDesc,
         });
         onToast(data.error || 'SMTP verification failed', 'error');
       }
@@ -272,7 +315,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
           }),
         });
 
-        const data = await resp.json();
+        const data = await parseJsonResponse(resp);
         setLastSentResult(data);
 
         if (resp.ok && data.success) {
@@ -298,7 +341,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
           }),
         });
 
-        const data = await resp.json();
+        const data = await parseJsonResponse(resp);
         setLastSentResult(data);
 
         if (resp.ok && data.success) {
@@ -349,7 +392,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
             apiKey: customApiKey.trim() || undefined,
           }),
         });
-        const data = await resp.json();
+        const data = await parseJsonResponse(resp);
         setLastSentResult(data);
 
         if (resp.ok && data.success) {
@@ -379,7 +422,7 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
           headers,
           body: JSON.stringify(payload),
         });
-        const data = await resp.json();
+        const data = await parseJsonResponse(resp);
         setLastSentResult(data);
 
         if (resp.ok && data.success) {
@@ -1206,15 +1249,70 @@ export const BrevoCampaignDesk: React.FC<BrevoCampaignDeskProps> = ({ onClose, o
               </div>
 
               <div>
-                <label className="block text-slate-800 font-bold mb-1">SMTP Password / Master Key</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-800 font-bold">SMTP Password / Master Key</label>
+                  {smtpHost.includes('brevo') && (
+                    <a
+                      href="https://app.brevo.com/settings/keys/smtp"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 font-bold"
+                    >
+                      <span>Generate Brevo Key</span>
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </div>
                 <input
                   type="password"
                   value={smtpPass}
                   onChange={(e) => setSmtpPass(e.target.value)}
-                  placeholder="Brevo SMTP Master Key or App Password"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  placeholder={smtpHost.includes('brevo') ? 'xsmtpsib-...' : 'SMTP Password or App Password'}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {smtpHost.includes('brevo') && smtpPass.length > 0 && (
+                  <div className="mt-1">
+                    {smtpPass.length < 20 ? (
+                      <p className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 shrink-0 text-amber-600" />
+                        <span>अधूरा Brevo Key ({smtpPass.length} अक्षर)। Brevo SMTP Key सामान्यतः 60+ अक्षरों का होता है (starts with xsmtpsib-)।</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
+                        <span>Valid key length ({smtpPass.length} characters)</span>
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* Brevo SMTP Key Helper Box */}
+              {smtpHost.includes('brevo') && (
+                <div className="p-3 bg-blue-50/80 border border-blue-200/80 rounded-2xl text-xs space-y-1.5 text-blue-950">
+                  <div className="font-bold flex items-center gap-1.5 text-blue-900">
+                    <Key className="h-3.5 w-3.5 text-blue-600" />
+                    <span>Brevo Master SMTP Key कैसे प्राप्त करें:</span>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-blue-800 leading-relaxed pl-1">
+                    <li>
+                      <strong>app.brevo.com</strong> में लॉगिन करें।
+                    </li>
+                    <li>
+                      ऊपर दाएँ मेन्यू में <strong>Settings</strong> &gt; <strong>SMTP &amp; API</strong> खोलें।
+                    </li>
+                    <li>
+                      <strong>SMTP</strong> टैब में <strong>"Generate a new SMTP key"</strong> पर क्लिक करें।
+                    </li>
+                    <li>
+                      जो 60+ अक्षरों की Key (उदा. <code className="font-mono bg-blue-100 px-1 py-0.5 rounded">xsmtpsib-...</code>) मिले, उसे कॉपी करके यहाँ पेस्ट करें।
+                    </li>
+                  </ol>
+                  <div className="text-[10px] text-blue-600 pt-0.5">
+                    💡 <em>नोट: 'CUtThC' जैसा 6-अक्षरों का पासवर्ड काम नहीं करेगा, पूरा जनरेटेड Key आवश्यक है।</em>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-slate-800 font-bold mb-1">From Header</label>

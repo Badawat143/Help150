@@ -1187,6 +1187,9 @@ app.post('/api/smtp/send', async (req, res) => {
       port: Number(port),
       secure: Boolean(secure || Number(port) === 465),
       auth: { user, pass },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 12000,
       tls: {
         rejectUnauthorized: false,
       },
@@ -1218,9 +1221,16 @@ app.post('/api/smtp/send', async (req, res) => {
       message: `Email successfully sent to ${to} via SMTP Relay (${host})!`,
     });
   } catch (err: any) {
+    let helpHint = 'Check your SMTP credentials, host, and port.';
+    if (err.message?.includes('535') || err.message?.includes('Authentication failed')) {
+      helpHint = 'Authentication failed. If using Brevo, ensure you pasted the full SMTP Key (starts with xsmtpsib-, generated in Brevo > SMTP & API > SMTP Keys), NOT an incomplete password or account password.';
+    } else if (err.message?.includes('SmtpClientAuthentication is disabled')) {
+      helpHint = 'Outlook/Office365 disabled basic SMTP auth for this mailbox. We recommend using Brevo API or Brevo SMTP Relay instead.';
+    }
     return res.status(500).json({
       success: false,
       error: err.message || 'SMTP delivery failed',
+      details: helpHint,
     });
   }
 });
@@ -1232,13 +1242,23 @@ app.post('/api/smtp/verify', async (req, res) => {
     port = 587,
     secure = false,
     user = 'b65b27001@smtp-brevo.com',
-    pass = 'CUtThC',
+    pass = '',
   } = req.body;
 
   if (!user || !pass) {
     return res.status(400).json({
       success: false,
       error: 'SMTP User and Password/Key are required.',
+      details: 'Please provide both SMTP username (e.g. b65b27001@smtp-brevo.com) and the full Master SMTP Key.',
+    });
+  }
+
+  // Check for common truncated Brevo key mistakes
+  if (String(host).includes('brevo') && String(pass).length < 15) {
+    return res.status(400).json({
+      success: false,
+      error: 'Incomplete Brevo SMTP Key (' + String(pass).length + ' chars)',
+      details: 'Brevo SMTP keys are generated from Brevo Dashboard > SMTP & API > SMTP Keys. They usually start with "xsmtpsib-" and are 60+ characters long. The entered value "' + String(pass) + '" is too short.',
     });
   }
 
@@ -1248,6 +1268,9 @@ app.post('/api/smtp/verify', async (req, res) => {
       port: Number(port),
       secure: Boolean(secure || Number(port) === 465),
       auth: { user, pass },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
       tls: {
         rejectUnauthorized: false,
       },
@@ -1260,10 +1283,16 @@ app.post('/api/smtp/verify', async (req, res) => {
       message: `SMTP connection to ${host}:${port} verified successfully! Server is ready to send emails.`,
     });
   } catch (err: any) {
+    let helpHint = 'Please ensure you copied the complete Master SMTP Key from Brevo (Brevo keys are usually full length strings starting with xsmtpsib- or a 32+ char token).';
+    if (err.message?.includes('SmtpClientAuthentication is disabled')) {
+      helpHint = 'Outlook/Office365 disabled basic SMTP auth for this mailbox. We recommend using Brevo API or Brevo SMTP Relay instead.';
+    } else if (err.message?.includes('ETIMEDOUT') || err.message?.includes('ECONNREFUSED')) {
+      helpHint = `Could not reach ${host} on port ${port}. Please ensure the host and port are correct and accessible.`;
+    }
     return res.status(401).json({
       success: false,
       error: err.message || 'SMTP Authentication failed',
-      details: 'Please ensure you copied the complete Master SMTP Key from Brevo (Brevo keys are usually full length strings starting with xsmtpsib- or a 16+ char token).',
+      details: helpHint,
     });
   }
 });
