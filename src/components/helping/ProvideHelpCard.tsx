@@ -688,8 +688,8 @@ export const ProvideHelpCard: React.FC<ProvideHelpCardProps> = ({
                   <ShieldCheck className="h-4 w-4 text-blue-400" />
                   <span>Compliance & Instructions:</span>
                 </p>
-                <p>1. Review details and click ACCEPT to confirm participation.</p>
-                <p>2. Transfer ₹{amount} via UPI to the provided recipient handle.</p>
+                <p>1. Review recipient UPI handle and transfer ₹{amount} directly to their account.</p>
+                <p>2. Complete transfer within the allotted time window.</p>
                 <p>3. Submit the 12-digit UTR reference or upload transaction slip screenshot within 12 hours.</p>
               </div>
             </div>

@@ -191,7 +191,7 @@ export interface HelpRequest {
   completedAt?: string;
 }
 
-export type CycleStepStatus = 'locked' | 'pending' | 'submitted' | 'completed';
+export type CycleStepStatus = 'locked' | 'pending' | 'submitted' | 'completed' | 'rejected';
 
 export interface CycleLinkDetails {
   requestId: string;
@@ -208,6 +208,8 @@ export interface CycleLinkDetails {
   slipUrl?: string;
   submittedAt?: string;
   completedAt?: string;
+  rejectionReason?: string;
+  rejectedAt?: string;
 }
 
 export interface UserHelpCycle {

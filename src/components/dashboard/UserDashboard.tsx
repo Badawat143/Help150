@@ -49,6 +49,7 @@ import {
   Info,
   ChevronDown,
   RefreshCw,
+  MoreVertical,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -118,6 +119,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
   // Active navigation inside the dashboard view
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Interactive state
   const [copiedReferral, setCopiedReferral] = useState(false);
@@ -368,6 +370,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   // Sidebar navigation click handler
   const handleNavClick = (itemId: string) => {
     setActiveSidebarItem(itemId);
+    setIsSidebarOpen(false);
     if (['wallet', 'kyc', 'referral', 'withdrawal', 'support', 'notifications', 'help'].includes(itemId)) {
       setActiveTab(itemId);
     } else if (itemId === 'profile') {
@@ -383,32 +386,56 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
     <div className="min-h-screen bg-[#F4F7FC] text-slate-800 font-sans">
       <div className="flex w-full">
         {/* ========================================================================= */}
-        {/* LEFT DARK NAVY SIDEBAR                                                   */}
+        {/* LEFT DARK NAVY SIDEBAR DRAWER (TUCKED INSIDE, OPENS ON 3-DOTS CLICK)      */}
         {/* ========================================================================= */}
+        {/* Backdrop for the drawer */}
+        {isSidebarOpen && (
+          <div
+            id="dashboard-sidebar-backdrop"
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 transition-opacity animate-fadeIn cursor-pointer"
+            title="Click to close sidebar"
+          />
+        )}
+
         <aside
           id="dashboard-left-sidebar"
-          className="w-64 shrink-0 bg-[#0B1528] min-h-screen p-4 hidden md:flex flex-col justify-between text-slate-300 select-none border-r border-slate-800"
+          className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 bg-[#0B1528] min-h-screen p-4 flex flex-col justify-between text-slate-300 select-none border-r border-slate-700/80 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         >
           <div className="space-y-6">
-            {/* Top Logo in Sidebar */}
-            <div className="flex items-center gap-2.5 px-2 pt-2">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/25">
-                <img
-                  src="/logo.png"
-                  alt="HELP150 Official Logo"
-                  referrerPolicy="no-referrer"
-                  className="h-full w-full object-contain rounded-full"
-                />
-              </div>
-              <div>
-                <div className="text-lg font-black text-white tracking-tight flex items-center">
-                  <span>HELP</span>
-                  <span className="text-amber-400">150</span>
+            {/* Top Logo in Sidebar with Close (X) Button */}
+            <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 shadow-md shadow-amber-500/25">
+                  <img
+                    src="/logo.png"
+                    alt="HELP150 Official Logo"
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-contain rounded-full"
+                  />
                 </div>
-                <div className="text-[10px] text-amber-200/70 font-medium whitespace-nowrap">
-                  Together For A Better Tomorrow
+                <div>
+                  <div className="text-lg font-black text-white tracking-tight flex items-center">
+                    <span>HELP</span>
+                    <span className="text-amber-400">150</span>
+                  </div>
+                  <div className="text-[10px] text-amber-200/70 font-medium whitespace-nowrap">
+                    Together For A Better Tomorrow
+                  </div>
                 </div>
               </div>
+
+              {/* Close Button */}
+              <button
+                id="btn-close-dashboard-sidebar"
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                title="मेन्यू बंद करें (Close Menu)"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Sidebar Navigation Items */}
@@ -605,6 +632,45 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
         {/* ========================================================================= */}
         <main className="flex-1 p-4 sm:p-6 lg:p-7 space-y-6 max-w-[1400px] mx-auto overflow-x-hidden">
           
+          {/* Floating 3-Dots Button (Fixed on left edge so user can always open menu) */}
+          <button
+            id="btn-floating-3dots-menu"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            className="fixed left-3 sm:left-4 top-24 z-40 flex items-center justify-center h-11 w-11 rounded-2xl bg-[#0B1528] text-amber-400 hover:text-white border-2 border-amber-400/60 shadow-2xl shadow-slate-950/80 hover:scale-110 transition cursor-pointer backdrop-blur-md group"
+            title="3 डॉट: डैशबोर्ड मेन्यू ऑप्शन्स खोलें"
+            aria-label="Open Dashboard Options Menu"
+          >
+            <MoreVertical className="h-6 w-6 group-hover:scale-110 transition-transform" />
+          </button>
+
+          {/* Top Bar with Prominent 3-Dots Button & Menu Trigger */}
+          <div className="w-full flex items-center justify-between gap-3 pb-1">
+            <button
+              id="btn-dashboard-3dots-menu"
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#0B1528] text-white hover:bg-slate-900 border border-slate-700 hover:border-amber-400/70 shadow-md transition cursor-pointer group"
+              title="3 डॉट पर क्लिक करें - सभी 13 ऑप्शन्स खुलेंगे"
+            >
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-slate-950 transition">
+                <MoreVertical className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-black text-amber-300 group-hover:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>मेन्यू ऑप्शन्स</span>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">3 डॉट</span>
+                </div>
+                <div className="text-[10px] text-slate-400">क्लिक करके सभी 13 विकल्प खोलें</div>
+              </div>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 font-bold text-xs">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <span>सुरक्षित पीयर सहायता प्रणाली</span>
+              </span>
+            </div>
+          </div>
+
           {/* ======================================================================= */}
           {/* 1. TOP USER NAME / WELCOME HERO BANNER                                  */}
           {/* ======================================================================= */}
@@ -629,6 +695,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 >
                   <UserIcon className="h-3 w-3" />
                   <span>Edit Profile & Bank Details</span>
+                </button>
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="px-2.5 py-1 rounded-lg bg-blue-950/70 text-amber-300 border border-amber-400/40 font-bold text-[11px] shadow-sm hover:bg-blue-900 transition cursor-pointer flex items-center gap-1"
+                  title="3 डॉट: सभी ऑप्शन्स खोलें"
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                  <span>सभी ऑप्शन्स (3 डॉट)</span>
                 </button>
               </div>
             </div>

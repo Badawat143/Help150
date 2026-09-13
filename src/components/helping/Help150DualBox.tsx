@@ -53,7 +53,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const [showProofModal, setShowProofModal] = useState<{ url: string; ref: string; amount: number; name: string } | null>(null);
   const [showCelebrationModal, setShowCelebrationModal] = useState<{ cycleNum: number; profit: number } | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState('Payment verification issue or duplicate reference');
+  const [rejectReason, setRejectReason] = useState('बैंक खाते में राशि प्राप्त नहीं हुई (Amount not credited in bank)');
 
   // Direct Inline UTR input states
   const [inlineUtr, setInlineUtr] = useState('');
@@ -230,6 +230,23 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       setFeedback({ type: 'error', message: err.message || 'Error confirming payment' });
     } finally {
       setIsConfirmingReceive(false);
+    }
+  };
+
+  // Reject Received ₹200 Payment Proof by Receiver
+  const handleRejectReceiveHelp = (reason: string) => {
+    const finalReason = reason.trim() || 'बैंक खाते में राशि प्राप्त नहीं हुई (Amount not credited in bank)';
+    try {
+      db.rejectCycleReceiveLink(currentUser.id, finalReason);
+      syncCycle();
+      refreshUserData();
+      setShowRejectModal(false);
+      setFeedback({
+        type: 'error',
+        message: `₹200 सहायता अस्वीकृत (Rejected) कर दी गई है। कारण: "${finalReason}"। एडमिन सहायता व प्रेषक को सूचित कर दिया गया है।`,
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error rejecting payment' });
     }
   };
 
@@ -580,31 +597,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   )}
                 </div>
 
-                {/* Action Buttons: [ ACCEPT ] [ REJECT ] */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <button
-                    onClick={() => {
-                      setFeedback({
-                        type: 'success',
-                        message: `Provide Help for ₹${activeProvideBeneficiary.amount} accepted. Please transfer via UPI and submit UTR / Slip below.`,
-                      });
-                    }}
-                    className="py-3 px-4 rounded-xl bg-white hover:bg-red-50 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-950/40 transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Check className="h-4 w-4 stroke-[3] text-emerald-600" />
-                    <span>[ ACCEPT ]</span>
-                  </button>
-
-                  <button
-                    onClick={() => setShowRejectModal(true)}
-                    className="py-3 px-4 rounded-xl bg-red-900 hover:bg-red-800 text-white border border-red-400/60 font-black text-xs sm:text-sm uppercase tracking-wider shadow transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <X className="h-4 w-4 stroke-[3] text-red-300" />
-                    <span>[ REJECT ]</span>
-                  </button>
-                </div>
-
-                {/* Primary Upload Button: 📤 Upload Payment Slip */}
+                {/* Primary Upload Button: 📤 Upload Payment Slip (Provider transfers & uploads proof) */}
                 <button
                   onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl border border-red-400/40 transition flex items-center justify-center gap-2 cursor-pointer"
@@ -941,21 +934,67 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </p>
                 </div>
 
-                {/* Primary Confirm Button: [ Confirm ₹200 Payment Received ] */}
-                <div className="space-y-2 pt-1">
-                  <button
-                    onClick={handleConfirmReceiveHelp}
-                    disabled={isConfirmingReceive}
-                    className="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm sm:text-base uppercase tracking-wider shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <CheckCircle2 className="h-5 w-5 stroke-[2.5]" />
-                    <span>[ ✅ Confirm ₹200 Payment Received (₹200 कन्फर्म करें) ]</span>
-                  </button>
+                {/* Receiver Action Panel: ACCEPT / REJECT incoming payment */}
+                {receiveLink.status === 'rejected' ? (
+                  <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-500/70 text-rose-200 space-y-2.5 text-center shadow-lg">
+                    <div className="flex items-center justify-center gap-2 font-bold text-rose-300 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
+                      <span>आपने यह भुगतान अस्वीकृत (REJECT) कर दिया है</span>
+                    </div>
+                    <p className="text-xs text-rose-200 font-medium">
+                      कारण: <strong className="text-white">"{receiveLink.rejectionReason || rejectReason}"</strong>
+                    </p>
+                    <p className="text-[11px] text-rose-300/90">
+                      एडमिन सपोर्ट और प्रेषक सदस्य को जांच के लिए सूचित कर दिया गया है।
+                    </p>
+                    <button
+                      onClick={handleConfirmReceiveHelp}
+                      disabled={isConfirmingReceive}
+                      className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider transition cursor-pointer shadow flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>पुनः जांच कर ₹200 स्वीकार करें (यदि राशि आ गई हो)</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between text-[11px] text-sky-200 px-1 font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>रिसीवर पुष्टि (Receiver Decision):</span>
+                      </span>
+                      <span className="text-amber-300 text-[10px]">बैंक खाता जांचकर निर्णय लें</span>
+                    </div>
 
-                  <p className="text-[11px] text-sky-200 text-center font-medium leading-relaxed">
-                    ₹200 कन्फर्म करते ही राशि आपके वॉलेट में जमा हो जाएगी (+₹50 शुद्ध लाभ) और <strong>बाएँ बॉक्स में अगला Provide Help (₹50) तुरंत अनलॉक हो जाएगा</strong>!
-                  </p>
-                </div>
+                    {/* Receiver Decision Buttons: [ ACCEPT ] & [ REJECT ] */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={handleConfirmReceiveHelp}
+                        disabled={isConfirmingReceive}
+                        className="py-3.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        title="राशि प्राप्त हो गई है, स्वीकार करें"
+                      >
+                        <Check className="h-4 w-4 stroke-[3] text-slate-950" />
+                        <span>[ ACCEPT ]</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowRejectModal(true)}
+                        disabled={isConfirmingReceive}
+                        className="py-3.5 px-3 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-rose-950/60 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        title="राशि प्राप्त नहीं हुई या गलत स्लिप है, अस्वीकार करें"
+                      >
+                        <X className="h-4 w-4 stroke-[3] text-white" />
+                        <span>[ REJECT ]</span>
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-sky-200 text-center font-medium leading-relaxed pt-0.5">
+                      ✅ <strong>ACCEPT:</strong> ₹200 आपके वॉलेट में जमा होगा (+₹50 शुद्ध लाभ) और अगला Provide Help अनलॉक होगा। <br />
+                      ❌ <strong>REJECT:</strong> यदि बैंक में पैसा न आया हो या गलत स्लिप हो तो तुरंत अस्वीकार करें।
+                    </p>
+                  </div>
+                )}
               </>
             )}
 
@@ -1255,50 +1294,75 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       )}
 
       {/* ========================================================================= */}
-      {/* REJECT MODAL                                                              */}
+      {/* RECEIVER REJECT MODAL                                                     */}
       {/* ========================================================================= */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-red-500 p-6 text-white space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-rose-500 p-6 text-white space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-red-300 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-                <span>Reject Task</span>
+              <h3 className="text-base font-bold text-rose-300 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-rose-400" />
+                <span>अस्वीकार करें (Reject Payment Proof)</span>
               </h3>
               <button onClick={() => setShowRejectModal(false)} className="p-1 text-slate-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              Please enter the reason for rejection (e.g., recipient UPI inactive, unreachable phone number):
+            <p className="text-xs text-slate-300 leading-relaxed">
+              रिसीवर के रूप में, यदि आपको प्रेषक सदस्य से ₹200 का भुगतान बैंक खाते या UPI में प्राप्त नहीं हुआ है, तो अस्वीकार करने का कारण चुनें या लिखें:
             </p>
 
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              rows={3}
-              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-red-400"
-            />
+            {/* Quick Reason Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] text-slate-400 font-semibold">त्वरित कारण चुनें (Quick Select):</span>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  'बैंक खाते में राशि प्राप्त नहीं हुई (Amount not credited in bank)',
+                  'अमान्य / फर्जी UTR नंबर (Invalid / fake UTR reference)',
+                  'कम राशि भेजी गई (Incorrect / partial amount received)',
+                  'फर्जी स्लिप स्क्रीनशॉट (Fake or altered screenshot)',
+                ].map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setRejectReason(reason)}
+                    className={`text-[11px] px-3 py-1.5 rounded-xl border text-left transition cursor-pointer ${
+                      rejectReason === reason
+                        ? 'bg-rose-600/30 border-rose-400 text-rose-200 font-bold'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-300">अस्वीकृति का विवरण (Details):</label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={2}
+                placeholder="कारण दर्ज करें..."
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase"
+                className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase cursor-pointer"
               >
-                Cancel
+                रद्द करें (Cancel)
               </button>
               <button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setFeedback({
-                    type: 'error',
-                    message: `Task rejection reported: ${rejectReason}. Admin will review the peer assignment.`,
-                  });
-                }}
-                className="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase shadow"
+                onClick={() => handleRejectReceiveHelp(rejectReason)}
+                className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase shadow cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Confirm Reject
+                <X className="h-4 w-4" />
+                <span>पुष्टि करें (Confirm Reject)</span>
               </button>
             </div>
           </div>

@@ -1323,6 +1323,32 @@ class DatabaseManager {
 
     return { completedCycle: cycle, newCycle: nextCycle };
   }
+
+  public rejectCycleReceiveLink(userId: string, reason: string): { cycle: UserHelpCycle } {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (cycle.receiveLink) {
+      cycle.receiveLink.status = 'rejected';
+      cycle.receiveLink.rejectionReason = reason;
+      cycle.receiveLink.rejectedAt = now;
+    }
+
+    this.state.notifications.unshift({
+      id: `NOTIF-REJ-${Date.now().toString().slice(-6)}`,
+      userId,
+      title: `Payment Proof Rejected (#${cycle.receiveLink?.requestId || cycle.id})`,
+      message: `You marked the incoming ₹200 assistance payment proof as rejected. Reason: ${reason}. Support desk has been notified.`,
+      type: 'warning',
+      isRead: false,
+      createdAt: now,
+    });
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return { cycle };
+  }
 }
 
 function sampleSlipUrl(amount: number, utr: string, name = 'Peer Member') {
