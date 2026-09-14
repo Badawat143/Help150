@@ -50,6 +50,8 @@ import {
   ChevronDown,
   RefreshCw,
   MoreVertical,
+  ArrowUpRight,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -84,6 +86,19 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const hierarchy = currentUser
     ? api.getReferralHierarchy(currentUser.id)
     : { directReferrals: [], allDownline: [], totalTeamSize: 0, levelStats: [] };
+
+  const userIncomeStats = currentUser
+    ? db.getUserIncomeStats(currentUser.id)
+    : {
+        totalHelpedReceived: 0,
+        totalHelpedGiven: 0,
+        netHelpingProfit: 0,
+        totalIncome: 0,
+        completedCyclesCount: 0,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalReferralRewards: 0,
+      };
 
   const [isSyncing, setIsSyncing] = useState(false);
   const handleSyncReferrals = async () => {
@@ -823,19 +838,31 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </div>
             </div>
 
-            {/* Card 2: Total Help Requests */}
+            {/* Card 2: Total Received / Income (टोटल रिसिव) */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex items-start gap-4 hover:shadow-md transition">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
-                <Repeat className="h-6 w-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 shrink-0">
+                <ArrowDownCircle className="h-6 w-6" />
               </div>
               <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-slate-500">Total Help Requests</div>
-                <div className="text-xl font-black text-slate-900 font-heading">2</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-slate-500">Total Received (टोटल रिसिव)</div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60">
+                    सहायता आय
+                  </span>
+                </div>
+                <div className="text-xl font-black text-slate-900 font-heading">
+                  ₹ {userIncomeStats.totalHelpedReceived.toFixed(2)}
+                </div>
+                <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                  <span>नेट लाभ: <strong className="text-emerald-600 font-mono font-bold">+₹{userIncomeStats.netHelpingProfit.toFixed(2)}</strong></span>
+                  <span>•</span>
+                  <span>{userIncomeStats.completedCyclesCount} सफल</span>
+                </div>
                 <button
                   onClick={() => setActiveTab('help')}
-                  className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline block cursor-pointer"
+                  className="mt-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline block cursor-pointer"
                 >
-                  View Details
+                  View Income Details ➔
                 </button>
               </div>
             </div>
@@ -1318,15 +1345,43 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                     </span>
                   </div>
 
-                  {/* Row 3: Total Earnings */}
+                  {/* Row 3: Total Income */}
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                     <div className="flex items-center gap-2 text-slate-600">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                         <Sparkles className="h-3 w-3" />
                       </div>
-                      <span>Total Earnings</span>
+                      <span>Total Income (कुल आय)</span>
                     </div>
-                    <span className="font-mono font-black text-blue-600 text-sm">₹ 850.00</span>
+                    <span className="font-mono font-black text-blue-600 text-sm">
+                      ₹ {userIncomeStats.totalIncome.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Row 4: Total Received (टोटल रिसिव) */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                    <div className="flex items-center gap-2 text-emerald-800">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <ArrowDownCircle className="h-3 w-3" />
+                      </div>
+                      <span className="font-semibold">Total Received (टोटल रिसिव)</span>
+                    </div>
+                    <span className="font-mono font-black text-emerald-600 text-sm">
+                      ₹ {userIncomeStats.totalHelpedReceived.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Row 5: Total Help Given (टोटल प्रोवाइड) */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                        <ArrowUpRight className="h-3 w-3" />
+                      </div>
+                      <span>Total Help Given (कुल सहायता दी)</span>
+                    </div>
+                    <span className="font-mono font-bold text-slate-700 text-sm">
+                      ₹ {userIncomeStats.totalHelpedGiven.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>

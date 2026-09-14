@@ -1227,12 +1227,65 @@ class DatabaseManager {
     return cycle;
   }
 
+  public getOrCreateWallet(userId: string): Wallet {
+    let wallet = this.state.wallets[userId];
+    const now = new Date().toISOString();
+    if (!wallet) {
+      wallet = {
+        userId,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalHelpedGiven: 0,
+        totalHelpedReceived: 0,
+        totalReferralRewards: 0,
+        totalWithdrawn: 0,
+        lastUpdated: now,
+      };
+      this.state.wallets[userId] = wallet;
+    }
+    return wallet;
+  }
+
+  public getUserIncomeStats(userId: string) {
+    const wallet = this.getOrCreateWallet(userId);
+    const completedCycles = (this.state.helpCycles || []).filter(
+      (c) => c.userId === userId && c.status === 'completed'
+    );
+    const totalCycleReceived = completedCycles.length * 200;
+    const totalCycleGiven = completedCycles.length * 150;
+    
+    // Ensure wallet is at least the sum of all completed cycles
+    if (wallet.totalHelpedReceived < totalCycleReceived) {
+      wallet.totalHelpedReceived = totalCycleReceived;
+    }
+    if (wallet.totalHelpedGiven < totalCycleGiven) {
+      wallet.totalHelpedGiven = totalCycleGiven;
+    }
+
+    const totalHelpedReceived = wallet.totalHelpedReceived;
+    const totalHelpedGiven = wallet.totalHelpedGiven;
+    const netHelpingProfit = Math.max(0, totalHelpedReceived - totalHelpedGiven);
+    const totalIncome = totalHelpedReceived + (wallet.totalReferralRewards || 0);
+
+    return {
+      totalHelpedReceived,
+      totalHelpedGiven,
+      netHelpingProfit,
+      totalIncome,
+      completedCyclesCount: completedCycles.length,
+      availableBalance: wallet.availableBalance,
+      pendingBalance: wallet.pendingBalance,
+      totalReferralRewards: wallet.totalReferralRewards || 0,
+    };
+  }
+
   public acceptCycleProvideLink(
     userId: string,
     linkType: 'verification' | 'second'
   ): UserHelpCycle {
     const cycle = this.getUserHelpCycle(userId);
     const now = new Date().toISOString();
+    const wallet = this.getOrCreateWallet(userId);
 
     if (linkType === 'verification') {
       cycle.verificationLink.status = 'completed';
@@ -1240,9 +1293,8 @@ class DatabaseManager {
       cycle.status = 'provide_second';
 
       // Update wallet total help given
-      if (this.state.wallets[userId]) {
-        this.state.wallets[userId].totalHelpedGiven += 50;
-      }
+      wallet.totalHelpedGiven += 50;
+      wallet.lastUpdated = now;
 
       this.state.notifications.unshift({
         id: `NOTIF-ACC-${Date.now().toString().slice(-6)}`,
@@ -1258,9 +1310,8 @@ class DatabaseManager {
       cycle.secondLink.completedAt = now;
 
       // Update wallet total help given
-      if (this.state.wallets[userId]) {
-        this.state.wallets[userId].totalHelpedGiven += 100;
-      }
+      wallet.totalHelpedGiven += 100;
+      wallet.lastUpdated = now;
 
       // Check if BOTH links are completed -> Start 12-Hour Timer!
       cycle.status = 'maturation_timer';
@@ -1397,22 +1448,8 @@ class DatabaseManager {
     cycle.status = 'completed';
     cycle.completedAt = now;
 
-    // Credit ₹200 to User Wallet
-    let wallet = this.state.wallets[userId];
-    if (!wallet) {
-      wallet = {
-        userId,
-        availableBalance: 0,
-        pendingBalance: 0,
-        totalHelpedGiven: 0,
-        totalHelpedReceived: 0,
-        totalReferralRewards: 0,
-        totalWithdrawn: 0,
-        lastUpdated: now,
-      };
-      this.state.wallets[userId] = wallet;
-    }
-
+    // Credit ₹200 to User Wallet & Total Received
+    const wallet = this.getOrCreateWallet(userId);
     wallet.availableBalance += 200;
     wallet.totalHelpedReceived += 200;
     wallet.lastUpdated = now;

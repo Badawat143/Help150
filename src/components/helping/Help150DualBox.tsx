@@ -30,6 +30,9 @@ import {
   Zap,
   ArrowRight,
   TrendingUp,
+  ArrowDownCircle,
+  ArrowUpRight,
+  Wallet as WalletIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
@@ -42,7 +45,8 @@ interface Help150DualBoxProps {
 }
 
 export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab }) => {
-  const { currentUser, refreshUserData } = useAuth();
+  const { currentUser, wallet, refreshUserData } = useAuth();
+  const incomeStats = currentUser ? db.getUserIncomeStats(currentUser.id) : null;
 
   // Cycle state
   const [cycle, setCycle] = useState<UserHelpCycle | null>(null);
@@ -350,6 +354,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       const result = db.confirmCycleReceiveLink(currentUser.id);
       syncCycle();
       refreshUserData();
+      const updatedStats = db.getUserIncomeStats(currentUser.id);
       setPendingCelebrationData({
         cycleNum: result.completedCycle.cycleNumber,
         profit: 50,
@@ -358,7 +363,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       setShowCoinAnimation(true);
       setFeedback({
         type: 'success',
-        message: `₹200 सहायता प्राप्त और कन्फर्म! कॉइन्स आपके वॉलेट हिस्ट्री में जमा हो रहे हैं। नई साइकिल #${result.newCycle.cycleNumber} का Provide Help (₹50) अनलॉक हो गया है!`,
+        message: `₹200 सहायता प्राप्त और कन्फर्म! यह राशि आपके "टोटल रिसिव" (अब ₹${updatedStats.totalHelpedReceived}) और वॉलेट बैलेंस में जमा हो गई है। नई साइकिल #${result.newCycle.cycleNumber} का Provide Help लिंक अनलॉक हो गया है!`,
       });
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error confirming payment' });
@@ -577,6 +582,114 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         )}
+      </div>
+
+      {/* 💰 USER FINANCIAL DASHBOARD: TOTAL RECEIVED & INCOME TRACKER */}
+      <div
+        id="helping-income-received-tracker"
+        className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-3 sm:p-4 shadow-xl"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>कुल कमाई एवं टोटल रिसिव (Total Income & Received Tracker)</span>
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/40">
+                  LIVE UPDATED
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                हर बार Receive लिंक एक्सेप्ट करने पर ₹200 आपके "टोटल रिसिव" व वॉलेट में तुरंत जुड़ता है
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold">
+            <span className="text-slate-400">साइकिल:</span>
+            <span className="text-amber-300 font-bold">#{cycle.cycleNumber}</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">सफल साइकिल:</span>
+            <span className="text-emerald-400 font-bold">{incomeStats?.completedCyclesCount || 0}</span>
+          </div>
+        </div>
+
+        {/* 4 Financial Highlight Badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {/* Tile 1: TOTAL RECEIVED (टोटल रिसिव) - Prominent Emerald Theme */}
+          <div className="p-2.5 rounded-xl bg-gradient-to-b from-emerald-950/80 to-slate-900 border border-emerald-500/40 relative overflow-hidden shadow-inner">
+            <div className="flex items-center justify-between text-[11px] text-emerald-300 font-semibold">
+              <span className="flex items-center gap-1">
+                <ArrowDownCircle className="h-3.5 w-3.5 text-emerald-400" />
+                <span>टोटल रिसिव (Received)</span>
+              </span>
+              <span className="text-[9px] bg-emerald-500/30 text-emerald-200 px-1.5 py-0.2 rounded font-mono font-bold">
+                आय
+              </span>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-emerald-300 font-mono mt-1 flex items-baseline gap-1">
+              <span>₹{incomeStats?.totalHelpedReceived ?? 0}</span>
+            </div>
+            <div className="text-[10px] text-emerald-400/80 mt-0.5 truncate font-medium">
+              +{incomeStats?.completedCyclesCount || 0} x ₹200 सहायता प्राप्त
+            </div>
+          </div>
+
+          {/* Tile 2: TOTAL HELP GIVEN (टोटल प्रोवाइड) */}
+          <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+              <span className="flex items-center gap-1">
+                <ArrowUpRight className="h-3.5 w-3.5 text-rose-400" />
+                <span>टोटल प्रोवाइड (Given)</span>
+              </span>
+              <span className="text-[9px] text-slate-500 font-mono">₹50+₹100</span>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-slate-200 font-mono mt-1">
+              ₹{incomeStats?.totalHelpedGiven ?? 0}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5 truncate font-medium">
+              दी गई कुल सहायता
+            </div>
+          </div>
+
+          {/* Tile 3: NET INCOME / PROFIT (कुल शुद्ध लाभ) */}
+          <div className="p-2.5 rounded-xl bg-gradient-to-b from-amber-950/40 to-slate-900 border border-amber-500/40 shadow-inner">
+            <div className="flex items-center justify-between text-[11px] text-amber-300 font-semibold">
+              <span className="flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span>कुल शुद्ध लाभ (Net Profit)</span>
+              </span>
+              <span className="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.2 rounded font-mono font-bold">
+                +₹50/Cycle
+              </span>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono mt-1">
+              +₹{incomeStats?.netHelpingProfit ?? 0}
+            </div>
+            <div className="text-[10px] text-amber-200/70 mt-0.5 truncate font-medium">
+              रिसिव (₹200) - प्रोवाइड (₹150)
+            </div>
+          </div>
+
+          {/* Tile 4: WALLET AVAILABLE BALANCE */}
+          <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+              <span className="flex items-center gap-1">
+                <WalletIcon className="h-3.5 w-3.5 text-blue-400" />
+                <span>वॉलेट बैलेंस (Balance)</span>
+              </span>
+              <span className="text-[9px] text-blue-300 font-mono font-bold">Ready</span>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-white font-mono mt-1">
+              ₹{(incomeStats?.availableBalance ?? wallet?.availableBalance ?? 0).toFixed(2)}
+            </div>
+            <div className="text-[10px] text-blue-400 mt-0.5 truncate font-medium">
+              निकासी योग्य शेष
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* QUICK STEP NAVIGATION PILLS */}
@@ -1251,7 +1364,18 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
+                    {/* Live Income & Received Indicator */}
+                    <div className="p-2 rounded-xl bg-emerald-950/90 border border-emerald-500/50 text-[11px] text-emerald-200 flex items-center justify-between shadow-inner">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <TrendingUp className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span>एक्सेप्ट करते ही ₹200 आपके "टोटल रिसिव" में जुड़ेगा</span>
+                      </div>
+                      <span className="font-mono font-black text-amber-300">
+                        वर्तमान कुल: ₹{incomeStats?.totalHelpedReceived ?? 0}
+                      </span>
+                    </div>
+
                     <div className={`grid ${receive24hTimer.is24HoursCompleted ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
                       <button
                         onClick={handleConfirmReceiveHelp}
@@ -1503,16 +1627,24 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Help Provided:</span>
-                <span className="font-mono font-bold text-red-400">₹150 (₹50 + ₹100)</span>
+                <span className="text-slate-400">This Cycle Help Provided:</span>
+                <span className="font-mono font-bold text-rose-400">₹150 (₹50 + ₹100)</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Help Received:</span>
+                <span className="text-slate-400">This Cycle Help Received:</span>
                 <span className="font-mono font-bold text-emerald-400">₹200</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-slate-700 text-sm">
-                <span className="text-white font-bold">Net Earnings:</span>
-                <span className="font-mono font-black text-amber-300">+₹{showCelebrationModal.profit}</span>
+              <div className="flex justify-between p-2 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-300">
+                <span className="font-bold">Total Received (टोटल रिसिव):</span>
+                <span className="font-mono font-black text-emerald-300 text-sm">
+                  ₹{incomeStats?.totalHelpedReceived ?? 0}
+                </span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-700 text-sm">
+                <span className="text-white font-bold">Net Earnings (कुल शुद्ध लाभ):</span>
+                <span className="font-mono font-black text-amber-300">
+                  +₹{incomeStats?.netHelpingProfit ?? showCelebrationModal.profit}
+                </span>
               </div>
             </div>
 

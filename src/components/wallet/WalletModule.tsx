@@ -25,6 +25,7 @@ import { db } from '../../services/db';
 export const WalletModule: React.FC = () => {
   const { currentUser, wallet, setActiveTab } = useAuth();
   const state = db.getState();
+  const incomeStats = currentUser ? db.getUserIncomeStats(currentUser.id) : null;
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -121,51 +122,77 @@ export const WalletModule: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Financial Metric Highlights */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Available Balance */}
+      {/* 6 Financial Metric Highlights */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* 1. Available Balance */}
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-md">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Available Balance</span>
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
-            ₹{wallet?.availableBalance ?? 0}
+          <div className="text-xl sm:text-2xl font-black text-white font-mono mt-1">
+            ₹{(incomeStats?.availableBalance ?? wallet?.availableBalance ?? 0).toFixed(2)}
           </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Ready for withdrawal</div>
+          <div className="text-[10px] text-emerald-400 mt-0.5">Ready for withdrawal</div>
         </div>
 
-        {/* Pending Balance */}
+        {/* 2. Total Received (टोटल रिसिव) */}
+        <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/60 to-slate-900 border border-emerald-500/50 shadow-md">
+          <div className="flex items-center justify-between text-[11px] text-emerald-300 font-semibold">
+            <span>Total Received (रिसिव)</span>
+            <ArrowDownCircle className="h-3.5 w-3.5 text-emerald-400" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1">
+            ₹{incomeStats?.totalHelpedReceived ?? wallet?.totalHelpedReceived ?? 0}
+          </div>
+          <div className="text-[10px] text-emerald-300/80 mt-0.5 font-medium">
+            कुल सहायता प्राप्त आय
+          </div>
+        </div>
+
+        {/* 3. Total Help Given (टोटल प्रोवाइड) */}
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-md">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Pending Balance</span>
-            <Clock className="h-3.5 w-3.5 text-amber-400" />
+            <span>Total Given (प्रोवाइड)</span>
+            <ArrowUpRight className="h-3.5 w-3.5 text-rose-400" />
           </div>
-          <div className="text-2xl font-black text-amber-400 font-mono mt-1">
-            ₹{wallet?.pendingBalance ?? 0}
+          <div className="text-xl sm:text-2xl font-black text-slate-200 font-mono mt-1">
+            ₹{incomeStats?.totalHelpedGiven ?? wallet?.totalHelpedGiven ?? 0}
           </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">In withdrawal / review</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">दी गई कुल सहायता</div>
         </div>
 
-        {/* Total Referral Rewards */}
+        {/* 4. Net Helping Profit (शुद्ध लाभ) */}
+        <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-950/40 to-slate-900 border border-amber-500/40 shadow-md">
+          <div className="flex items-center justify-between text-[11px] text-amber-300 font-semibold">
+            <span>Net Profit (शुद्ध लाभ)</span>
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono mt-1">
+            +₹{incomeStats?.netHelpingProfit ?? 0}
+          </div>
+          <div className="text-[10px] text-amber-200/70 mt-0.5 font-medium">+₹50 प्रति साइकिल</div>
+        </div>
+
+        {/* 5. Referral Rewards */}
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-md">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Referral Incentives</span>
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
           </div>
-          <div className="text-2xl font-black text-purple-400 font-mono mt-1">
+          <div className="text-xl sm:text-2xl font-black text-purple-400 font-mono mt-1">
             ₹{wallet?.totalReferralRewards ?? 0}
           </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Qualifying activity incentives</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Level activity incentives</div>
         </div>
 
-        {/* Total Withdrawn */}
+        {/* 6. Total Withdrawn */}
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-md">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Total Withdrawn</span>
             <ArrowDownCircle className="h-3.5 w-3.5 text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-blue-400 font-mono mt-1">
+          <div className="text-xl sm:text-2xl font-black text-blue-400 font-mono mt-1">
             ₹{wallet?.totalWithdrawn ?? 0}
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">Transferred to Bank/UPI</div>
