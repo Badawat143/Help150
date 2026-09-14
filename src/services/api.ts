@@ -27,16 +27,30 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// Generate unique, non-duplicable User ID
+// Generate unique, non-duplicable User ID starting from H150-304071 onwards for regular members
 export function generateUserId(existingUsers: User[]): string {
   let id = '';
   let exists = true;
   while (exists) {
-    const num = Math.floor(100000 + Math.random() * 900000);
+    const num = Math.floor(304071 + Math.random() * (999999 - 304071));
     id = `H150-${num}`;
     exists = existingUsers.some((u) => u.id === id);
   }
   return id;
+}
+
+export function isAdminOrTestId(userId?: string): boolean {
+  if (!userId) return false;
+  const cleanId = userId.toUpperCase();
+  if (cleanId === 'H150-ADMIN01' || cleanId === 'H150-COMP01' || cleanId.includes('ADMIN')) return true;
+  const seedIds = ['H150-784920', 'H150-918234', 'H150-449102', 'H150-610293', 'H150-338291'];
+  if (seedIds.includes(cleanId)) return true;
+  const match = cleanId.match(/(\d+)/);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (num > 0 && num < 304071) return true;
+  }
+  return false;
 }
 
 // Log immutable audit trail

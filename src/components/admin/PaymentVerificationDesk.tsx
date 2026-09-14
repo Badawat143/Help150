@@ -18,7 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { db } from '../../services/db';
-import { api } from '../../services/api';
+import { api, isAdminOrTestId } from '../../services/api';
 import { HelpRequest, User as UserType } from '../../types';
 import { StatusBadge } from '../helping/StatusBadge';
 
@@ -317,7 +317,7 @@ export const PaymentVerificationDesk: React.FC<PaymentVerificationDeskProps> = (
                     <p className="font-bold text-white">{req.matchedWithUserName || 'System Treasury'}</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-slate-400 font-mono text-[11px]">ID: {req.matchedWithUserId || 'H150-ADMIN01'}</p>
-                      {(!req.matchedWithUserId || req.matchedWithUserId === 'H150-ADMIN01' || req.matchedWithUserId.toUpperCase().includes('ADMIN')) && (
+                      {isAdminOrTestId(req.matchedWithUserId) && (
                         <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-1.5 py-0.2 rounded text-[10px] font-black">
                           👑 Admin Receiver ID
                         </span>

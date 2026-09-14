@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
-import { api } from '../../services/api';
+import { api, isAdminOrTestId } from '../../services/api';
 import { HelpRequest, User } from '../../types';
 import { CountdownTimer } from '../common/CountdownTimer';
 import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
@@ -1267,7 +1267,7 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                           <div className="font-bold text-emerald-700">{req.matchedWithUserName || 'Treasury'}</div>
                           <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 flex-wrap">
                             <span>{req.matchedWithUserId}</span>
-                            {(!req.matchedWithUserId || req.matchedWithUserId === 'H150-ADMIN01' || req.matchedWithUserId.toUpperCase().includes('ADMIN')) && (
+                            {isAdminOrTestId(req.matchedWithUserId) && (
                               <span className="bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded text-[9px] font-black">
                                 👑 Admin ID
                               </span>

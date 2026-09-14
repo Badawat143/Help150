@@ -898,15 +898,21 @@ class DatabaseManager {
           if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
           }
-          // Ensure all users have valid passwords, hashes, and designate pre-existing IDs as Admin IDs
+          // Ensure all users have valid passwords, hashes, and designate pre-existing IDs (before H150-304071) as Admin IDs
           if (Array.isArray(loadedState.users)) {
             loadedState.users.forEach((u) => {
-              // Rule: "अभी तक जितना id है वो सब एडमिन का है"
-              // All existing accounts up to this point belong to Admin system pool
-              if (u.accountType !== 'registered_user') {
+              const seedIds = ['H150-ADMIN01', 'H150-COMP01', 'H150-784920', 'H150-918234', 'H150-449102', 'H150-610293', 'H150-338291'];
+              const numMatch = u.id.match(/(\d+)/);
+              const num = numMatch ? parseInt(numMatch[1], 10) : 0;
+              
+              if (seedIds.includes(u.id) || (num > 0 && num < 304071) || u.role === 'admin' || u.id === 'H150-ADMIN01') {
                 u.isAdminAccount = true;
                 u.accountType = 'admin_pool';
                 u.role = 'admin';
+              } else {
+                u.isAdminAccount = false;
+                if (!u.accountType || u.accountType === 'admin_pool') u.accountType = 'registered_user';
+                if (!u.role || u.role === ('admin' as any)) u.role = 'user';
               }
               if (!u.password) {
                 if (u.passwordHash) {

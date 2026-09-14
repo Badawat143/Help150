@@ -367,11 +367,11 @@ app.post('/api/register', async (req, res) => {
       }
     }
 
-    // Generate unique user ID
+    // Generate unique user ID starting from H150-304071 onwards
     let newUserId = '';
     let exists = true;
     while (exists) {
-      const num = Math.floor(100000 + Math.random() * 900000);
+      const num = Math.floor(304071 + Math.random() * (999999 - 304071));
       newUserId = `H150-${num}`;
       exists = dbData.users.some((u: any) => u.id === newUserId);
     }
