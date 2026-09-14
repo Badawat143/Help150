@@ -63,7 +63,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     'HELP150 is a peer community mutual-helping platform. All community transactions, eligibility rules, and referral incentives are subject to platform verification, statutory compliance, and applicable Indian laws. HELP150 strictly does NOT offer guaranteed income, investment schemes, or fixed returns.',
   systemNoticeText: 'HELP150: Plan Cycle • Verification Link ₹50 + Second Link ₹100 ➔ 12-Hour Timer ➔ Auto Receive Link ₹200',
   complianceDisclaimerText: 'HELP150 operates strictly as a peer-to-peer voluntary community mutual assistance platform. It is not an investment scheme, bank, or MLM. No returns are guaranteed.',
-  adminUpiId: 'help150.treasury@icici',
+  adminUpiId: '7066463676@naviaxis',
   autoDispatchMode: false,
   autoDispatchOnRegistration: false,
   defaultLinkReceiverType: 'admin_treasury',
@@ -94,8 +94,8 @@ function getSeedDatabase(): DatabaseState {
   const users: User[] = [
     {
       id: 'H150-ADMIN01',
-      fullName: 'System Superadmin',
-      mobile: '9800000001',
+      fullName: 'Yenkanna Badawat',
+      mobile: '7066463676',
       email: 'admin@help150.org',
       password: 'Admin@150',
       passwordHash: btoa('Admin@150'),
@@ -112,6 +112,12 @@ function getSeedDatabase(): DatabaseState {
       deviceInfo: 'Admin Workstation (Linux Chrome)',
       ipAddress: '103.21.144.10',
       internalNotes: ['Root system administrator'],
+      bankName: 'State Bank of India',
+      accountHolderName: 'Yenkanna Badawat',
+      accountNumber: '32103707641',
+      ifscCode: 'SBIN0003078',
+      upiId: '7066463676@naviaxis',
+      gpayPhonePeNumber: '7066463676',
     },
     {
       id: 'H150-COMP01',
@@ -905,6 +911,15 @@ class DatabaseManager {
               const numMatch = u.id.match(/(\d+)/);
               const num = numMatch ? parseInt(numMatch[1], 10) : 0;
               
+              if (u.id === 'H150-ADMIN01') {
+                u.bankName = 'State Bank of India';
+                u.accountHolderName = 'Yenkanna Badawat';
+                u.accountNumber = '32103707641';
+                u.ifscCode = 'SBIN0003078';
+                u.upiId = '7066463676@naviaxis';
+                u.fullName = 'Yenkanna Badawat';
+                u.mobile = '7066463676';
+              }
               if (seedIds.includes(u.id) || (num > 0 && num < 304071) || u.role === 'admin' || u.id === 'H150-ADMIN01') {
                 u.isAdminAccount = true;
                 u.accountType = 'admin_pool';
