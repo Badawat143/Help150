@@ -2420,12 +2420,14 @@ export const AdminPanel: React.FC = () => {
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => setEditingUserPassword(null)}
                 className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSavePasswordChange}
                 className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs cursor-pointer shadow-md shadow-amber-500/20"
               >
@@ -2461,6 +2463,7 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setEditingUserDetails(null)}
                 className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
               >
