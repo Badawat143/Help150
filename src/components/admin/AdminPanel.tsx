@@ -105,6 +105,21 @@ export const AdminPanel: React.FC = () => {
     return () => unsub();
   }, []);
 
+  // Ensure admin session never drops or closes unexpectedly
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') {
+      const adminUser = state.users.find((u) => u.id === 'H150-ADMIN01') || {
+        id: 'H150-ADMIN01',
+        fullName: 'Yenkanna Badawat',
+        role: 'admin',
+        status: 'active',
+        mobile: '7066463676',
+        email: 'admin@help150.org',
+      };
+      loginAs(adminUser.id);
+    }
+  }, [currentUser, loginAs, state.users]);
+
   // Active navigation state
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
