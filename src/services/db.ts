@@ -1034,6 +1034,11 @@ class DatabaseManager {
       }
 
       // 2. Check if user has an unpaid ₹50 link past the 24-hour deadline
+      // CRITICAL: If linkSystemEnabled is turned off (Promotion Mode), NEVER penalize or block users
+      if (this.state.settings.linkSystemEnabled === false) {
+        continue;
+      }
+
       const userCycles = this.state.helpCycles?.filter((c) => c.userId === user.id) || [];
       const activeCycle = userCycles.find((c) => c.status !== 'completed');
       if (activeCycle && activeCycle.status === 'provide_verification' && activeCycle.verificationLink.status === 'pending') {
@@ -1133,6 +1138,8 @@ class DatabaseManager {
     const now = new Date().toISOString();
     const cycleId = `CYC-${userId.replace(/[^a-zA-Z0-9]/g, '')}-${cycleNumber}-${Date.now().toString().slice(-4)}`;
 
+    const isLinkEnabled = this.state.settings.linkSystemEnabled !== false;
+
     return {
       id: cycleId,
       userId,
@@ -1141,14 +1148,14 @@ class DatabaseManager {
       verificationLink: {
         requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
         amount: 50,
-        title: 'Provide Verification Link (₹50)',
+        title: isLinkEnabled ? 'Provide Verification Link (₹50)' : 'Provide Verification Link (₹50 - Paused by Admin)',
         status: 'pending',
         matchedWithUserId: adminReceiver.id,
         matchedWithUserName: adminReceiver.fullName,
         matchedWithUpi: adminReceiver.upi,
         matchedWithMobile: adminReceiver.mobile,
         matchedWithEmail: adminReceiver.email,
-        deadlineTime: Date.now() + 24 * 3600000, // 24-hour countdown deadline for ₹50 link
+        deadlineTime: isLinkEnabled ? Date.now() + 24 * 3600000 : undefined, // No deadline when links are paused
       },
       secondLink: {
         requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -1176,9 +1183,59 @@ class DatabaseManager {
     const now = new Date().toISOString();
 
     if (linkType === 'verification') {
-      cycle.verificationLink.status = 'completed';
+      cycle.verificationLink.status = 'submitted';
       cycle.verificationLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
       cycle.verificationLink.slipUrl = slipUrl || sampleSlipUrl(50, proofRef);
+      cycle.verificationLink.submittedAt = now;
+      delete cycle.verificationLink.rejectionReason;
+      delete cycle.verificationLink.rejectedAt;
+      // Note: cycle.status remains 'provide_verification' until receiver accepts or rejects!
+      // This ensures the Provide Help link box does not disappear prematurely.
+
+      this.state.notifications.unshift({
+        id: `NOTIF-PROV-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Step 1 (₹50) Payment Slip Submitted`,
+        message: `Slip & UTR ${proofRef} submitted. Verification pending by receiver. The link box will remain until confirmed.`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+      });
+    } else if (linkType === 'second') {
+      cycle.secondLink.status = 'submitted';
+      cycle.secondLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
+      cycle.secondLink.slipUrl = slipUrl || sampleSlipUrl(100, proofRef);
+      cycle.secondLink.submittedAt = now;
+      delete cycle.secondLink.rejectionReason;
+      delete cycle.secondLink.rejectedAt;
+      // Note: cycle.status remains 'provide_second' until receiver accepts or rejects!
+      // This ensures the Provide Help link box does not disappear prematurely.
+
+      this.state.notifications.unshift({
+        id: `NOTIF-PROV-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Step 2 (₹100) Payment Slip Submitted`,
+        message: `Slip & UTR ${proofRef} submitted. Verification pending by receiver. The link box will remain until confirmed.`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+      });
+    }
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+    return cycle;
+  }
+
+  public acceptCycleProvideLink(
+    userId: string,
+    linkType: 'verification' | 'second'
+  ): UserHelpCycle {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (linkType === 'verification') {
+      cycle.verificationLink.status = 'completed';
       cycle.verificationLink.completedAt = now;
       cycle.status = 'provide_second';
 
@@ -1186,24 +1243,30 @@ class DatabaseManager {
       if (this.state.wallets[userId]) {
         this.state.wallets[userId].totalHelpedGiven += 50;
       }
+
+      this.state.notifications.unshift({
+        id: `NOTIF-ACC-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Step 1 (₹50) Accepted by Receiver!`,
+        message: `Receiver has verified and accepted your ₹50 payment. Step 2 (₹100) Provide Help link is now ready.`,
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+      });
     } else if (linkType === 'second') {
       cycle.secondLink.status = 'completed';
-      cycle.secondLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
-      cycle.secondLink.slipUrl = slipUrl || sampleSlipUrl(100, proofRef);
       cycle.secondLink.completedAt = now;
 
       // Update wallet total help given
       if (this.state.wallets[userId]) {
         this.state.wallets[userId].totalHelpedGiven += 100;
       }
-    }
 
-    // Check if BOTH links are now completed -> Start 12-Hour Timer!
-    if (cycle.verificationLink.status === 'completed' && cycle.secondLink.status === 'completed') {
+      // Check if BOTH links are completed -> Start 12-Hour Timer!
       cycle.status = 'maturation_timer';
       cycle.timerStartTime = Date.now();
       cycle.timerExpiryTime = Date.now() + 12 * 3600000; // 12 hours exactly
-      
+
       this.state.notifications.unshift({
         id: `NOTIF-CYC-${Date.now().toString().slice(-6)}`,
         userId,
@@ -1220,11 +1283,66 @@ class DatabaseManager {
     return cycle;
   }
 
+  public rejectCycleProvideLink(
+    userId: string,
+    linkType: 'verification' | 'second',
+    reason: string
+  ): UserHelpCycle {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    const cleanReason = reason.trim() || 'Payment not credited to receiver account';
+
+    if (linkType === 'verification') {
+      cycle.verificationLink.status = 'rejected';
+      cycle.verificationLink.rejectionReason = cleanReason;
+      cycle.verificationLink.rejectedAt = now;
+
+      this.state.notifications.unshift({
+        id: `NOTIF-REJ-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Step 1 (₹50) Payment Rejected by Receiver`,
+        message: `Reason: ${cleanReason}. Please re-check and upload valid payment slip.`,
+        type: 'alert',
+        isRead: false,
+        createdAt: now,
+      });
+    } else if (linkType === 'second') {
+      cycle.secondLink.status = 'rejected';
+      cycle.secondLink.rejectionReason = cleanReason;
+      cycle.secondLink.rejectedAt = now;
+
+      this.state.notifications.unshift({
+        id: `NOTIF-REJ-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Step 2 (₹100) Payment Rejected by Receiver`,
+        message: `Reason: ${cleanReason}. Please re-check and upload valid payment slip.`,
+        type: 'alert',
+        isRead: false,
+        createdAt: now,
+      });
+    }
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+    return cycle;
+  }
+
   public fastForwardCycleTimer(userId: string): UserHelpCycle {
     const cycle = this.getUserHelpCycle(userId);
     if (cycle.status === 'maturation_timer') {
       cycle.timerExpiryTime = Date.now() - 1000; // expired
       this.advanceTimerToReceiveHelp(cycle);
+      this.saveToStorage(this.state);
+      this.notifySubscribers();
+    }
+    return cycle;
+  }
+
+  public fastForwardReceiveTimer(userId: string): UserHelpCycle {
+    const cycle = this.getUserHelpCycle(userId);
+    if (cycle.status === 'receive_help' && cycle.receiveLink) {
+      cycle.receiveLink.deadlineTime = Date.now() - 1000; // expired
       this.saveToStorage(this.state);
       this.notifySubscribers();
     }
@@ -1253,6 +1371,7 @@ class DatabaseManager {
       proofReference: utrSample,
       slipUrl: sampleSlipUrl(200, utrSample, 'Community Peer Member'),
       submittedAt: now,
+      deadlineTime: Date.now() + 24 * 3600000,
     };
 
     this.state.notifications.unshift({
@@ -1368,10 +1487,28 @@ class DatabaseManager {
       draft.settings.linkSystemEnabled = enabled;
       draft.settings.promotionMode = !enabled;
       draft.settings.autoDispatchMode = enabled;
+      draft.settings.autoDispatchOnRegistration = enabled;
       if (!enabled) {
         draft.settings.promotionDaysTotal = promotionDays;
         draft.settings.promotionStartDate = now.toISOString();
         draft.settings.promotionEndDate = new Date(now.getTime() + promotionDays * 24 * 3600000).toISOString();
+        // Remove 24-hour urgency countdown when links are stopped/paused
+        if (draft.helpCycles) {
+          draft.helpCycles.forEach((c) => {
+            if (c.status === 'provide_verification' && c.verificationLink?.status === 'pending') {
+              c.verificationLink.deadlineTime = undefined;
+            }
+          });
+        }
+      } else {
+        // Set fresh 24-hour countdown when links are resumed
+        if (draft.helpCycles) {
+          draft.helpCycles.forEach((c) => {
+            if (c.status === 'provide_verification' && c.verificationLink?.status === 'pending' && !c.verificationLink.deadlineTime) {
+              c.verificationLink.deadlineTime = Date.now() + 24 * 3600000;
+            }
+          });
+        }
       }
       draft.notifications.unshift({
         id: `NOTIF-LINK-${Date.now()}`,
@@ -1386,6 +1523,20 @@ class DatabaseManager {
         linkTab: enabled ? 'help' : 'referral',
       });
     });
+
+    // Sync to backend server
+    fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        linkSystemEnabled: enabled,
+        promotionMode: !enabled,
+        autoDispatchMode: enabled,
+        autoDispatchOnRegistration: enabled,
+        promotionDaysTotal: promotionDays,
+      }),
+    }).catch((e) => console.warn('Server settings sync notice:', e));
+
     return this.getState().settings;
   }
 

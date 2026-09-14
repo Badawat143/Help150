@@ -118,6 +118,23 @@ export const AdminPanel: React.FC = () => {
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
   const [editingUserPassword, setEditingUserPassword] = useState<{ userId: string; userName: string; currentPass: string; newPass: string } | null>(null);
+  const [editingUserDetails, setEditingUserDetails] = useState<{
+    userId: string;
+    fullName: string;
+    mobile: string;
+    email: string;
+    password: string;
+    sponsorId: string;
+    status: 'active' | 'blocked' | 'suspended';
+    kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+    upiId: string;
+    bankName: string;
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    gpayPhonePeNumber: string;
+  } | null>(null);
+  const [showEditDetailsPassword, setShowEditDetailsPassword] = useState<boolean>(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -325,6 +342,87 @@ export const AdminPanel: React.FC = () => {
       refreshUserData();
     } else {
       showToast(res.error || 'Failed to update password', 'error');
+    }
+  };
+
+  const handleOpenEditUserDetails = (u: User) => {
+    const kyc = state.kycRecords.find((k) => k.userId === u.id);
+    let pwd = u.password;
+    if (!pwd && u.passwordHash) {
+      try {
+        pwd = atob(u.passwordHash);
+      } catch {
+        pwd = u.role === 'admin' ? 'Admin@150' : 'Pass@123';
+      }
+    }
+    if (!pwd) pwd = u.role === 'admin' ? 'Admin@150' : 'Pass@123';
+
+    setEditingUserDetails({
+      userId: u.id,
+      fullName: u.fullName || '',
+      mobile: u.mobile || '',
+      email: u.email || '',
+      password: pwd,
+      sponsorId: u.sponsorId || '',
+      status: (u.status as any) || 'active',
+      kycStatus: (u.kycStatus as any) || 'not_submitted',
+      upiId: u.upiId || kyc?.upiId || '',
+      bankName: u.bankName || kyc?.bankName || '',
+      accountHolderName: u.accountHolderName || kyc?.accountHolderName || u.fullName || '',
+      accountNumber: u.accountNumber || kyc?.accountNumber || '',
+      ifscCode: u.ifscCode || kyc?.ifscCode || '',
+      gpayPhonePeNumber: u.gpayPhonePeNumber || u.mobile || '',
+    });
+    setShowEditDetailsPassword(false);
+  };
+
+  const handleSaveUserDetailsChange = async () => {
+    if (!editingUserDetails) return;
+    if (!editingUserDetails.fullName.trim()) {
+      showToast('Full Name cannot be empty.', 'error');
+      return;
+    }
+    if (!editingUserDetails.mobile.trim() || editingUserDetails.mobile.trim().length < 10) {
+      showToast('Please enter a valid 10-digit mobile number.', 'error');
+      return;
+    }
+    if (!editingUserDetails.email.trim() || !editingUserDetails.email.includes('@')) {
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+    if (!editingUserDetails.password.trim() || editingUserDetails.password.trim().length < 4) {
+      showToast('Password must be at least 4 characters long.', 'error');
+      return;
+    }
+
+    const adminActor = {
+      id: currentUser?.id || 'H150-ADMIN01',
+      name: currentUser?.fullName || 'System Superadmin',
+      role: 'admin',
+    };
+
+    const res = await api.adminUpdateUserDetails(adminActor, editingUserDetails.userId, {
+      fullName: editingUserDetails.fullName.trim(),
+      mobile: editingUserDetails.mobile.trim(),
+      email: editingUserDetails.email.trim(),
+      password: editingUserDetails.password.trim(),
+      sponsorId: editingUserDetails.sponsorId.trim() || null,
+      status: editingUserDetails.status,
+      kycStatus: editingUserDetails.kycStatus,
+      upiId: editingUserDetails.upiId.trim(),
+      bankName: editingUserDetails.bankName.trim(),
+      accountHolderName: editingUserDetails.accountHolderName.trim(),
+      accountNumber: editingUserDetails.accountNumber.trim(),
+      ifscCode: editingUserDetails.ifscCode.trim().toUpperCase(),
+      gpayPhonePeNumber: editingUserDetails.gpayPhonePeNumber.trim(),
+    });
+
+    if (res.success) {
+      showToast(`User ID ${editingUserDetails.userId} details updated successfully in database & cloud!`);
+      setEditingUserDetails(null);
+      refreshUserData();
+    } else {
+      showToast(res.error || 'Failed to update user details', 'error');
     }
   };
 
@@ -1717,7 +1815,7 @@ export const AdminPanel: React.FC = () => {
                     <th className="py-3 px-3">Sponsor ID</th>
                     <th className="py-3 px-3">KYC</th>
                     <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Action (ब्लॉक / अनब्लॉक)</th>
+                    <th className="py-3 px-3 text-right">Action (एडिट डिटेल्स / ब्लॉक)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1925,32 +2023,44 @@ export const AdminPanel: React.FC = () => {
 
                           {/* Action: Block / Unblock */}
                           <td className="py-3 px-3 text-right">
-                            {u.id !== 'H150-ADMIN01' ? (
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              {/* Edit All Details Button */}
                               <button
-                                onClick={() => handleToggleBlockUser(u)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5 ${
-                                  u.status === 'blocked'
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
-                                }`}
+                                onClick={() => handleOpenEditUserDetails(u)}
+                                className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 active:scale-95"
+                                title={`Edit all details of ${u.fullName} (${u.id})`}
                               >
-                                {u.status === 'blocked' ? (
-                                  <>
-                                    <Unlock className="h-3.5 w-3.5" />
-                                    <span>Unblock (अनब्लॉक)</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Ban className="h-3.5 w-3.5" />
-                                    <span>Block (ब्लॉक करें)</span>
-                                  </>
-                                )}
+                                <Edit className="h-3.5 w-3.5 text-amber-700" />
+                                <span>Edit Details</span>
                               </button>
-                            ) : (
-                              <span className="text-xs font-bold text-slate-400 px-3 py-1.5">
-                                Superadmin
-                              </span>
-                            )}
+
+                              {u.id !== 'H150-ADMIN01' ? (
+                                <button
+                                  onClick={() => handleToggleBlockUser(u)}
+                                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
+                                    u.status === 'blocked'
+                                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                                      : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                                  }`}
+                                >
+                                  {u.status === 'blocked' ? (
+                                    <>
+                                      <Unlock className="h-3.5 w-3.5" />
+                                      <span>Unblock</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Ban className="h-3.5 w-3.5" />
+                                      <span>Block</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-400 px-2 py-1">
+                                  Superadmin
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2065,6 +2175,323 @@ export const AdminPanel: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs cursor-pointer shadow-md shadow-amber-500/20"
               >
                 Save New Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-MODAL: COMPLETE USER DETAILS EDITOR (एडमिन द्वारा सभी यूजर डिटेल्स में बदलाव) */}
+      {editingUserDetails && (
+        <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl border border-slate-200 space-y-5 max-h-[92vh] overflow-y-auto animate-in fade-in">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center shadow-md">
+                  <Edit className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-base font-black text-slate-900 font-heading">
+                      Edit User Profile & Financial Details
+                    </h4>
+                    <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
+                      {editingUserDetails.userId}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    एडमिन सभी यूजर ID के नाम, मोबाइल, ईमेल, पासवर्ड, स्पॉन्सर, स्टेटस और बैंक/UPI डिटेल्स बदल सकता है।
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingUserDetails(null)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Form Sections */}
+            <div className="space-y-5 text-xs">
+              {/* SECTION 1: PERSONAL & CONTACT INFORMATION */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-slate-900 font-black text-xs">
+                  <UserIcon className="h-4 w-4 text-blue-600" />
+                  <span>1. Personal & Contact Information (व्यक्तिगत जानकारी)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Full Name (सदस्य का पूरा नाम) *
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.fullName}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, fullName: e.target.value } : null
+                        )
+                      }
+                      placeholder="Enter Full Name"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Mobile Number (मोबाइल नंबर) *
+                    </label>
+                    <input
+                      type="tel"
+                      value={editingUserDetails.mobile}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, mobile: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) } : null
+                        )
+                      }
+                      placeholder="10-digit mobile"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Email Address (ईमेल) *
+                    </label>
+                    <input
+                      type="email"
+                      value={editingUserDetails.email}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, email: e.target.value } : null
+                        )
+                      }
+                      placeholder="user@example.com"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: SECURITY, SPONSOR & STATUS */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-slate-900 font-black text-xs">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                  <span>2. Security, Sponsor & Account Status (पासवर्ड व खाता स्थिति)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Login Password (पासवर्ड) *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showEditDetailsPassword ? 'text' : 'password'}
+                        value={editingUserDetails.password}
+                        onChange={(e) =>
+                          setEditingUserDetails((prev) =>
+                            prev ? { ...prev, password: e.target.value } : null
+                          )
+                        }
+                        placeholder="Min 4 characters"
+                        className="w-full pl-3 pr-8 py-2 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-800 text-xs focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditDetailsPassword((p) => !p)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        {showEditDetailsPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Sponsor ID (स्पॉन्सर आईडी)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.sponsorId}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, sponsorId: e.target.value.toUpperCase() } : null
+                        )
+                      }
+                      placeholder="e.g. H150-1002"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Account Status (खाता स्थिति)
+                    </label>
+                    <select
+                      value={editingUserDetails.status}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, status: e.target.value as any } : null
+                        )
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none cursor-pointer"
+                    >
+                      <option value="active">Active (सक्रिय)</option>
+                      <option value="blocked">Blocked (ब्लॉक)</option>
+                      <option value="suspended">Suspended (निलंबित)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      KYC Status (केवाईसी)
+                    </label>
+                    <select
+                      value={editingUserDetails.kycStatus}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, kycStatus: e.target.value as any } : null
+                        )
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none cursor-pointer"
+                    >
+                      <option value="verified">Verified (सत्यापित)</option>
+                      <option value="pending">Pending (प्रतीक्षारत)</option>
+                      <option value="rejected">Rejected (अस्वीकृत)</option>
+                      <option value="not_submitted">Not Submitted (जमा नहीं)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: BANK & UPI PAYMENT DETAILS */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-slate-900 font-black text-xs">
+                  <Wallet className="h-4 w-4 text-emerald-600" />
+                  <span>3. Bank Account & UPI Payment Details (बैंक खाता व UPI डिटेल्स)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      UPI ID (जैसे user@upi)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.upiId}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, upiId: e.target.value.toLowerCase() } : null
+                        )
+                      }
+                      placeholder="e.g. 9876543210@paytm"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Bank Name (बैंक का नाम)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.bankName}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, bankName: e.target.value } : null
+                        )
+                      }
+                      placeholder="e.g. State Bank of India"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Account Holder Name (खाताधारक का नाम)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.accountHolderName}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, accountHolderName: e.target.value } : null
+                        )
+                      }
+                      placeholder="As per bank record"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Account Number (खाता संख्या)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.accountNumber}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, accountNumber: e.target.value.replace(/[^0-9]/g, '') } : null
+                        )
+                      }
+                      placeholder="Bank Account Number"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      IFSC Code (आईएफएससी कोड)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUserDetails.ifscCode}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, ifscCode: e.target.value.toUpperCase() } : null
+                        )
+                      }
+                      placeholder="e.g. SBIN0001234"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      GPay / PhonePe Mobile (गूगलपे/फोनपे)
+                    </label>
+                    <input
+                      type="tel"
+                      value={editingUserDetails.gpayPhonePeNumber}
+                      onChange={(e) =>
+                        setEditingUserDetails((prev) =>
+                          prev ? { ...prev, gpayPhonePeNumber: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) } : null
+                        )
+                      }
+                      placeholder="10-digit number"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingUserDetails(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                Cancel (रद्द करें)
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveUserDetailsChange}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs cursor-pointer shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1.5"
+              >
+                <Check className="h-4 w-4" />
+                <span>Save All Details (सभी बदलाव सुरक्षित करें)</span>
               </button>
             </div>
           </div>

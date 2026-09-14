@@ -230,8 +230,9 @@ export const api = {
       draft.users.push(newUser);
       draft.wallets[newUserId] = initialWallet;
 
-      // Check if auto-dispatch is enabled
-      if (draft.settings.autoDispatchOnRegistration || draft.settings.autoDispatchMode) {
+      // Check if auto-dispatch is enabled AND link system is turned ON
+      const isLinksActive = draft.settings.linkSystemEnabled !== false;
+      if (isLinksActive && (draft.settings.autoDispatchOnRegistration || draft.settings.autoDispatchMode)) {
         const timerHours = draft.settings.timerDurationHours || 24;
         const expiryEpoch = Date.now() + timerHours * 60 * 60 * 1000;
         const receiver =
@@ -279,7 +280,9 @@ export const api = {
         id: `NOTIF-${Date.now().toString().slice(-6)}`,
         userId: newUserId,
         title: 'Welcome to HELP150 Community',
-        message: `Your User ID is ${newUserId}. Your first Provide Help Link of ₹50 has been activated! Please complete within 24 hours to avoid account block and auto-deletion.`,
+        message: isLinksActive
+          ? `Your User ID is ${newUserId}. Your first Provide Help Link of ₹50 has been activated! Please complete within 24 hours to avoid account block and auto-deletion.`
+          : `Your User ID is ${newUserId}. Note: Automatic helping links are temporarily paused by Admin during the 4-Day Promotion Mode. No 24-hour timer applies until links are enabled.`,
         type: 'info',
         isRead: false,
         createdAt: now,
@@ -2433,6 +2436,121 @@ export const api = {
       'User',
       userId,
       `Reset password for user ${user.fullName} (${userId}) by Admin.`
+    );
+
+    return { success: true, data: db.getState().users.find((u) => u.id === userId)! };
+  },
+
+  async adminUpdateUserDetails(
+    adminActor: { id: string; name: string; role: string },
+    userId: string,
+    updates: {
+      fullName?: string;
+      mobile?: string;
+      email?: string;
+      password?: string;
+      sponsorId?: string | null;
+      status?: 'active' | 'blocked' | 'suspended';
+      kycStatus?: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+      upiId?: string;
+      bankName?: string;
+      accountHolderName?: string;
+      accountNumber?: string;
+      ifscCode?: string;
+      gpayPhonePeNumber?: string;
+    }
+  ): Promise<ApiResponse<User>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    let updatedUser: User | null = null;
+    db.updateState((draft) => {
+      const u = draft.users.find((x) => x.id === userId);
+      if (u) {
+        if (updates.fullName !== undefined && updates.fullName.trim()) {
+          u.fullName = updates.fullName.trim();
+        }
+        if (updates.mobile !== undefined && updates.mobile.trim()) {
+          u.mobile = updates.mobile.trim();
+        }
+        if (updates.email !== undefined && updates.email.trim()) {
+          u.email = updates.email.trim();
+        }
+        if (updates.password !== undefined && updates.password.trim().length >= 4) {
+          u.password = updates.password.trim();
+          u.passwordHash = btoa(updates.password.trim());
+        }
+        if (updates.sponsorId !== undefined) {
+          u.sponsorId = updates.sponsorId ? updates.sponsorId.trim() : null;
+        }
+        if (updates.status !== undefined) {
+          u.status = updates.status;
+          if (updates.status === 'blocked') {
+            u.blockedAt = u.blockedAt || new Date().toISOString();
+            u.blockedReason = u.blockedReason || 'Blocked by Admin update';
+            u.autoDeleteAt = u.autoDeleteAt || new Date(Date.now() + 24 * 3600000).toISOString();
+          } else if (updates.status === 'active') {
+            delete u.blockedAt;
+            delete u.blockedReason;
+            delete u.autoDeleteAt;
+          }
+        }
+        if (updates.kycStatus !== undefined) {
+          u.kycStatus = updates.kycStatus;
+        }
+        if (updates.upiId !== undefined) {
+          u.upiId = updates.upiId.trim();
+        }
+        if (updates.bankName !== undefined) {
+          u.bankName = updates.bankName.trim();
+        }
+        if (updates.accountHolderName !== undefined) {
+          u.accountHolderName = updates.accountHolderName.trim();
+        }
+        if (updates.accountNumber !== undefined) {
+          u.accountNumber = updates.accountNumber.trim();
+        }
+        if (updates.ifscCode !== undefined) {
+          u.ifscCode = updates.ifscCode.trim().toUpperCase();
+        }
+        if (updates.gpayPhonePeNumber !== undefined) {
+          u.gpayPhonePeNumber = updates.gpayPhonePeNumber.trim();
+        }
+
+        u.internalNotes = u.internalNotes || [];
+        u.internalNotes.push(`[${new Date().toLocaleDateString()}] Details updated by Admin ${adminActor.name}`);
+        updatedUser = { ...u };
+      }
+
+      // Also update KYC record if bank/UPI/Name updated
+      const kycRec = draft.kycRecords.find((k) => k.userId === userId);
+      if (kycRec) {
+        if (updates.fullName) kycRec.fullNameAsPerId = updates.fullName.trim();
+        if (updates.upiId) kycRec.upiId = updates.upiId.trim();
+        if (updates.bankName) kycRec.bankName = updates.bankName.trim();
+        if (updates.accountNumber) kycRec.accountNumber = updates.accountNumber.trim();
+        if (updates.accountHolderName) kycRec.accountHolderName = updates.accountHolderName.trim();
+        if (updates.ifscCode) kycRec.ifscCode = updates.ifscCode.trim().toUpperCase();
+        if (updates.kycStatus) kycRec.status = updates.kycStatus;
+      }
+    });
+
+    if (updatedUser) {
+      firestoreSync.syncUser(updatedUser);
+      fetch('/api/admin/user/update-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, updates }),
+      }).catch((e) => console.warn('Server user details update sync notice:', e));
+    }
+
+    logAudit(
+      adminActor,
+      'ADMIN_UPDATE_USER_DETAILS',
+      'User',
+      userId,
+      `Admin ${adminActor.name} updated profile & credentials for user ${user.fullName} (${userId}).`
     );
 
     return { success: true, data: db.getState().users.find((u) => u.id === userId)! };

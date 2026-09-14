@@ -422,7 +422,9 @@ app.post('/api/register', async (req, res) => {
       createdAt: now,
     };
 
-    // Cycle 1: Step 1 ₹50 Verification Link (24-hour deadline) + Step 2 ₹100 Second Link
+    const isLinkSystemEnabled = dbData.settings?.linkSystemEnabled !== false && dbData.settings?.autoDispatchMode !== false;
+
+    // Cycle 1: Step 1 ₹50 Verification Link + Step 2 ₹100 Second Link
     const initialCycle = {
       id: `CYC-${newUserId.replace(/[^a-zA-Z0-9]/g, '')}-1-${Date.now().toString().slice(-4)}`,
       userId: newUserId,
@@ -431,14 +433,14 @@ app.post('/api/register', async (req, res) => {
       verificationLink: {
         requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
         amount: 50,
-        title: 'Provide Verification Link (₹50)',
+        title: isLinkSystemEnabled ? 'Provide Verification Link (₹50)' : 'Provide Verification Link (₹50 - Paused by Admin)',
         status: 'pending',
         matchedWithUserId: 'H150-918234',
         matchedWithUserName: 'Priya Sharma',
         matchedWithUpi: 'priyasharma@okaxis',
         matchedWithMobile: '9876512345',
         matchedWithEmail: 'priya.sharma@example.com',
-        deadlineTime: Date.now() + 24 * 3600000, // 24 hours deadline
+        deadlineTime: isLinkSystemEnabled ? Date.now() + 24 * 3600000 : undefined, // 24 hours deadline only when links are active
       },
       secondLink: {
         requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -468,7 +470,9 @@ app.post('/api/register', async (req, res) => {
       id: `NOTIF-${Date.now().toString().slice(-6)}`,
       userId: newUserId,
       title: 'Welcome to HELP150 Community',
-      message: `Your User ID is ${newUserId}. Your first ₹50 Provide Help link is active! Please complete ₹50 within 24 hours to prevent account block and automatic deletion.`,
+      message: isLinkSystemEnabled
+        ? `Your User ID is ${newUserId}. Your first ₹50 Provide Help link is active! Please complete ₹50 within 24 hours to prevent account block and automatic deletion.`
+        : `Your User ID is ${newUserId}. Note: Automatic helping links are temporarily paused by Admin during the 4-Day Promotion Mode. Enjoy building your team!`,
       type: 'info',
       isRead: false,
       createdAt: now,
@@ -671,6 +675,112 @@ app.post('/api/admin/user/password', async (req, res) => {
       }
     }
     return res.json({ success: true, user });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin User Profile, Banking & Credentials Full Details Update
+app.post('/api/admin/user/update-details', async (req, res) => {
+  try {
+    const { userId, updates } = req.body;
+    if (!userId || !updates) {
+      return res.status(400).json({ success: false, message: 'userId and updates are required' });
+    }
+    const dbData = readDb();
+    const user = dbData.users?.find((u: any) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (updates.fullName !== undefined && updates.fullName.trim()) {
+      user.fullName = updates.fullName.trim();
+    }
+    if (updates.mobile !== undefined && updates.mobile.trim()) {
+      user.mobile = updates.mobile.trim();
+    }
+    if (updates.email !== undefined && updates.email.trim()) {
+      user.email = updates.email.trim();
+    }
+    if (updates.password !== undefined && String(updates.password).trim().length >= 4) {
+      user.password = String(updates.password).trim();
+      user.passwordHash = Buffer.from(String(updates.password).trim()).toString('base64');
+    }
+    if (updates.sponsorId !== undefined) {
+      user.sponsorId = updates.sponsorId ? String(updates.sponsorId).trim() : null;
+    }
+    if (updates.status !== undefined) {
+      user.status = updates.status;
+      if (updates.status === 'blocked') {
+        user.blockedAt = user.blockedAt || new Date().toISOString();
+        user.blockedReason = updates.blockedReason || 'Blocked by Administrator';
+        user.autoDeleteAt = user.autoDeleteAt || new Date(Date.now() + 24 * 3600000).toISOString();
+      } else if (updates.status === 'active') {
+        delete user.blockedAt;
+        delete user.blockedReason;
+        delete user.autoDeleteAt;
+      }
+    }
+    if (updates.kycStatus !== undefined) {
+      user.kycStatus = updates.kycStatus;
+    }
+    if (updates.upiId !== undefined) {
+      user.upiId = String(updates.upiId).trim();
+    }
+    if (updates.bankName !== undefined) {
+      user.bankName = String(updates.bankName).trim();
+    }
+    if (updates.accountHolderName !== undefined) {
+      user.accountHolderName = String(updates.accountHolderName).trim();
+    }
+    if (updates.accountNumber !== undefined) {
+      user.accountNumber = String(updates.accountNumber).trim();
+    }
+    if (updates.ifscCode !== undefined) {
+      user.ifscCode = String(updates.ifscCode).trim().toUpperCase();
+    }
+    if (updates.gpayPhonePeNumber !== undefined) {
+      user.gpayPhonePeNumber = String(updates.gpayPhonePeNumber).trim();
+    }
+
+    user.internalNotes = user.internalNotes || [];
+    user.internalNotes.push(`[${new Date().toLocaleDateString()}] Details updated by Administrator`);
+
+    writeDb(dbData);
+
+    if (serverFirestore) {
+      try {
+        await setDoc(doc(serverFirestore, 'users', user.id), user);
+      } catch (fErr) {
+        console.warn('Server firestore update-details sync warning:', fErr);
+      }
+    }
+
+    return res.json({ success: true, user });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin System Settings (Master Link Switch & Promotion Mode)
+app.get('/api/admin/settings', (req, res) => {
+  try {
+    const dbData = readDb();
+    return res.json({ success: true, settings: dbData.settings || {} });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/settings', (req, res) => {
+  try {
+    const dbData = readDb();
+    dbData.settings = {
+      ...(dbData.settings || {}),
+      ...req.body,
+    };
+    writeDb(dbData);
+    return res.json({ success: true, settings: dbData.settings });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -1318,6 +1428,63 @@ app.post('/api/smtp/verify', async (req, res) => {
 
 // Serve static files from /public directory (logos, social share images, favicons)
 app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Social Crawler Open Graph Preview Interceptor (WhatsApp, Telegram, Facebook, Twitter, Discord, LinkedIn)
+app.use((req, res, next) => {
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  const isCrawler =
+    ua.includes('whatsapp') ||
+    ua.includes('facebookexternalhit') ||
+    ua.includes('facebot') ||
+    ua.includes('twitterbot') ||
+    ua.includes('telegrambot') ||
+    ua.includes('linkedinbot') ||
+    ua.includes('slackbot') ||
+    ua.includes('discordbot');
+
+  if (isCrawler && req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.includes('.')) {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host') || 'help150.org';
+    const fullOrigin = `${protocol}://${host}`;
+    const refParam = req.query.ref ? String(req.query.ref) : '';
+    const shareUrl = `${fullOrigin}${req.originalUrl}`;
+    const logoUrl = `${fullOrigin}/og-image.png`;
+    const title = refParam ? `HELP150 Community — Sponsor Invite (${refParam})` : `HELP150 — Together For A Better Tomorrow`;
+    const description = `🤝 Join the HELP150 Community Peer-to-Peer Mutual Assistance Platform! Guaranteed transparent matching, direct UPI transactions, and active community protection.${refParam ? ` Referred by Sponsor ID: ${refParam}` : ''}`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HELP150 Community">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:url" content="${shareUrl}">
+  <meta property="og:image" content="${logoUrl}">
+  <meta property="og:image:secure_url" content="${logoUrl}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${title}">
+  <meta name="twitter:description" content="${description}">
+  <meta name="twitter:image" content="${logoUrl}">
+  <link rel="icon" type="image/png" href="${fullOrigin}/favicon.png">
+</head>
+<body style="font-family: sans-serif; padding: 40px; background: #0b1120; color: #f8fafc; text-align: center;">
+  <img src="${logoUrl}" alt="HELP150 Logo" style="max-width: 400px; border-radius: 12px; margin-bottom: 20px;" />
+  <h1 style="color: #38bdf8;">${title}</h1>
+  <p style="color: #cbd5e1; max-width: 600px; margin: 0 auto 24px auto; line-height: 1.6;">${description}</p>
+  <a href="${shareUrl}" style="background: #0284c7; color: #fff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">Open HELP150 App</a>
+</body>
+</html>`;
+    return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
+  }
+  next();
+});
 
 // ---------------- VITE MIDDLEWARE SETUP ----------------
 async function startServer() {

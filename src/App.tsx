@@ -57,6 +57,13 @@ const AppContent: React.FC = () => {
   // Detect direct admin login URL (?admin=login or #/admin/login)
   useEffect(() => {
     const checkAdminUrl = () => {
+      // If admin is currently impersonating / viewing as a member, NEVER show admin login modal
+      const isImpersonating = !!sessionStorage.getItem('HELP150_ADMIN_IMPERSONATOR');
+      if (isImpersonating) {
+        setIsAdminLoginOpen(false);
+        return;
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash.toLowerCase();
       const isAdminQuery =
@@ -69,7 +76,8 @@ const AppContent: React.FC = () => {
       if (isAdminQuery) {
         if (currentUser?.role === 'admin' || currentUser?.role === 'compliance_officer') {
           setActiveTab('admin');
-        } else {
+        } else if (!currentUser) {
+          // Only open admin login modal if NO user is currently logged in
           setIsAdminLoginOpen(true);
         }
       }
@@ -77,11 +85,19 @@ const AppContent: React.FC = () => {
 
     checkAdminUrl();
 
-    // Listen to custom event for opening admin login portal
-    const handleOpenAdminPortal = () => setIsAdminLoginOpen(true);
+    // Listen to custom events for controlling admin login portal
+    const handleOpenAdminPortal = () => {
+      if (!sessionStorage.getItem('HELP150_ADMIN_IMPERSONATOR')) {
+        setIsAdminLoginOpen(true);
+      }
+    };
+    const handleCloseAdminPortal = () => setIsAdminLoginOpen(false);
+
     window.addEventListener('open-admin-login', handleOpenAdminPortal);
+    window.addEventListener('close-admin-login', handleCloseAdminPortal);
     return () => {
       window.removeEventListener('open-admin-login', handleOpenAdminPortal);
+      window.removeEventListener('close-admin-login', handleCloseAdminPortal);
     };
   }, [currentUser, setActiveTab]);
 

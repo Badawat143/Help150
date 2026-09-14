@@ -53,7 +53,7 @@ export const HelpModule: React.FC = () => {
   const activeProvideRequest = allUserRequests.find(
     (r) =>
       r.userId === currentUser.id &&
-      ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'pending_match', 'matched', 'proof_submitted'].includes(
+      ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'pending_match', 'matched', 'proof_submitted', 'REJECTED', 'rejected'].includes(
         r.status
       )
   );

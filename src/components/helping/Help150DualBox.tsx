@@ -35,6 +35,7 @@ import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
 import { UserHelpCycle } from '../../types';
 import { PaymentSlipUploadModal } from './PaymentSlipUploadModal';
+import { CoinTransferAnimation } from './CoinTransferAnimation';
 
 interface Help150DualBoxProps {
   onNavigateTab?: (tab: string) => void;
@@ -102,6 +103,20 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const [step1Timer, setStep1Timer] = useState({ hours: 23, minutes: 59, seconds: 59, isExpired: false });
   const [timer12h, setTimer12h] = useState({ hours: 11, minutes: 59, seconds: 59, percent: 0, isExpired: false });
   const [deletionTimer, setDeletionTimer] = useState({ hours: 23, minutes: 59, seconds: 59 });
+  const [receive24hTimer, setReceive24hTimer] = useState({
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
+    is24HoursCompleted: false,
+  });
+
+  // Coin animation & celebration state
+  const [showCoinAnimation, setShowCoinAnimation] = useState(false);
+  const [pendingCelebrationData, setPendingCelebrationData] = useState<{ cycleNum: number; profit: number } | null>(null);
+
+  // Provide Help Reject Modal State (when receiver rejects payment proof)
+  const [showProvideRejectModal, setShowProvideRejectModal] = useState<'verification' | 'second' | null>(null);
+  const [provideRejectReason, setProvideRejectReason] = useState('');
 
   // Sync cycle data
   const syncCycle = () => {
@@ -177,10 +192,35 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           setTimer12h({ hours, minutes, seconds, percent, isExpired: false });
         }
       }
+
+      // 4. Step 4: 24-Hour Receive Help Deadline Timer (Reject button appears ONLY after 24h expires!)
+      if (cycle.status === 'receive_help' && cycle.receiveLink) {
+        const deadline =
+          cycle.receiveLink.deadlineTime ||
+          (cycle.receiveLink.submittedAt
+            ? new Date(cycle.receiveLink.submittedAt).getTime() + 24 * 3600000
+            : new Date(cycle.createdAt).getTime() + 24 * 3600000);
+        const diff = Math.max(0, deadline - now);
+        const isCompleted24h = diff <= 0;
+        setReceive24hTimer({
+          hours: Math.floor(diff / 3600000),
+          minutes: Math.floor((diff % 3600000) / 60000),
+          seconds: Math.floor((diff % 60000) / 1000),
+          is24HoursCompleted: isCompleted24h,
+        });
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [cycle?.status, cycle?.timerExpiryTime, cycle?.verificationLink.deadlineTime, currentUser?.status, currentUser?.autoDeleteAt]);
+  }, [
+    cycle?.status,
+    cycle?.timerExpiryTime,
+    cycle?.verificationLink.deadlineTime,
+    cycle?.receiveLink?.deadlineTime,
+    cycle?.receiveLink?.submittedAt,
+    currentUser?.status,
+    currentUser?.autoDeleteAt,
+  ]);
 
   if (!currentUser || !cycle) return null;
 
@@ -225,18 +265,57 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (type === 'verification') {
         setFeedback({
           type: 'success',
-          message: 'Step 1 (₹50) स्लिप व यूटीआर सबमिट हो गया! सिग्नल में पहली लाइट हरी (✅) हो गई है।',
+          message: 'Step 1 (₹50) स्लिप व यूटीआर सबमिट हो गया! सत्यापन प्रतीक्षारत है। जब तक रिसीवर एक्सेप्ट या रिजेक्ट नहीं करता, लिंक बॉक्स सुरक्षित रहेगा।',
         });
       } else {
         setFeedback({
           type: 'success',
-          message: 'Step 2 (₹100) स्लिप व यूटीआर सबमिट हो गया! दोनों लाइटें हरी (✅) हो गई हैं। 12 घंटे का टाइमर शुरू हो गया है।',
+          message: 'Step 2 (₹100) स्लिप व यूटीआर सबमिट हो गया! सत्यापन प्रतीक्षारत है। जब तक रिसीवर एक्सेप्ट या रिजेक्ट नहीं करता, लिंक बॉक्स सुरक्षित रहेगा।',
         });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error submitting payment' });
     } finally {
       setIsSubmittingUtr(false);
+    }
+  };
+
+  // Receiver accepts Provide Help payment proof (₹50 or ₹100)
+  const handleAcceptProvideLink = (type: 'verification' | 'second') => {
+    try {
+      db.acceptCycleProvideLink(currentUser.id, type);
+      syncCycle();
+      refreshUserData();
+      setFeedback({
+        type: 'success',
+        message:
+          type === 'verification'
+            ? 'रिसीवर द्वारा Step 1 (₹50) भुगतान स्वीकार (Accept) कर लिया गया! अब Step 2 (₹100) लिंक सक्रिय हो गया है।'
+            : 'रिसीवर द्वारा Step 2 (₹100) भुगतान स्वीकार (Accept) कर लिया गया! 12 घंटे का टाइमर शुरू हो गया है।',
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error accepting payment' });
+    }
+  };
+
+  // Receiver rejects Provide Help payment proof (₹50 or ₹100)
+  const handleRejectProvideLink = (type: 'verification' | 'second') => {
+    if (!provideRejectReason.trim()) {
+      setFeedback({ type: 'error', message: 'कृपया रिजेक्ट करने का कारण दर्ज करें।' });
+      return;
+    }
+    try {
+      db.rejectCycleProvideLink(currentUser.id, type, provideRejectReason);
+      syncCycle();
+      refreshUserData();
+      setShowProvideRejectModal(null);
+      setProvideRejectReason('');
+      setFeedback({
+        type: 'error',
+        message: 'रिसीवर द्वारा स्लिप अस्वीकार (Reject) कर दी गई। आप सही स्लिप अथवा यूटीआर पुनः सबमिट कर सकते हैं।',
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error rejecting payment' });
     }
   };
 
@@ -251,7 +330,19 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     });
   };
 
-  // Confirm Received ₹200 Payment -> Loops and Restarts Cycle
+  // Fast forward 24-hour receive link deadline timer (for test/simulation)
+  const handleFastForwardReceiveTimer = () => {
+    db.fastForwardReceiveTimer(currentUser.id);
+    syncCycle();
+    refreshUserData();
+    setReceive24hTimer({ hours: 0, minutes: 0, seconds: 0, is24HoursCompleted: true });
+    setFeedback({
+      type: 'success',
+      message: '24 घंटे का टाइमर समाप्त! रिजेक्ट बटन अब सक्रिय और दिखाई दे रहा है।',
+    });
+  };
+
+  // Confirm Received ₹200 Payment -> Trigger Flying Coins Animation -> Loops and Restarts Cycle
   const handleConfirmReceiveHelp = async () => {
     setIsConfirmingReceive(true);
     setFeedback(null);
@@ -259,18 +350,28 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       const result = db.confirmCycleReceiveLink(currentUser.id);
       syncCycle();
       refreshUserData();
-      setShowCelebrationModal({
+      setPendingCelebrationData({
         cycleNum: result.completedCycle.cycleNumber,
         profit: 50,
       });
+      // Trigger gold coins flying into wallet history!
+      setShowCoinAnimation(true);
       setFeedback({
         type: 'success',
-        message: `₹200 प्राप्त और कन्फर्म हो गया! साइकिल #${result.completedCycle.cycleNumber} पूर्ण। अब नई साइकिल #${result.newCycle.cycleNumber} का Provide Help (₹50) अनलॉक हो गया है!`,
+        message: `₹200 सहायता प्राप्त और कन्फर्म! कॉइन्स आपके वॉलेट हिस्ट्री में जमा हो रहे हैं। नई साइकिल #${result.newCycle.cycleNumber} का Provide Help (₹50) अनलॉक हो गया है!`,
       });
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error confirming payment' });
     } finally {
       setIsConfirmingReceive(false);
+    }
+  };
+
+  const handleCoinAnimationComplete = () => {
+    setShowCoinAnimation(false);
+    if (pendingCelebrationData) {
+      setShowCelebrationModal(pendingCelebrationData);
+      setPendingCelebrationData(null);
     }
   };
 
@@ -335,15 +436,22 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   // Provide Help Slip verification states
   const isStep1SlipUploaded =
     step1.status === 'completed' ||
+    step1.status === 'submitted' ||
     Boolean(step1.slipUrl && step1.slipUrl.trim().length > 0) ||
     Boolean(step1.proofReference && step1.proofReference.trim().length > 0) ||
     (isStep1Active && Boolean(inlineAttachedSlip.previewUrl));
 
   const isStep2SlipUploaded =
     step2.status === 'completed' ||
+    step2.status === 'submitted' ||
     Boolean(step2.slipUrl && step2.slipUrl.trim().length > 0) ||
     Boolean(step2.proofReference && step2.proofReference.trim().length > 0) ||
     (isStep2Active && Boolean(inlineAttachedSlip.previewUrl));
+
+  // Current active Provide Help link details
+  const currentActiveProvideLink = isStep1Active ? step1 : step2;
+  const isCurrentLinkSubmitted = currentActiveProvideLink.status === 'submitted';
+  const isCurrentLinkRejected = currentActiveProvideLink.status === 'rejected';
 
   // Current active Provide Help link amount and slip status
   const currentProvideLinkAmount = isStep1Active ? 50 : isStep2Active ? 100 : 0;
@@ -750,81 +858,188 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
                 )}
 
-                {/* Row 3: Action Buttons right up to amount level (Upload Slip & QR + Inline UTR) */}
-                <div className="space-y-1.5 pt-0.5">
-                  {/* Hidden file input for direct 1-click slip attach */}
-                  <input
-                    type="file"
-                    ref={inlineFileInputRef}
-                    onChange={handleInlineFileSelect}
-                    accept="image/*,.pdf"
-                    className="hidden"
-                  />
+                {/* Row 3: Action Buttons OR Submitted Status with Receiver Accept/Reject */}
+                {isCurrentLinkSubmitted ? (
+                  <div className="space-y-2 pt-1">
+                    {/* Status Notice: Box will NOT disappear until receiver accepts or rejects */}
+                    <div className="p-2.5 rounded-xl bg-amber-950/80 border border-amber-400/60 space-y-1.5 text-xs shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-300 text-[11px] flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+                          <span>स्लिप सबमिट हो चुकी है (सत्यापन प्रतीक्षारत)</span>
+                        </span>
+                        <span className="text-[9px] font-mono font-black bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                          Pending Confirmation
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-amber-100 font-medium leading-relaxed bg-amber-950/40 p-1.5 rounded-lg border border-amber-500/20">
+                        🔒 <strong>महत्वपूर्ण निर्देश:</strong> जब तक रिसीवर द्वारा यह पेमेंट एक्सेप्ट या रिजेक्ट नहीं किया जाता, तब तक यह प्रोवाइड हेल्प लिंक बॉक्स यहाँ से नहीं हटेगा।
+                      </p>
+                      <div className="flex items-center justify-between pt-0.5 text-[10px] font-mono text-slate-300">
+                        <span>
+                          UTR:{' '}
+                          <strong className="text-white">
+                            {currentActiveProvideLink.proofReference || inlineUtr || 'Submitted'}
+                          </strong>
+                        </span>
+                        {(currentActiveProvideLink.slipUrl || inlineAttachedSlip.previewUrl) && (
+                          <button
+                            onClick={() =>
+                              setShowProofModal({
+                                url: (currentActiveProvideLink.slipUrl || inlineAttachedSlip.previewUrl)!,
+                                ref: currentActiveProvideLink.proofReference || inlineUtr || 'Submitted',
+                                amount: activeProvideBeneficiary.amount,
+                                name: activeProvideBeneficiary.name,
+                              })
+                            }
+                            className="text-[10px] text-emerald-300 hover:text-emerald-200 font-bold underline cursor-pointer"
+                          >
+                            अपलोड स्लिप देखें ➔
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
-                      className={`flex-1 py-1.5 px-2 rounded-lg font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                        isCurrentLinkSlipUploaded
-                          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400'
-                          : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white'
-                      }`}
-                      title="स्लिप अपलोड मोडल खोलें"
-                    >
-                      <UploadCloud className="h-3.5 w-3.5" />
-                      <span>Upload Slip (₹{activeProvideBeneficiary.amount})</span>
-                      <span
-                        className={`h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-black border ${
-                          isCurrentLinkSlipUploaded
-                            ? 'bg-emerald-400 border-emerald-100 text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.9)]'
-                            : 'bg-amber-400 border-amber-200 text-slate-950 shadow-[0_0_6px_rgba(245,158,11,0.9)] animate-pulse'
-                        }`}
-                        title={isCurrentLinkSlipUploaded ? 'हरी लाइट ✅' : 'संतरी लाइट 🟠'}
+                    {/* Receiver Verification Controls */}
+                    <div className="p-2 rounded-xl bg-slate-900/95 border border-slate-700/80 space-y-1.5 shadow-md">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1">
+                          <span>🛡️</span>
+                          <span>रिसीवर सत्यापन (Receiver Action):</span>
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-medium">
+                          (स्वीकार या अस्वीकार करें)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleAcceptProvideLink(activeProvideBeneficiary.type)}
+                          className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md cursor-pointer transition flex items-center justify-center gap-1.5"
+                          title="रिसीवर द्वारा पेमेंट स्वीकार करें"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>एक्सेप्ट (Accept ₹{activeProvideBeneficiary.amount})</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProvideRejectReason('');
+                            setShowProvideRejectModal(activeProvideBeneficiary.type);
+                          }}
+                          className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-rose-700 via-red-700 to-rose-700 hover:from-rose-600 hover:to-red-600 text-white font-black text-xs shadow-md cursor-pointer transition flex items-center justify-center gap-1.5"
+                          title="रिसीवर द्वारा पेमेंट अस्वीकार करें"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          <span>रिजेक्ट (Reject)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Change / Re-upload Option if sent wrong slip */}
+                    <div className="text-center pt-0.5">
+                      <button
+                        onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
+                        className="text-[10px] text-red-300 hover:text-white underline cursor-pointer"
                       >
-                        {isCurrentLinkSlipUploaded ? '✅' : '🟠'}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => inlineFileInputRef.current?.click()}
-                      className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
-                      title="सीधे डिवाइस से स्लिप चुनें"
-                    >
-                      <Paperclip className="h-3.5 w-3.5" />
-                      <span>Attach</span>
-                    </button>
-                    <button
-                      onClick={() => setShowQrModal({
-                        name: activeProvideBeneficiary.name,
-                        upi: activeProvideBeneficiary.upi,
-                        amount: activeProvideBeneficiary.amount,
-                        title: activeProvideBeneficiary.title,
-                      })}
-                      className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <QrCode className="h-3.5 w-3.5" />
-                      <span>Pay QR</span>
-                    </button>
+                        🔄 क्या गलती से गलत स्लिप अपलोड हो गई? यहाँ क्लिक कर बदलें
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <div className="space-y-1.5 pt-0.5">
+                    {/* Rejection Alert Banner if previously rejected */}
+                    {isCurrentLinkRejected && (
+                      <div className="p-2 rounded-xl bg-rose-950/90 border border-rose-500 text-rose-200 text-xs space-y-1 shadow-inner">
+                        <div className="flex items-center gap-1.5 font-bold text-rose-300 text-[11px]">
+                          <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />
+                          <span>रिसीवर द्वारा स्लिप अस्वीकार (Reject) की गई!</span>
+                        </div>
+                        {currentActiveProvideLink.rejectionReason && (
+                          <p className="text-[10px] text-rose-100 font-mono bg-black/40 p-1.5 rounded border border-rose-800">
+                            <strong>कारण:</strong> {currentActiveProvideLink.rejectionReason}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-slate-300">
+                          कृपया अपना UPI / बैंक स्टेटमेंट चेक करके सही 12-अंकीय UTR व नई स्लिप पुनः सबमिट करें:
+                        </p>
+                      </div>
+                    )}
 
-                  {/* Inline 12-Digit UTR */}
-                  <div className="flex gap-1.5">
+                    {/* Hidden file input for direct 1-click slip attach */}
                     <input
-                      type="text"
-                      value={inlineUtr}
-                      onChange={(e) => setInlineUtr(e.target.value)}
-                      placeholder="Enter 12-digit UPI UTR"
-                      className="flex-1 px-2.5 py-1 rounded-lg bg-red-950 border border-red-400/50 text-white text-[11px] font-mono placeholder:text-red-300/40 focus:outline-none focus:border-emerald-300"
+                      type="file"
+                      ref={inlineFileInputRef}
+                      onChange={handleInlineFileSelect}
+                      accept="image/*,.pdf"
+                      className="hidden"
                     />
-                    <button
-                      onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
-                      disabled={isSubmittingUtr || (!inlineUtr.trim() && !inlineAttachedSlip.previewUrl)}
-                      className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-[11px] cursor-pointer shadow disabled:opacity-50 flex items-center gap-1"
-                    >
-                      <span>{isSubmittingUtr ? '...' : 'Submit UTR'}</span>
-                      {inlineAttachedSlip.previewUrl && <span className="text-[10px]">📎</span>}
-                    </button>
+
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setShowUploadModal(activeProvideBeneficiary.type)}
+                        className={`flex-1 py-1.5 px-2 rounded-lg font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isCurrentLinkSlipUploaded
+                            ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400'
+                            : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white'
+                        }`}
+                        title="स्लिप अपलोड मोडल खोलें"
+                      >
+                        <UploadCloud className="h-3.5 w-3.5" />
+                        <span>Upload Slip (₹{activeProvideBeneficiary.amount})</span>
+                        <span
+                          className={`h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-black border ${
+                            isCurrentLinkSlipUploaded
+                              ? 'bg-emerald-400 border-emerald-100 text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.9)]'
+                              : 'bg-amber-400 border-amber-200 text-slate-950 shadow-[0_0_6px_rgba(245,158,11,0.9)] animate-pulse'
+                          }`}
+                          title={isCurrentLinkSlipUploaded ? 'हरी लाइट ✅' : 'संतरी लाइट 🟠'}
+                        >
+                          {isCurrentLinkSlipUploaded ? '✅' : '🟠'}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => inlineFileInputRef.current?.click()}
+                        className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        title="सीधे डिवाइस से स्लिप चुनें"
+                      >
+                        <Paperclip className="h-3.5 w-3.5" />
+                        <span>Attach</span>
+                      </button>
+                      <button
+                        onClick={() =>
+                          setShowQrModal({
+                            name: activeProvideBeneficiary.name,
+                            upi: activeProvideBeneficiary.upi,
+                            amount: activeProvideBeneficiary.amount,
+                            title: activeProvideBeneficiary.title,
+                          })
+                        }
+                        className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <QrCode className="h-3.5 w-3.5" />
+                        <span>Pay QR</span>
+                      </button>
+                    </div>
+
+                    {/* Inline 12-Digit UTR */}
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        value={inlineUtr}
+                        onChange={(e) => setInlineUtr(e.target.value)}
+                        placeholder="Enter 12-digit UPI UTR"
+                        className="flex-1 px-2.5 py-1 rounded-lg bg-red-950 border border-red-400/50 text-white text-[11px] font-mono placeholder:text-red-300/40 focus:outline-none focus:border-emerald-300"
+                      />
+                      <button
+                        onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
+                        disabled={isSubmittingUtr || (!inlineUtr.trim() && !inlineAttachedSlip.previewUrl)}
+                        className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-[11px] cursor-pointer shadow disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <span>{isSubmittingUtr ? '...' : 'Submit UTR'}</span>
+                        {inlineAttachedSlip.previewUrl && <span className="text-[10px]">📎</span>}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -929,9 +1144,18 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               <div className="flex items-center gap-2">
                 {/* Live Action Timer Badge */}
                 {isReceiveActive && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-900/90 border border-sky-400/50 text-amber-300 font-mono font-bold text-[10px] shadow-sm">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-900/90 border border-sky-400/50 text-amber-300 font-mono font-bold text-[10px] shadow-sm"
+                    title={receive24hTimer.is24HoursCompleted ? '24 घंटे पूर्ण (Reject Unlocked)' : '24-Hour Receiver Action Deadline'}
+                  >
                     <Clock className="h-3 w-3 animate-pulse" />
-                    <span>23:59:59</span>
+                    <span>
+                      {receive24hTimer.is24HoursCompleted
+                        ? '00:00:00 (EXPIRED)'
+                        : `${String(receive24hTimer.hours).padStart(2, '0')}:${String(
+                            receive24hTimer.minutes
+                          ).padStart(2, '0')}:${String(receive24hTimer.seconds).padStart(2, '0')}`}
+                    </span>
                   </span>
                 )}
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
@@ -1027,29 +1251,61 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-2 gap-1.5">
+                  <div className="space-y-1.5">
+                    <div className={`grid ${receive24hTimer.is24HoursCompleted ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
                       <button
                         onClick={handleConfirmReceiveHelp}
                         disabled={isConfirmingReceive}
-                        className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
                         title="राशि प्राप्त हो गई है, स्वीकार करें"
                       >
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        <Check className="h-4 w-4 stroke-[3]" />
                         <span>[ ACCEPT ₹200 ]</span>
                       </button>
-                      <button
-                        onClick={() => setShowRejectModal(true)}
-                        disabled={isConfirmingReceive}
-                        className="py-2 px-2.5 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
-                        title="राशि प्राप्त नहीं हुई, अस्वीकार करें"
-                      >
-                        <X className="h-3.5 w-3.5 stroke-[3]" />
-                        <span>[ REJECT ]</span>
-                      </button>
+
+                      {/* रिजेक्ट बटन लिंक के टाइमर के साथ कनेक्ट: 24 घंटे पूरे होने के बाद ही दिखाई देगा */}
+                      {receive24hTimer.is24HoursCompleted ? (
+                        <button
+                          onClick={() => setShowRejectModal(true)}
+                          disabled={isConfirmingReceive}
+                          className="py-2.5 px-2.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 animate-in fade-in"
+                          title="24 घंटे पूरे हो चुके हैं, अस्वीकार करें"
+                        >
+                          <X className="h-3.5 w-3.5 stroke-[3]" />
+                          <span>[ REJECT ]</span>
+                        </button>
+                      ) : null}
                     </div>
+
+                    {/* 24 घंटे पूरे होने से पहले रिजेक्ट लॉक संदेश */}
+                    {!receive24hTimer.is24HoursCompleted && (
+                      <div className="p-2 rounded-xl bg-sky-950/90 border border-sky-400/30 flex items-center justify-between text-[10px] text-sky-200">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
+                          <span className="truncate">
+                            रिजेक्ट बटन 24 घंटे पूरे होने पर खुलेगा (शेष:{' '}
+                            <strong className="font-mono text-amber-300 font-bold">
+                              {String(receive24hTimer.hours).padStart(2, '0')}:
+                              {String(receive24hTimer.minutes).padStart(2, '0')}:
+                              {String(receive24hTimer.seconds).padStart(2, '0')}
+                            </strong>
+                            )
+                          </span>
+                        </div>
+                        {/* Quick simulator for admin/testing verification */}
+                        <button
+                          type="button"
+                          onClick={handleFastForwardReceiveTimer}
+                          className="text-[9px] font-bold text-amber-300 hover:text-amber-100 underline cursor-pointer shrink-0 ml-2"
+                          title="परीक्षण हेतु 24 घंटे का टाइमर तुरंत समाप्त करें"
+                        >
+                          ⚡ Test 24h
+                        </button>
+                      </div>
+                    )}
+
                     <div className="text-[9px] text-sky-200 text-center font-medium">
-                      बैंक खाता जांचकर निर्णय लें (स्वीकार करने पर +₹50 शुद्ध लाभ)
+                      बैंक खाता जांचकर निर्णय लें (स्वीकार करने पर +₹50 शुद्ध लाभ वॉलेट में कॉइन के रूप में जमा होगा)
                     </div>
                   </div>
                 )}
@@ -1348,6 +1604,102 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PROVIDE HELP RECEIVER REJECT MODAL                                        */}
+      {/* ========================================================================= */}
+      {showProvideRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-rose-500 p-6 text-white space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-rose-300 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-rose-400" />
+                <span>
+                  स्लिप अस्वीकार करें (Reject ₹
+                  {showProvideRejectModal === 'verification' ? 50 : 100} Payment)
+                </span>
+              </h3>
+              <button
+                onClick={() => setShowProvideRejectModal(null)}
+                className="p-1 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              रिसीवर के रूप में, यदि आपको प्रेषक सदस्य से ₹
+              {showProvideRejectModal === 'verification' ? 50 : 100} का भुगतान बैंक खाते या
+              UPI में प्राप्त नहीं हुआ है, तो अस्वीकार करने का कारण चुनें या लिखें:
+            </p>
+
+            {/* Quick Reason Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] text-slate-400 font-semibold">
+                त्वरित कारण चुनें (Quick Select):
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  'बैंक खाते में राशि प्राप्त नहीं हुई (Amount not credited in bank)',
+                  'अमान्य / गलत UTR नंबर (Invalid / incorrect UTR reference)',
+                  'कम राशि भेजी गई (Partial amount received)',
+                  'फर्जी स्लिप स्क्रीनशॉट (Fake or altered screenshot)',
+                ].map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setProvideRejectReason(reason)}
+                    className={`text-[11px] px-3 py-1.5 rounded-xl border text-left transition cursor-pointer ${
+                      provideRejectReason === reason
+                        ? 'bg-rose-600/30 border-rose-400 text-rose-200 font-bold'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-300">
+                अस्वीकृति का विवरण (Details):
+              </label>
+              <textarea
+                value={provideRejectReason}
+                onChange={(e) => setProvideRejectReason(e.target.value)}
+                rows={2}
+                placeholder="कारण दर्ज करें..."
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button
+                onClick={() => setShowProvideRejectModal(null)}
+                className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase cursor-pointer"
+              >
+                रद्द करें (Cancel)
+              </button>
+              <button
+                onClick={() => handleRejectProvideLink(showProvideRejectModal)}
+                className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase shadow cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                <span>पुष्टि करें (Confirm Reject)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🪙 User Directive: Flying Gold Coins Animation when Accept button is clicked */}
+      {showCoinAnimation && (
+        <CoinTransferAnimation
+          amount={200}
+          onComplete={handleCoinAnimationComplete}
+        />
       )}
     </div>
   );
