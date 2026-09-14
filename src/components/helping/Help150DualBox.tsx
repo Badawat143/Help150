@@ -584,114 +584,6 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         )}
       </div>
 
-      {/* 💰 USER FINANCIAL DASHBOARD: TOTAL RECEIVED & INCOME TRACKER */}
-      <div
-        id="helping-income-received-tracker"
-        className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-3 sm:p-4 shadow-xl"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <span>कुल कमाई एवं टोटल रिसिव (Total Income & Received Tracker)</span>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/40">
-                  LIVE UPDATED
-                </span>
-              </div>
-              <div className="text-[10px] text-slate-400">
-                हर बार Receive लिंक एक्सेप्ट करने पर ₹200 आपके "टोटल रिसिव" व वॉलेट में तुरंत जुड़ता है
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold">
-            <span className="text-slate-400">साइकिल:</span>
-            <span className="text-amber-300 font-bold">#{cycle.cycleNumber}</span>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">सफल साइकिल:</span>
-            <span className="text-emerald-400 font-bold">{incomeStats?.completedCyclesCount || 0}</span>
-          </div>
-        </div>
-
-        {/* 4 Financial Highlight Badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {/* Tile 1: TOTAL RECEIVED (टोटल रिसिव) - Prominent Emerald Theme */}
-          <div className="p-2.5 rounded-xl bg-gradient-to-b from-emerald-950/80 to-slate-900 border border-emerald-500/40 relative overflow-hidden shadow-inner">
-            <div className="flex items-center justify-between text-[11px] text-emerald-300 font-semibold">
-              <span className="flex items-center gap-1">
-                <ArrowDownCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>टोटल रिसिव (Received)</span>
-              </span>
-              <span className="text-[9px] bg-emerald-500/30 text-emerald-200 px-1.5 py-0.2 rounded font-mono font-bold">
-                आय
-              </span>
-            </div>
-            <div className="text-xl sm:text-2xl font-black text-emerald-300 font-mono mt-1 flex items-baseline gap-1">
-              <span>₹{incomeStats?.totalHelpedReceived ?? 0}</span>
-            </div>
-            <div className="text-[10px] text-emerald-400/80 mt-0.5 truncate font-medium">
-              +{incomeStats?.completedCyclesCount || 0} x ₹200 सहायता प्राप्त
-            </div>
-          </div>
-
-          {/* Tile 2: TOTAL HELP GIVEN (टोटल प्रोवाइड) */}
-          <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-            <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
-              <span className="flex items-center gap-1">
-                <ArrowUpRight className="h-3.5 w-3.5 text-rose-400" />
-                <span>टोटल प्रोवाइड (Given)</span>
-              </span>
-              <span className="text-[9px] text-slate-500 font-mono">₹50+₹100</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-black text-slate-200 font-mono mt-1">
-              ₹{incomeStats?.totalHelpedGiven ?? 0}
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 truncate font-medium">
-              दी गई कुल सहायता
-            </div>
-          </div>
-
-          {/* Tile 3: NET INCOME / PROFIT (कुल शुद्ध लाभ) */}
-          <div className="p-2.5 rounded-xl bg-gradient-to-b from-amber-950/40 to-slate-900 border border-amber-500/40 shadow-inner">
-            <div className="flex items-center justify-between text-[11px] text-amber-300 font-semibold">
-              <span className="flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>कुल शुद्ध लाभ (Net Profit)</span>
-              </span>
-              <span className="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.2 rounded font-mono font-bold">
-                +₹50/Cycle
-              </span>
-            </div>
-            <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono mt-1">
-              +₹{incomeStats?.netHelpingProfit ?? 0}
-            </div>
-            <div className="text-[10px] text-amber-200/70 mt-0.5 truncate font-medium">
-              रिसिव (₹200) - प्रोवाइड (₹150)
-            </div>
-          </div>
-
-          {/* Tile 4: WALLET AVAILABLE BALANCE */}
-          <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-            <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
-              <span className="flex items-center gap-1">
-                <WalletIcon className="h-3.5 w-3.5 text-blue-400" />
-                <span>वॉलेट बैलेंस (Balance)</span>
-              </span>
-              <span className="text-[9px] text-blue-300 font-mono font-bold">Ready</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-black text-white font-mono mt-1">
-              ₹{(incomeStats?.availableBalance ?? wallet?.availableBalance ?? 0).toFixed(2)}
-            </div>
-            <div className="text-[10px] text-blue-400 mt-0.5 truncate font-medium">
-              निकासी योग्य शेष
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* QUICK STEP NAVIGATION PILLS */}
       <div className="flex flex-wrap items-center gap-2 py-1 text-xs font-bold font-mono">
         <span
@@ -1493,6 +1385,206 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             <strong className="text-emerald-300 font-mono font-bold">
               ₹200 (Net Profit: +₹50)
             </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 💰 USER FINANCIAL DASHBOARD: TOTAL INCOME & RECEIVED TRACKER              */}
+      {/* (दिखाई दे दोनों लिंक बॉक्स के ठीक नीचे, 4 अलग-अलग आकर्षक रंगों में)       */}
+      {/* ========================================================================= */}
+      <div
+        id="helping-income-received-tracker"
+        className="rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 p-4 sm:p-5 shadow-2xl space-y-4"
+      >
+        {/* Tracker Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <span>Total Income &amp; Received Tracker</span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/40">
+                  LIVE TRACKER
+                </span>
+              </div>
+              <div className="text-xs text-slate-300 mt-0.5">
+                कुल कमाई एवं सहायता रिपोर्ट — हर बार Receive लिंक एक्सेप्ट करने पर ₹200 आपके "टोटल रिसिव" व वॉलेट में तुरंत जुड़ता है
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-mono font-bold bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 self-start sm:self-auto">
+            <span className="text-slate-400">वर्तमान साइकिल:</span>
+            <span className="text-amber-300 font-black">#{cycle.cycleNumber}</span>
+            <span className="text-slate-700">•</span>
+            <span className="text-slate-400">सफल:</span>
+            <span className="text-emerald-400 font-black">{incomeStats?.completedCyclesCount || 0}</span>
+          </div>
+        </div>
+
+        {/* 4 Cards With 4 Distinct, Vibrant, High-Contrast Colors */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* ========================================================================= */}
+          {/* OPTION 1: हरा रंग (EMERALD GREEN) - TOTAL RECEIVED (टोटल रिसिव)           */}
+          {/* ========================================================================= */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-emerald-950 via-emerald-900/60 to-slate-950 border-2 border-emerald-400 shadow-lg shadow-emerald-500/20 transition-all hover:border-emerald-300 group">
+            <div className="absolute top-0 right-0 h-20 w-20 bg-emerald-400/10 rounded-full blur-xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm">
+                    <ArrowDownCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-emerald-300 uppercase tracking-wide">
+                      टोटल रिसिव
+                    </div>
+                    <div className="text-[10px] text-emerald-200/80 font-medium">Total Received</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/50 font-mono font-extrabold uppercase shadow-sm">
+                  आय (Income)
+                </span>
+              </div>
+
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono tracking-tight drop-shadow-md">
+                  ₹{incomeStats?.totalHelpedReceived ?? 0}
+                </div>
+                <div className="text-[11px] text-emerald-200/90 mt-1 font-medium flex items-center justify-between">
+                  <span>+{incomeStats?.completedCyclesCount || 0} बार ₹200 प्राप्त</span>
+                  <span className="font-mono text-emerald-300 text-[10px] font-bold">+₹200/Accept</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-emerald-500/30 text-[10px] text-emerald-300/80 flex items-center justify-between">
+                <span>कुल सहायता आमदनी</span>
+                <span className="font-bold text-emerald-200">₹200 प्रति साइकिल</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* OPTION 2: लाल/गुलाबी रंग (ROSE RED) - TOTAL HELP GIVEN (टोटल प्रोवाइड)    */}
+          {/* ========================================================================= */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-rose-950 via-rose-900/60 to-slate-950 border-2 border-rose-400 shadow-lg shadow-rose-500/20 transition-all hover:border-rose-300 group">
+            <div className="absolute top-0 right-0 h-20 w-20 bg-rose-400/10 rounded-full blur-xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-rose-500/25 text-rose-300 border border-rose-400/50 shadow-sm">
+                    <ArrowUpRight className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-rose-300 uppercase tracking-wide">
+                      टोटल प्रोवाइड
+                    </div>
+                    <div className="text-[10px] text-rose-200/80 font-medium">Total Help Given</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-200 border border-rose-400/50 font-mono font-extrabold uppercase shadow-sm">
+                  दी गई (Out)
+                </span>
+              </div>
+
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-rose-300 font-mono tracking-tight drop-shadow-md">
+                  ₹{incomeStats?.totalHelpedGiven ?? 0}
+                </div>
+                <div className="text-[11px] text-rose-200/90 mt-1 font-medium flex items-center justify-between">
+                  <span>दी गई कुल सहायता</span>
+                  <span className="font-mono text-rose-300 text-[10px] font-bold">₹50 + ₹100</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-rose-500/30 text-[10px] text-rose-300/80 flex items-center justify-between">
+                <span>प्रति साइकिल लागत</span>
+                <span className="font-bold text-rose-200">₹150 (₹50+₹100)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* OPTION 3: सुनहरा अंबर रंग (GOLDEN AMBER) - NET PROFIT (कुल शुद्ध लाभ)     */}
+          {/* ========================================================================= */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-amber-950 via-amber-900/60 to-slate-950 border-2 border-amber-400 shadow-lg shadow-amber-500/20 transition-all hover:border-amber-300 group">
+            <div className="absolute top-0 right-0 h-20 w-20 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-amber-500/25 text-amber-300 border border-amber-400/50 shadow-sm">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-amber-300 uppercase tracking-wide">
+                      कुल शुद्ध लाभ
+                    </div>
+                    <div className="text-[10px] text-amber-200/80 font-medium">Net Profit</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/50 font-mono font-extrabold uppercase shadow-sm">
+                  +₹50/साइकिल
+                </span>
+              </div>
+
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono tracking-tight drop-shadow-md">
+                  +₹{incomeStats?.netHelpingProfit ?? 0}
+                </div>
+                <div className="text-[11px] text-amber-200/90 mt-1 font-medium flex items-center justify-between">
+                  <span>रिसिव (₹200) - प्रोवाइड (₹150)</span>
+                  <span className="font-mono text-amber-300 text-[10px] font-bold">शुद्ध कमाई</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-amber-500/30 text-[10px] text-amber-300/80 flex items-center justify-between">
+                <span>प्रति चक्र शुद्ध बचत</span>
+                <span className="font-bold text-amber-200">+₹50 गारंटीड</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* OPTION 4: सियान / नीला रंग (CYAN BLUE) - WALLET BALANCE (वॉलेट बैलेंस)    */}
+          {/* ========================================================================= */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-cyan-950 via-blue-950 to-slate-950 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20 transition-all hover:border-cyan-300 group">
+            <div className="absolute top-0 right-0 h-20 w-20 bg-cyan-400/10 rounded-full blur-xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-cyan-500/25 text-cyan-300 border border-cyan-400/50 shadow-sm">
+                    <WalletIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-cyan-300 uppercase tracking-wide">
+                      वॉलेट बैलेंस
+                    </div>
+                    <div className="text-[10px] text-cyan-200/80 font-medium">Available Balance</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 font-mono font-extrabold uppercase shadow-sm">
+                  Ready
+                </span>
+              </div>
+
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-cyan-300 font-mono tracking-tight drop-shadow-md">
+                  ₹{(incomeStats?.availableBalance ?? wallet?.availableBalance ?? 0).toFixed(2)}
+                </div>
+                <div className="text-[11px] text-cyan-200/90 mt-1 font-medium flex items-center justify-between">
+                  <span>तुरंत निकासी योग्य शेष</span>
+                  <span className="font-mono text-cyan-300 text-[10px] font-bold">UPI / Bank</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-cyan-500/30 text-[10px] text-cyan-300/80 flex items-center justify-between">
+                <span>निकासी स्थिति</span>
+                <span className="font-bold text-cyan-200">24x7 उपलब्ध</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
