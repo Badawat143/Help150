@@ -336,40 +336,56 @@ export const ReceiveHelpCard: React.FC<ReceiveHelpCardProps> = ({
         {/* 2. Action Buttons (ACCEPT, REJECT) - STRICTLY VISIBLE ONLY TO RECEIVER */}
         {isReceiver && !isAccepted && !isCompleted && !isRejected && (
           <div className="space-y-2 pt-1">
-            <div className="p-2 rounded-xl bg-sky-950/80 border border-sky-400/30 text-center">
-              <span className="text-[11px] font-bold text-amber-300">
-                👤 आप रिसीवर हैं: बैंक/UPI में ₹{amount} प्राप्त होने की पुष्टि करने के बाद ही निर्णय लें
-              </span>
-            </div>
-            <div className={`grid ${timeLeft.isExpired ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-3`}>
-              <button
-                onClick={() => setShowAcceptModal(true)}
-                className="py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <CheckCircle2 className="h-4 w-4 stroke-[2.5]" />
-                <span>🟢 ACCEPT (स्वीकार करें)</span>
-              </button>
-
-              {/* रिजेक्ट बटन लिंक के टाइमर के साथ कनेक्ट: 24 घंटे पूरे होने के बाद ही यूजर को दिखाई देगा */}
-              {timeLeft.isExpired ? (
-                <button
-                  onClick={() => setShowRejectModal(true)}
-                  className="py-3 px-4 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer animate-in fade-in"
-                >
-                  <XCircle className="h-4 w-4 stroke-[2.5]" />
-                  <span>🔴 REJECT (अस्वीकार करें)</span>
-                </button>
-              ) : null}
-            </div>
-
-            {/* 24 घंटे पूरे होने से पहले रिजेक्ट लॉक संदेश */}
-            {!timeLeft.isExpired && (
-              <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-center flex items-center justify-center gap-2 text-[11px] text-amber-300">
-                <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse shrink-0" />
-                <span>
-                  रिजेक्ट बटन 24 घंटे पूरे होने के बाद ही दिखाई देगा (शेष समय: {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')})
-                </span>
+            {!isSlipUploaded ? (
+              /* Awaiting Slip Upload by Sender */
+              <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-center space-y-1.5 shadow-inner">
+                <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-300">
+                  <Clock className="h-4 w-4 text-amber-400 animate-pulse shrink-0" />
+                  <span>प्रदाता द्वारा स्लिप अपलोड की प्रतीक्षा है</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  प्रदाता सदस्य (<strong>{senderName}</strong>) द्वारा सहायता राशि ट्रांसफर कर पेमेंट स्लिप अपलोड करने के बाद ही आपको यहाँ <strong>"एक्सेप्ट"</strong> बटन दिखाई देगा।
+                </p>
               </div>
+            ) : (
+              /* Slip is Uploaded: Receiver can now ACCEPT or REJECT */
+              <>
+                <div className="p-2 rounded-xl bg-sky-950/80 border border-sky-400/30 text-center">
+                  <span className="text-[11px] font-bold text-amber-300">
+                    👤 आप रिसीवर हैं: बैंक/UPI में ₹{amount} प्राप्त होने की पुष्टि करने के बाद ही निर्णय लें
+                  </span>
+                </div>
+                <div className={`grid ${timeLeft.isExpired ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                  <button
+                    onClick={() => setShowAcceptModal(true)}
+                    className="py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 stroke-[2.5]" />
+                    <span>🟢 ACCEPT (स्वीकार करें)</span>
+                  </button>
+
+                  {/* रिजेक्ट बटन लिंक के टाइमर के साथ कनेक्ट: 24 घंटे पूरे होने के बाद ही यूजर को दिखाई देगा */}
+                  {timeLeft.isExpired ? (
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      className="py-3 px-4 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer animate-in fade-in"
+                    >
+                      <XCircle className="h-4 w-4 stroke-[2.5]" />
+                      <span>🔴 REJECT (अस्वीकार करें)</span>
+                    </button>
+                  ) : null}
+                </div>
+
+                {/* 24 घंटे पूरे होने से पहले रिजेक्ट लॉक संदेश */}
+                {!timeLeft.isExpired && (
+                  <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-center flex items-center justify-center gap-2 text-[11px] text-amber-300">
+                    <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse shrink-0" />
+                    <span>
+                      रिजेक्ट बटन 24 घंटे पूरे होने के बाद ही दिखाई देगा (शेष समय: {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')})
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

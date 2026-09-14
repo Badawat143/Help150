@@ -23,6 +23,7 @@ import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { referralTracker } from './services/referralTracker';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const AppContent: React.FC = () => {
   const { activeTab, setActiveTab, currentUser, loginAs } = useAuth();
@@ -215,11 +216,13 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

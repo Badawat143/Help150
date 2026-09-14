@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   HeartHandshake,
   Clock,
@@ -226,6 +226,64 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     currentUser?.autoDeleteAt,
   ]);
 
+  // Incoming Provide links from other community members where currentUser is the designated Receiver
+  const incomingProvidePayments = useMemo(() => {
+    if (!currentUser?.id) return [];
+    const list: Array<{
+      cycleId: string;
+      providerUserId: string;
+      providerName: string;
+      providerMobile?: string;
+      type: 'verification' | 'second';
+      amount: number;
+      proofReference?: string;
+      slipUrl?: string;
+      submittedAt?: string;
+    }> = [];
+
+    const cycles = db.getState().helpCycles || [];
+    for (const c of cycles) {
+      if (
+        c.verificationLink &&
+        c.verificationLink.matchedWithUserId === currentUser.id &&
+        c.verificationLink.status === 'submitted'
+      ) {
+        const u = db.getState().users.find((user) => user.id === c.userId);
+        list.push({
+          cycleId: c.id,
+          providerUserId: c.userId,
+          providerName: u?.fullName || c.userId,
+          providerMobile: u?.mobile,
+          type: 'verification',
+          amount: 50,
+          proofReference: c.verificationLink.proofReference,
+          slipUrl: c.verificationLink.slipUrl,
+          submittedAt: c.verificationLink.submittedAt,
+        });
+      }
+
+      if (
+        c.secondLink &&
+        c.secondLink.matchedWithUserId === currentUser.id &&
+        c.secondLink.status === 'submitted'
+      ) {
+        const u = db.getState().users.find((user) => user.id === c.userId);
+        list.push({
+          cycleId: c.id,
+          providerUserId: c.userId,
+          providerName: u?.fullName || c.userId,
+          providerMobile: u?.mobile,
+          type: 'second',
+          amount: 100,
+          proofReference: c.secondLink.proofReference,
+          slipUrl: c.secondLink.slipUrl,
+          submittedAt: c.secondLink.submittedAt,
+        });
+      }
+    }
+    return list;
+  }, [currentUser?.id, cycle]);
+
   if (!currentUser || !cycle) return null;
 
   const handleCopyText = (text: string, key: string, label: string) => {
@@ -299,6 +357,42 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       });
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Error accepting payment' });
+    }
+  };
+
+  // Receiver accepts incoming provide help from other member
+  const handleAcceptIncomingProvide = (providerUserId: string, type: 'verification' | 'second') => {
+    try {
+      db.acceptCycleProvideLink(providerUserId, type);
+      syncCycle();
+      refreshUserData();
+      setFeedback({
+        type: 'success',
+        message: `आपने सदस्य से ₹${type === 'verification' ? 50 : 100} सहायता भुगतान सफलतापूर्वक स्वीकार कर लिया! राशि आपके टोटल रिसिव में जुड़ गई है।`,
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error accepting payment' });
+    }
+  };
+
+  // Receiver rejects incoming provide help payment proof
+  const handleRejectIncomingProvide = (providerUserId: string, type: 'verification' | 'second') => {
+    if (!provideRejectReason.trim()) {
+      setFeedback({ type: 'error', message: 'कृपया रिजेक्ट करने का कारण दर्ज करें।' });
+      return;
+    }
+    try {
+      db.rejectCycleProvideLink(providerUserId, type, provideRejectReason);
+      syncCycle();
+      refreshUserData();
+      setShowProvideRejectModal(null);
+      setProvideRejectReason('');
+      setFeedback({
+        type: 'error',
+        message: 'भुगतान अस्वीकार (Reject) कर दिया गया। प्रदाता को सूचित कर दिया गया है।',
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error rejecting payment' });
     }
   };
 
@@ -465,6 +559,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     : isStep2Active
     ? isStep2SlipUploaded
     : false;
+
+  // Slip state for the Receive Help link: only when slip is uploaded does receiver get Accept button
+  const isReceiveSlipUploaded = Boolean(
+    receiveLink &&
+    (receiveLink.status === 'submitted' ||
+      receiveLink.status === 'completed' ||
+      Boolean(receiveLink.slipUrl && receiveLink.slipUrl.trim().length > 0) ||
+      Boolean(receiveLink.proofReference && receiveLink.proofReference.trim().length > 0))
+  );
 
   // Compact Traffic Signal for ONLY the active link amount
   const renderActiveLinkSignal = () => {
@@ -863,7 +966,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
                 )}
 
-                {/* Row 3: Action Buttons OR Submitted Status with Receiver Accept/Reject */}
+                {/* Row 3: Submitted Status for Provider (Provider does NOT see Accept/Reject buttons) */}
                 {isCurrentLinkSubmitted ? (
                   <div className="space-y-2 pt-1">
                     {/* Status Notice: Box will NOT disappear until receiver accepts or rejects */}
@@ -874,11 +977,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                           <span>स्लिप सबमिट हो चुकी है (सत्यापन प्रतीक्षारत)</span>
                         </span>
                         <span className="text-[9px] font-mono font-black bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded-full">
-                          Pending Confirmation
+                          Awaiting Receiver
                         </span>
                       </div>
                       <p className="text-[10px] text-amber-100 font-medium leading-relaxed bg-amber-950/40 p-1.5 rounded-lg border border-amber-500/20">
-                        🔒 <strong>महत्वपूर्ण निर्देश:</strong> जब तक रिसीवर द्वारा यह पेमेंट एक्सेप्ट या रिजेक्ट नहीं किया जाता, तब तक यह प्रोवाइड हेल्प लिंक बॉक्स यहाँ से नहीं हटेगा।
+                        🔒 <strong>महत्वपूर्ण निर्देश:</strong> आपकी पेमेंट स्लिप प्राप्तकर्ता <strong>{activeProvideBeneficiary.name}</strong> को भेज दी गई है। सुरक्षा नियमों के अनुसार <strong>प्रोवाइडर को एक्सेप्ट/रिजेक्ट बटन नहीं मिलता</strong>। जब तक रिसीवर द्वारा यह पेमेंट एक्सेप्ट नहीं किया जाता, तब तक यह लिंक यहाँ रहेगा।
                       </p>
                       <div className="flex items-center justify-between pt-0.5 text-[10px] font-mono text-slate-300">
                         <span>
@@ -905,36 +1008,33 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                       </div>
                     </div>
 
-                    {/* Receiver Verification Controls */}
-                    <div className="p-2 rounded-xl bg-slate-900/95 border border-slate-700/80 space-y-1.5 shadow-md">
+                    {/* Receiver Verification Info (No buttons for Provider; Receiver accepts on their end) */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/95 border border-slate-700/80 space-y-1.5 shadow-md">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1">
-                          <span>🛡️</span>
-                          <span>रिसीवर सत्यापन (Receiver Action):</span>
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                          <span>👤</span>
+                          <span>रिसीवर (सत्यापनकर्ता):</span>
                         </span>
-                        <span className="text-[9px] text-slate-400 font-medium">
-                          (स्वीकार या अस्वीकार करें)
+                        <span className="text-[10px] text-amber-300 font-mono font-bold">
+                          {activeProvideBeneficiary.name} ({activeProvideBeneficiary.id})
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <p className="text-[10px] text-slate-400 leading-normal bg-black/30 p-1.5 rounded-lg border border-slate-800">
+                        स्लिप रिसीवर <strong>{activeProvideBeneficiary.name}</strong> को भेजी गई है। रिसीवर द्वारा अपने खाते में राशि प्राप्त होने की पुष्टि कर 'एक्सेप्ट' करने के बाद आपका अगला स्टेप अनलॉक होगा।
+                      </p>
+
+                      {/* Preview / Simulation testing helper */}
+                      <div className="pt-1 border-t border-slate-800 flex items-center justify-between">
+                        <span className="text-[9px] text-slate-400">
+                          (टेस्ट मोड: रिसीवर की तरफ से एक्सेप्ट करें)
+                        </span>
                         <button
                           onClick={() => handleAcceptProvideLink(activeProvideBeneficiary.type)}
-                          className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md cursor-pointer transition flex items-center justify-center gap-1.5"
-                          title="रिसीवर द्वारा पेमेंट स्वीकार करें"
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-[10px] shadow cursor-pointer transition flex items-center gap-1"
+                          title="टेस्टिंग हेतु रिसीवर की तरफ से स्वीकार करें"
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span>एक्सेप्ट (Accept ₹{activeProvideBeneficiary.amount})</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setProvideRejectReason('');
-                            setShowProvideRejectModal(activeProvideBeneficiary.type);
-                          }}
-                          className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-rose-700 via-red-700 to-rose-700 hover:from-rose-600 hover:to-red-600 text-white font-black text-xs shadow-md cursor-pointer transition flex items-center justify-center gap-1.5"
-                          title="रिसीवर द्वारा पेमेंट अस्वीकार करें"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          <span>रिजेक्ट (Reject)</span>
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>रिसीवर रूप में एक्सेप्ट (₹{activeProvideBeneficiary.amount})</span>
                         </button>
                       </div>
                     </div>
@@ -1173,6 +1273,77 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
             </div>
 
+            {/* Incoming Provide Payments from other members awaiting receiver verification */}
+            {incomingProvidePayments.length > 0 && (
+              <div className="bg-emerald-950/90 border-2 border-emerald-400/80 rounded-xl p-2.5 space-y-2 shadow-lg animate-in fade-in">
+                <div className="flex items-center justify-between border-b border-emerald-500/40 pb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs">📥</span>
+                    <span className="font-bold text-white text-xs">
+                      आवक सहायता स्लिप सत्यापन ({incomingProvidePayments.length})
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
+                    Action Required
+                  </span>
+                </div>
+
+                {incomingProvidePayments.map((pmt) => (
+                  <div key={pmt.cycleId + pmt.type} className="p-2 rounded-lg bg-black/40 border border-emerald-500/30 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-bold text-white">{pmt.providerName}</div>
+                        <div className="text-[9px] text-slate-400 font-mono">ID: {pmt.providerUserId}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono font-black text-amber-300 text-sm">₹{pmt.amount}</div>
+                        <div className="text-[9px] text-emerald-300">
+                          {pmt.type === 'verification' ? 'Step 1 (सत्यापन)' : 'Step 2'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono">
+                      <span>UTR: <strong className="text-amber-300">{pmt.proofReference || 'Submitted'}</strong></span>
+                      {pmt.slipUrl && (
+                        <button
+                          onClick={() => setShowProofModal({
+                            url: pmt.slipUrl!,
+                            ref: pmt.proofReference || '',
+                            amount: pmt.amount,
+                            name: pmt.providerName,
+                          })}
+                          className="text-emerald-300 hover:text-white underline font-bold cursor-pointer"
+                        >
+                          स्लिप देखें ➔
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        onClick={() => handleAcceptIncomingProvide(pmt.providerUserId, pmt.type)}
+                        className="py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        <span>एक्सेप्ट (₹{pmt.amount})</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setProvideRejectReason('');
+                          setShowProvideRejectModal(pmt.type);
+                        }}
+                        className="py-1.5 px-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5 stroke-[3]" />
+                        <span>रिजेक्ट</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* A. SCENARIO 1: RECEIVE HELP IS ACTIVE (₹200 LINK READY TO CONFIRM) */}
             {isReceiveActive && receiveLink && (
               <div className="bg-sky-950/80 border border-sky-400/50 rounded-xl p-2.5 space-y-2 shadow-inner">
@@ -1254,6 +1425,17 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                       <CheckCircle2 className="h-3 w-3" />
                       <span>पुनः जांच कर ₹200 स्वीकार करें</span>
                     </button>
+                  </div>
+                ) : !isReceiveSlipUploaded ? (
+                  /* Waiting for provider to upload slip before receiver can accept */
+                  <div className="p-3 rounded-xl bg-amber-950/70 border border-amber-400/50 text-center space-y-1.5 shadow-inner">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300">
+                      <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                      <span>प्रदाता द्वारा स्लिप अपलोड की प्रतीक्षा है</span>
+                    </div>
+                    <p className="text-[10px] text-amber-100 leading-relaxed">
+                      प्रदाता सदस्य (<strong>{receiveLink.matchedWithUserName}</strong>) द्वारा सहायता राशि ट्रांसफर कर पेमेंट स्लिप अपलोड करने के बाद ही यहाँ <strong>"एक्सेप्ट"</strong> बटन दिखाई देगा।
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">

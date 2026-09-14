@@ -1292,9 +1292,34 @@ class DatabaseManager {
       cycle.verificationLink.completedAt = now;
       cycle.status = 'provide_second';
 
-      // Update wallet total help given
+      // Update provider wallet total help given
       wallet.totalHelpedGiven += 50;
       wallet.lastUpdated = now;
+
+      // Credit Receiver's Wallet & Total Received
+      const receiverId = cycle.verificationLink.matchedWithUserId;
+      if (receiverId && receiverId !== 'H150-ADMIN01') {
+        const receiverWallet = this.getOrCreateWallet(receiverId);
+        receiverWallet.availableBalance += 50;
+        receiverWallet.totalHelpedReceived += 50;
+        receiverWallet.lastUpdated = now;
+
+        this.state.transactions.unshift({
+          id: `TXN-REC-${Date.now().toString().slice(-6)}`,
+          userId: receiverId,
+          type: 'help_received',
+          amount: 50,
+          balanceAfter: receiverWallet.availableBalance,
+          status: 'completed',
+          referenceId: cycle.verificationLink.requestId,
+          remarks: `₹50 Help Received accepted from ${this.state.users.find((u) => u.id === userId)?.fullName || userId}`,
+          senderUserId: userId,
+          receiverUserId: receiverId,
+          senderName: this.state.users.find((u) => u.id === userId)?.fullName || 'Member',
+          receiverName: this.state.users.find((u) => u.id === receiverId)?.fullName || 'Receiver',
+          createdAt: now,
+        });
+      }
 
       this.state.notifications.unshift({
         id: `NOTIF-ACC-${Date.now().toString().slice(-6)}`,
@@ -1309,9 +1334,34 @@ class DatabaseManager {
       cycle.secondLink.status = 'completed';
       cycle.secondLink.completedAt = now;
 
-      // Update wallet total help given
+      // Update provider wallet total help given
       wallet.totalHelpedGiven += 100;
       wallet.lastUpdated = now;
+
+      // Credit Receiver's Wallet & Total Received
+      const receiverId = cycle.secondLink.matchedWithUserId;
+      if (receiverId && receiverId !== 'H150-ADMIN01') {
+        const receiverWallet = this.getOrCreateWallet(receiverId);
+        receiverWallet.availableBalance += 100;
+        receiverWallet.totalHelpedReceived += 100;
+        receiverWallet.lastUpdated = now;
+
+        this.state.transactions.unshift({
+          id: `TXN-REC-${Date.now().toString().slice(-6)}`,
+          userId: receiverId,
+          type: 'help_received',
+          amount: 100,
+          balanceAfter: receiverWallet.availableBalance,
+          status: 'completed',
+          referenceId: cycle.secondLink.requestId,
+          remarks: `₹100 Help Received accepted from ${this.state.users.find((u) => u.id === userId)?.fullName || userId}`,
+          senderUserId: userId,
+          receiverUserId: receiverId,
+          senderName: this.state.users.find((u) => u.id === userId)?.fullName || 'Member',
+          receiverName: this.state.users.find((u) => u.id === receiverId)?.fullName || 'Receiver',
+          createdAt: now,
+        });
+      }
 
       // Check if BOTH links are completed -> Start 12-Hour Timer!
       cycle.status = 'maturation_timer';
