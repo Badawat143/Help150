@@ -25,6 +25,8 @@ import {
   Moon,
   Sun,
   Database,
+  CreditCard,
+  Building,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FirebaseConnectionModal } from './FirebaseConnectionModal';
@@ -67,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
     { id: 'wallet', label: 'Wallet', icon: WalletIcon, authRequired: true },
     { id: 'withdrawal', label: 'Withdrawal', icon: ArrowDownCircle, authRequired: true },
     { id: 'referral', label: 'Referral Team', icon: Users, authRequired: true },
-    { id: 'kyc', label: 'KYC', icon: ShieldCheck, authRequired: true },
+    { id: 'kyc', label: 'Bank & UPI', icon: CreditCard, authRequired: true },
     { id: 'support', label: 'Support', icon: HelpCircle, authRequired: true },
   ];
 
@@ -441,7 +443,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenRegister }) =
                 { name: 'Main Wallet & Ledger', tab: 'wallet', color: 'text-emerald-400' },
                 { name: 'Instant Withdrawal', tab: 'withdrawal', color: 'text-blue-400' },
                 { name: 'Referral & 6-Level Team', tab: 'referral', color: 'text-purple-400' },
-                { name: 'KYC & Bank Verification', tab: 'kyc', color: 'text-indigo-400' },
+                { name: 'Bank & UPI Profile', tab: 'kyc', color: 'text-indigo-400' },
                 { name: '24x7 Help Desk', tab: 'support', color: 'text-teal-400' },
               ].map((item, idx) => (
                 <button

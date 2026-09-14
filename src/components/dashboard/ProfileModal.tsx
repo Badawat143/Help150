@@ -26,6 +26,7 @@ interface ProfileModalProps {
   onClose: () => void;
   currentUser: User;
   onProfileUpdated?: () => void;
+  initialTab?: 'profile' | 'bank' | 'upi';
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -33,6 +34,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onClose,
   currentUser,
   onProfileUpdated,
+  initialTab = 'profile',
 }) => {
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,7 +57,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   );
 
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'bank'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'bank' | 'upi'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   if (!isOpen) return null;
 
@@ -159,28 +167,42 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex gap-2 mt-4 border-b border-white/10 pb-0">
+          <div className="flex gap-1.5 mt-4 border-b border-white/10 pb-0 overflow-x-auto">
             <button
               type="button"
               onClick={() => setActiveTab('profile')}
-              className={`px-4 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'profile'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-blue-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              1. Personal Profile & Photo
+              <UserIcon className="h-3.5 w-3.5 text-blue-600" />
+              <span>1. प्रोफ़ाइल (Profile)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('bank')}
-              className={`px-4 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'bank'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-blue-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              2. Bank & UPI Details
+              <Building className="h-3.5 w-3.5 text-emerald-600" />
+              <span>2. बैंक डिटेल्स (Bank)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('upi')}
+              className={`px-3.5 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'upi'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-blue-200 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Smartphone className="h-3.5 w-3.5 text-cyan-600" />
+              <span>3. UPI डिटेल्स (UPI)</span>
             </button>
           </div>
         </div>
@@ -287,47 +309,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
                 />
               </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bank')}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>अगला: बैंक डिटेल्स भरें</span>
+                  <Building className="h-3.5 w-3.5 text-emerald-600" />
+                </button>
+              </div>
             </div>
           )}
 
           {activeTab === 'bank' && (
             <div className="space-y-4 animate-fadeIn">
               {/* Notice Banner */}
-              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
-                <Sparkles className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2.5">
+                <Building className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong>Direct Payment Details:</strong> Other community members will send assistance directly to this UPI ID and Bank Account.
+                  <strong>बैंक खाता विवरण:</strong> कम्युनिटी सदस्य सहायता राशि व विथड्रॉल सीधे आपके इस बैंक खाते में भेजेंगे।
                 </p>
-              </div>
-
-              {/* UPI ID */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <Smartphone className="h-3.5 w-3.5 text-blue-600" />
-                  <span>UPI ID (Google Pay / PhonePe / Paytm / BHIM)</span>
-                </label>
-                <input
-                  type="text"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="e.g. yourname@okhdfcbank / 9876543210@paytm"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono"
-                />
-              </div>
-
-              {/* GPay / PhonePe Number */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Google Pay / PhonePe Mobile Number</span>
-                </label>
-                <input
-                  type="tel"
-                  value={gpayPhonePeNumber}
-                  onChange={(e) => setGpayPhonePeNumber(e.target.value)}
-                  placeholder="9876543210"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
-                />
               </div>
 
               {/* Bank Name */}
@@ -388,6 +391,92 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono uppercase"
                   />
                 </div>
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('profile')}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+                >
+                  ← प्रोफ़ाइल
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('upi')}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>अगला: UPI भरें</span>
+                  <Smartphone className="h-3.5 w-3.5 text-cyan-600" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'upi' && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Notice Banner */}
+              <div className="p-3 bg-cyan-50 rounded-2xl border border-cyan-200 text-xs text-cyan-900 flex items-start gap-2.5">
+                <Smartphone className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong>UPI पेमेंट विवरण:</strong> Google Pay, PhonePe, Paytm, BHIM आदि UPI से सीधे भुगतान पाने के लिए अपनी UPI ID दर्ज करें।
+                </p>
+              </div>
+
+              {/* UPI ID */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5 text-blue-600" />
+                  <span>UPI ID (Google Pay / PhonePe / Paytm / BHIM)</span>
+                </label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="e.g. yourname@okhdfcbank / 9876543210@paytm"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium font-mono"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="text-[10px] text-slate-500 font-medium">Quick handles:</span>
+                  {['@okhdfcbank', '@okaxis', '@oksbi', '@ybl', '@paytm', '@ibl'].map((handle) => (
+                    <button
+                      key={handle}
+                      type="button"
+                      onClick={() => {
+                        const prefix = upiId.includes('@') ? upiId.split('@')[0] : upiId || mobile;
+                        setUpiId(`${prefix}${handle}`);
+                      }}
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 border border-slate-200 font-mono transition cursor-pointer"
+                    >
+                      {handle}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* GPay / PhonePe Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Google Pay / PhonePe Mobile Number</span>
+                </label>
+                <input
+                  type="tel"
+                  value={gpayPhonePeNumber}
+                  onChange={(e) => setGpayPhonePeNumber(e.target.value)}
+                  placeholder="9876543210"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium"
+                />
+              </div>
+
+              <div className="flex justify-start pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bank')}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+                >
+                  ← वापस बैंक डिटेल्स
+                </button>
               </div>
             </div>
           )}

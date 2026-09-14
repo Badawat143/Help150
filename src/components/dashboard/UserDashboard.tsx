@@ -52,6 +52,9 @@ import {
   MoreVertical,
   ArrowUpRight,
   TrendingUp,
+  Building,
+  Smartphone,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -65,6 +68,7 @@ import { DirectReferralsSection } from './DirectReferralsSection';
 import { DirectReferralsModal } from './DirectReferralsModal';
 import { Help150DualBox } from '../helping/Help150DualBox';
 import { PromotionNoticeBanner } from './PromotionNoticeBanner';
+import { TotalIncomeReceivedTracker } from './TotalIncomeReceivedTracker';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -152,6 +156,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileModalInitialTab, setProfileModalInitialTab] = useState<'profile' | 'bank' | 'upi'>('profile');
   const [rejectTarget, setRejectTarget] = useState<{ id: string; type: 'provide' | 'receive'; name: string } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('Payment verification pending or peer unreachable');
 
@@ -387,11 +392,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
   const handleNavClick = (itemId: string) => {
     setActiveSidebarItem(itemId);
     setIsSidebarOpen(false);
-    if (['wallet', 'kyc', 'referral', 'withdrawal', 'support', 'notifications', 'help'].includes(itemId)) {
+    if (['wallet', 'referral', 'withdrawal', 'support', 'notifications', 'help'].includes(itemId)) {
       setActiveTab(itemId);
+    } else if (itemId === 'kyc') {
+      setActiveTab('kyc');
     } else if (itemId === 'profile') {
+      setProfileModalInitialTab('profile');
+      setShowProfileModal(true);
+    } else if (itemId === 'bank') {
+      setProfileModalInitialTab('bank');
+      setShowProfileModal(true);
+    } else if (itemId === 'upi') {
+      setProfileModalInitialTab('upi');
       setShowProfileModal(true);
     } else if (itemId === 'settings') {
+      setProfileModalInitialTab('profile');
       setShowProfileModal(true);
     } else if (itemId === 'logout') {
       logout();
@@ -478,21 +493,34 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <UserIcon className="h-4 w-4" />
-                <span>Profile</span>
+                <UserIcon className="h-4 w-4 text-amber-400" />
+                <span>प्रोफ़ाइल (Profile)</span>
               </button>
 
-              {/* 3. KYC Verification */}
+              {/* 3. Bank Details */}
               <button
-                onClick={() => handleNavClick('kyc')}
+                onClick={() => handleNavClick('bank')}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
-                  activeSidebarItem === 'kyc'
+                  activeSidebarItem === 'bank'
                     ? 'bg-[#1877F2] text-white font-bold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <ShieldCheck className="h-4 w-4" />
-                <span>KYC Verification</span>
+                <Building className="h-4 w-4 text-emerald-400" />
+                <span>बैंक डिटेल्स (Bank Details)</span>
+              </button>
+
+              {/* 4. UPI Details */}
+              <button
+                onClick={() => handleNavClick('upi')}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                  activeSidebarItem === 'upi'
+                    ? 'bg-[#1877F2] text-white font-bold'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Smartphone className="h-4 w-4 text-cyan-400" />
+                <span>UPI डिटेल्स (GPay / PhonePe)</span>
               </button>
 
               {/* 4. Wallet */}
@@ -777,6 +805,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           <Help150DualBox onNavigateTab={handleNavClick} />
 
           {/* ======================================================================= */}
+          {/* 💰 TOTAL INCOME & RECEIVED TRACKER (4 DISTINCT COLORED OPTIONS)         */}
+          {/* Appears directly below both link boxes as requested by user              */}
+          {/* ======================================================================= */}
+          <TotalIncomeReceivedTracker
+            userIncomeStats={userIncomeStats}
+            wallet={wallet}
+            onNavigateTab={handleNavClick}
+          />
+
+          {/* ======================================================================= */}
           {/* 3. ACCOUNT STATUS & KYC STATUS PANEL                                    */}
           {/* ======================================================================= */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -797,20 +835,29 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </span>
             </div>
 
-            {/* KYC Status */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex items-center justify-between hover:shadow-md transition">
+            {/* Bank & UPI Details Status */}
+            <div
+              onClick={() => {
+                setProfileModalInitialTab('bank');
+                setShowProfileModal(true);
+              }}
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex items-center justify-between hover:shadow-md transition cursor-pointer"
+              title="Click to view/edit Bank & UPI Details"
+            >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
-                  <Shield className="h-5 w-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm">
+                  <Building className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-slate-500">KYC Status</div>
-                  <div className="text-sm font-bold text-slate-900">Identity & Bank Details</div>
+                  <div className="text-xs font-semibold text-slate-500">Bank & UPI Profile</div>
+                  <div className="text-sm font-bold text-slate-900 truncate max-w-[170px]">
+                    {currentUser?.upiId || currentUser?.bankName || 'Bank & UPI Linked'}
+                  </div>
                 </div>
               </div>
-              <span className="bg-[#00C07F] text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+              <span className="bg-[#00C07F] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 shrink-0">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Verified
+                <span>Linked</span>
               </span>
             </div>
           </div>
@@ -1718,6 +1765,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
         onClose={() => setShowProfileModal(false)}
         currentUser={currentUser}
         onProfileUpdated={refreshUserData}
+        initialTab={profileModalInitialTab}
       />
 
       {/* Direct Referrals User IDs Modal */}

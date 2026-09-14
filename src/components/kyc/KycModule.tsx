@@ -199,193 +199,167 @@ export const KycModule: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Card 1: Personal Info & Photo */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-5">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <UserIcon className="h-5 w-5 text-blue-600" />
-              <h3 className="text-sm font-bold text-slate-900">1. Personal Profile & Photo</h3>
-            </div>
-
-            {/* Profile Photo Uploader */}
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center text-xl font-black shadow-md overflow-hidden border-2 border-white">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{fullName.charAt(0) || 'U'}</span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute -bottom-1 -right-1 p-1 rounded-full bg-amber-400 text-slate-950 shadow-md hover:bg-amber-300 transition cursor-pointer border-2 border-white"
-                  title="Upload Photo"
-                >
-                  <Camera className="h-3 w-3" />
-                </button>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <UserIcon className="h-5 w-5 text-amber-500" />
+                <h3 className="text-sm font-bold text-slate-900">1. प्रोफ़ाइल (Profile & Photo)</h3>
               </div>
 
-              <div className="flex-1">
-                <div className="text-xs font-bold text-slate-800">Profile Picture</div>
-                <div className="text-[11px] text-slate-500">JPG, PNG, WEBP (Max 5MB)</div>
-                <div className="flex items-center gap-2 mt-2">
+              {/* Profile Photo Uploader */}
+              <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center text-lg font-black shadow-md overflow-hidden border-2 border-white">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{fullName.charAt(0) || 'U'}</span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow-sm"
+                    className="absolute -bottom-1 -right-1 p-1 rounded-full bg-amber-400 text-slate-950 shadow-md hover:bg-amber-300 transition cursor-pointer border-2 border-white"
+                    title="Upload Photo"
                   >
-                    <UploadCloud className="h-3.5 w-3.5" />
-                    <span>Change Photo</span>
+                    <Camera className="h-3 w-3" />
                   </button>
-                  {avatarUrl && (
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-800">Profile Photo</div>
+                  <div className="text-[10px] text-slate-500">Max 5MB (JPG/PNG)</div>
+                  <div className="flex items-center gap-1.5 mt-1.5">
                     <button
                       type="button"
-                      onClick={() => setAvatarUrl('')}
-                      className="px-2 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs cursor-pointer transition"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow-sm"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <UploadCloud className="h-3 w-3" />
+                      <span>Upload</span>
                     </button>
-                  )}
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl('')}
+                        className="px-2 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-[11px] cursor-pointer transition"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
                 </div>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Full Name (पूरा नाम) *
+                </label>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Mobile */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Mobile Number (मोबाइल) *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  placeholder="10-digit mobile number"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Email Address (ईमेल)
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@gmail.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
                 />
               </div>
             </div>
-
-            {/* Name */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* Mobile */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Mobile Number *
-              </label>
-              <input
-                type="tel"
-                required
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder="10-digit mobile number"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@gmail.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
           </div>
 
-          {/* Card 2: Bank & UPI Details */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Building className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-sm font-bold text-slate-900">2. Bank & UPI Payment Details</h3>
-            </div>
+          {/* Card 2: Bank Details */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Building className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-sm font-bold text-slate-900">2. बैंक डिटेल्स (Bank Details)</h3>
+              </div>
 
-            {/* UPI ID */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                <Smartphone className="h-3.5 w-3.5 text-blue-600" />
-                <span>UPI ID (Google Pay / PhonePe / Paytm / BHIM)</span>
-              </label>
-              <input
-                type="text"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                placeholder="e.g. name@okhdfcbank / 9876543210@paytm"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* GPay PhonePe Mobile */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Google Pay / PhonePe Mobile Number</span>
-              </label>
-              <input
-                type="tel"
-                value={gpayPhonePeNumber}
-                onChange={(e) => setGpayPhonePeNumber(e.target.value)}
-                placeholder="9876543210"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* Bank Name */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Bank Name
-              </label>
-              <input
-                type="text"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                placeholder="e.g. State Bank of India / HDFC Bank"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* Account Holder Name */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Account Holder Name
-              </label>
-              <input
-                type="text"
-                value={accountHolderName}
-                onChange={(e) => setAccountHolderName(e.target.value)}
-                placeholder="Account holder name"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
-              />
-            </div>
-
-            {/* Account Number & IFSC */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Bank Name */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Account Number
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Bank Name (बैंक का नाम)
+                </label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="State Bank of India / HDFC / PNB"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Account Holder Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Account Holder Name (खाताधारक नाम)
+                </label>
+                <input
+                  type="text"
+                  value={accountHolderName}
+                  onChange={(e) => setAccountHolderName(e.target.value)}
+                  placeholder="Name as in passbook"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Account Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Account Number (खाता संख्या)
                 </label>
                 <input
                   type="text"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder="384910294819"
+                  placeholder="e.g. 384910294819"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
                 />
               </div>
+
+              {/* IFSC Code */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  IFSC Code
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  IFSC Code (आईएफएससी कोड)
                 </label>
                 <input
                   type="text"
@@ -394,6 +368,66 @@ export const KycModule: React.FC = () => {
                   placeholder="SBIN0001234"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: UPI Details */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xl space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Smartphone className="h-5 w-5 text-cyan-600" />
+                <h3 className="text-sm font-bold text-slate-900">3. UPI डिटेल्स (UPI Payment)</h3>
+              </div>
+
+              {/* UPI ID */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5 text-cyan-600" />
+                  <span>UPI ID (GPay / PhonePe / Paytm / BHIM)</span>
+                </label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="name@okhdfcbank / 9876543210@paytm"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {['@okhdfcbank', '@okaxis', '@oksbi', '@ybl', '@paytm'].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => {
+                        const base = upiId.includes('@') ? upiId.split('@')[0] : upiId || mobile;
+                        setUpiId(`${base}${h}`);
+                      }}
+                      className="text-[10px] px-2 py-0.5 rounded bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-mono transition cursor-pointer"
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* GPay PhonePe Mobile */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Google Pay / PhonePe Mobile Number</span>
+                </label>
+                <input
+                  type="tel"
+                  value={gpayPhonePeNumber}
+                  onChange={(e) => setGpayPhonePeNumber(e.target.value)}
+                  placeholder="9876543210"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Quick tip box */}
+              <div className="p-3 bg-cyan-50 rounded-2xl border border-cyan-100 text-[11px] text-cyan-900 leading-relaxed">
+                💡 अन्य सदस्य इस UPI ID पर स्कैन करके या सीधे UPI ऐप से आपको ₹150 की सहायता राशि ट्रांसफर करेंगे।
               </div>
             </div>
           </div>

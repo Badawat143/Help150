@@ -626,11 +626,45 @@ export const api = {
         if (actionType === 'provide') {
           r.senderAccepted = true;
           r.senderAcceptedAt = now;
+          r.status = 'ACCEPTED';
         } else {
           r.receiverAccepted = true;
           r.receiverAcceptedAt = now;
+          r.status = 'COMPLETED';
+
+          // User Request: Recived लिंक एक्सेप्ट करने पर टोटल रिसिव में आना चाहिए जो यूजर को देखने में काम आता है कि अभी तक कितना इनकम किया है
+          const receiverWallet = draft.wallets[actor.id] || {
+            userId: actor.id,
+            availableBalance: 0,
+            pendingBalance: 0,
+            totalHelpedGiven: 0,
+            totalHelpedReceived: 0,
+            totalReferralRewards: 0,
+            totalWithdrawn: 0,
+            lastUpdated: now,
+          };
+          receiverWallet.availableBalance += (r.amount || 200);
+          receiverWallet.totalHelpedReceived += (r.amount || 200);
+          receiverWallet.lastUpdated = now;
+          draft.wallets[actor.id] = receiverWallet;
+
+          // Record transaction for Total Received & Income History
+          draft.transactions.unshift({
+            id: `TXN-REC-${Date.now().toString().slice(-6)}`,
+            userId: actor.id,
+            type: 'help_received',
+            amount: r.amount || 200,
+            balanceAfter: receiverWallet.availableBalance,
+            status: 'completed',
+            referenceId: r.id,
+            remarks: `Received Help ₹${r.amount || 200} accepted from ${r.userName}`,
+            senderUserId: r.userId,
+            receiverUserId: actor.id,
+            senderName: r.userName,
+            receiverName: actor.name,
+            createdAt: now,
+          });
         }
-        r.status = 'ACCEPTED';
         updated = r;
       }
       draft.notifications.unshift({
