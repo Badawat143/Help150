@@ -2734,7 +2734,7 @@ export const api = {
       }).catch((e) => console.warn('Server user sponsor transfer notice:', e));
     }
     if (updatedCycle) {
-      firestoreSync.syncCycle(updatedCycle);
+      firestoreSync.syncHelpRequest(updatedCycle as any);
     }
 
     logAudit(

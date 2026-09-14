@@ -182,6 +182,16 @@ export const AdminPanel: React.FC = () => {
   const totalTransactionsCount = state.transactions.length > 5 ? state.transactions.length : 4852;
   const supportTicketsCount = 24;
 
+  // Direct to Admin users (सदस्य जो सीधे एडमिन में लगे हैं)
+  const directAdminUsers = useMemo(() => {
+    return state.users.filter(
+      (u) =>
+        u.id !== 'H150-ADMIN01' &&
+        u.role !== 'admin' &&
+        (!u.sponsorId || u.sponsorId === 'H150-ADMIN01' || u.sponsorId.toUpperCase() === 'DIRECT')
+    );
+  }, [state.users]);
+
   // Sidebar Menu Items matching the 22 items in image
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, hasArrow: false },
@@ -277,16 +287,6 @@ export const AdminPanel: React.FC = () => {
     showToast(`Withdrawal #${withdrawalId} approved and processed.`);
     refreshUserData();
   };
-
-  // Direct to Admin users (सदस्य जो सीधे एडमिन में लगे हैं)
-  const directAdminUsers = useMemo(() => {
-    return state.users.filter(
-      (u) =>
-        u.id !== 'H150-ADMIN01' &&
-        u.role !== 'admin' &&
-        (!u.sponsorId || u.sponsorId === 'H150-ADMIN01' || u.sponsorId.toUpperCase() === 'DIRECT')
-    );
-  }, [state.users]);
 
   // Target sponsor match for transfer
   const targetSponsorMatch = useMemo(() => {
@@ -2076,6 +2076,22 @@ export const AdminPanel: React.FC = () => {
 
                       return (
                         <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-3 text-center">
+                            {u.id !== 'H150-ADMIN01' ? (
+                              <input
+                                type="checkbox"
+                                checked={selectedUserIdsForBulk.includes(u.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedUserIdsForBulk((prev) => [...prev, u.id]);
+                                  } else {
+                                    setSelectedUserIdsForBulk((prev) => prev.filter((id) => id !== u.id));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer h-4 w-4"
+                              />
+                            ) : null}
+                          </td>
                           <td className="py-3 px-3 text-slate-400 font-semibold">{idx + 1}</td>
                           
                           {/* User ID with 1-click Copy */}
@@ -2257,6 +2273,21 @@ export const AdminPanel: React.FC = () => {
                                 <Edit className="h-3.5 w-3.5 text-amber-700" />
                                 <span>Edit Details</span>
                               </button>
+
+                              {/* Transfer ID Button */}
+                              {u.id !== 'H150-ADMIN01' && (
+                                <button
+                                  onClick={() => {
+                                    setTransferTargetUser(u);
+                                    setTargetSponsorInput('');
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 active:scale-95"
+                                  title={`Transfer ${u.fullName} (${u.id}) to another member`}
+                                >
+                                  <ArrowRightLeft className="h-3.5 w-3.5 text-purple-700" />
+                                  <span>Transfer ID</span>
+                                </button>
+                              )}
 
                               {u.id !== 'H150-ADMIN01' ? (
                                 <button
@@ -2979,6 +3010,171 @@ export const AdminPanel: React.FC = () => {
                 className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE TRANSFER MODAL */}
+      {transferTargetUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-700 text-amber-300">
+                  <ArrowRightLeft className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-heading">एडमिन से यूजर में आईडी ट्रांसफर करें</h3>
+                  <p className="text-xs text-slate-500">ID Transfer from Admin to Member Team</p>
+                </div>
+              </div>
+              <button onClick={() => setTransferTargetUser(null)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 space-y-1">
+                <div className="font-bold text-slate-900">चुनी गई आईडी (Selected ID):</div>
+                <div className="font-mono text-purple-700 font-black text-sm">{transferTargetUser.id} - {transferTargetUser.fullName}</div>
+                <div className="text-[11px] text-slate-600">मोबाइल: {transferTargetUser.mobile} | वर्तमान स्पॉन्सर: {transferTargetUser.sponsorId || 'Direct (Admin)'}</div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  नए स्पॉन्सर का यूजर ID या मोबाइल नंबर दर्ज करें:
+                </label>
+                <input
+                  type="text"
+                  value={targetSponsorInput}
+                  onChange={(e) => setTargetSponsorInput(e.target.value)}
+                  placeholder="उदा. H150-1002 या मोबाइल नंबर"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-mono text-xs"
+                />
+                {targetSponsorMatch ? (
+                  <div className="mt-1.5 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold flex items-center justify-between">
+                    <span>मिल गया: {targetSponsorMatch.id} ({targetSponsorMatch.fullName})</span>
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  </div>
+                ) : targetSponsorInput.trim().length > 2 ? (
+                  <div className="mt-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px]">
+                    कोई सदस्य नहीं मिला। दर्ज किया गया टेक्स्ट सीधे स्पॉन्सर आईडी मान लिया जाएगा।
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="transfer_help_links_chk"
+                  checked={transferHelpLinks}
+                  onChange={(e) => setTransferHelpLinks(e.target.checked)}
+                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 h-4 w-4 cursor-pointer"
+                />
+                <label htmlFor="transfer_help_links_chk" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  इस आईडी के हेल्प लिंक (₹50/₹100) भी नए स्पॉन्सर को री-असाइन करें
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setTransferTargetUser(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteTransfer}
+                disabled={isTransferring}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-black text-xs cursor-pointer shadow-md shadow-purple-900/30 transition active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <ArrowRightLeft className="h-4 w-4 text-amber-300" />
+                <span>{isTransferring ? 'ट्रांसफर हो रहा है...' : 'अब ट्रांसफर करें (Transfer Now)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK TRANSFER MODAL */}
+      {isBulkTransferModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 font-black">
+                  {selectedUserIdsForBulk.length}
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-heading">बल्क एडमिन आईडी ट्रांसफर (Bulk Transfer)</h3>
+                  <p className="text-xs text-slate-500">{selectedUserIdsForBulk.length} चयनित आईडी को एक साथ ट्रांसफर करें</p>
+                </div>
+              </div>
+              <button onClick={() => setIsBulkTransferModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 max-h-32 overflow-y-auto font-mono text-[11px] text-slate-700">
+                <div className="font-bold text-slate-900 mb-1">चयनित यूजर IDs:</div>
+                {selectedUserIdsForBulk.join(', ')}
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  नए स्पॉन्सर का यूजर ID या मोबाइल नंबर दर्ज करें:
+                </label>
+                <input
+                  type="text"
+                  value={targetSponsorInput}
+                  onChange={(e) => setTargetSponsorInput(e.target.value)}
+                  placeholder="उदा. H150-1002 या मोबाइल नंबर"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-mono text-xs"
+                />
+                {targetSponsorMatch ? (
+                  <div className="mt-1.5 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold flex items-center justify-between">
+                    <span>मिल गया: {targetSponsorMatch.id} ({targetSponsorMatch.fullName})</span>
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="bulk_transfer_help_links_chk"
+                  checked={transferHelpLinks}
+                  onChange={(e) => setTransferHelpLinks(e.target.checked)}
+                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 h-4 w-4 cursor-pointer"
+                />
+                <label htmlFor="bulk_transfer_help_links_chk" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  इन सभी आईडी के हेल्प लिंक भी नए स्पॉन्सर को री-असाइन करें
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsBulkTransferModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteBulkTransfer}
+                disabled={isTransferring}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs cursor-pointer shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                <span>{isTransferring ? 'ट्रांसफर हो रहा है...' : `सभी ${selectedUserIdsForBulk.length} आईडी ट्रांसफर करें`}</span>
               </button>
             </div>
           </div>
