@@ -17,6 +17,7 @@ import {
   SupportTicket,
   AuditLog,
   WebsiteSettings,
+  UserHelpCycle,
 } from '../types';
 
 export interface ApiResponse<T> {
@@ -172,6 +173,12 @@ export const api = {
         return { success: false, error: 'Invalid Referral/Sponsor ID. Please check the ID or register directly.' };
       }
       validSponsorId = sponsor.id;
+    } else if (state.settings.defaultDirectSponsorId && state.settings.defaultDirectSponsorId.trim()) {
+      const defTarget = state.settings.defaultDirectSponsorId.trim().toUpperCase();
+      const defSponsor = state.users.find((u) => u.id.toUpperCase() === defTarget);
+      if (defSponsor && defSponsor.status === 'active') {
+        validSponsorId = defSponsor.id;
+      }
     }
 
     const newUserId = generateUserId(state.users);
@@ -2588,6 +2595,200 @@ export const api = {
     );
 
     return { success: true, data: db.getState().users.find((u) => u.id === userId)! };
+  },
+
+  /**
+   * Transfer / Shift any User ID from Admin to another active User (Sponsor Reassignment)
+   * Also optionally reassigns active ₹50 / ₹100 help links from Admin's UPI to the target User's UPI!
+   */
+  async adminTransferUserFromAdmin(
+    adminActor: { id: string; name: string; role: string },
+    userId: string,
+    targetSponsorId: string,
+    options: {
+      transferHelpLinks?: boolean;
+    } = {}
+  ): Promise<ApiResponse<{ user: User; newSponsor: User; linksTransferred: number }>> {
+    const state = db.getState();
+    const user = state.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'यूजर आईडी नहीं मिली (User not found)' };
+    if (user.role === 'admin' || user.id === 'H150-ADMIN01') {
+      return { success: false, error: 'सुपरएडमिन आईडी को ट्रांसफर नहीं किया जा सकता।' };
+    }
+
+    const cleanTargetId = targetSponsorId.trim().toUpperCase();
+    let newSponsor = state.users.find(
+      (u) =>
+        u.id.toUpperCase() === cleanTargetId ||
+        u.id.toUpperCase() === `H150-${cleanTargetId}` ||
+        (cleanTargetId.replace(/\D/g, '').length >= 6 && u.mobile?.slice(-10) === cleanTargetId.replace(/\D/g, ''))
+    );
+    if (!newSponsor) {
+      newSponsor = (await firestoreSync.fetchUserDirect(cleanTargetId)) || undefined;
+    }
+    if (!newSponsor) {
+      return {
+        success: false,
+        error: `टारगेट यूजर ID "${targetSponsorId}" सिस्टम में नहीं मिली। कृपया मान्य यूजर आईडी दर्ज करें।`,
+      };
+    }
+    if (newSponsor.id === user.id) {
+      return { success: false, error: 'यूजर को स्वयं का स्पॉन्सर नहीं बनाया जा सकता।' };
+    }
+
+    const shouldTransferLinks = options.transferHelpLinks !== false;
+    let linksTransferred = 0;
+    const now = new Date().toISOString();
+
+    let updatedUser: User | null = null;
+    let updatedCycle: UserHelpCycle | null = null;
+
+    db.updateState((draft) => {
+      // 1. Update user's sponsor
+      const u = draft.users.find((x) => x.id === userId);
+      if (u) {
+        const oldSponsor = u.sponsorId || 'Admin (Direct)';
+        u.sponsorId = newSponsor!.id;
+        u.internalNotes = u.internalNotes || [];
+        u.internalNotes.push(
+          `[${new Date().toLocaleDateString()}] Reassigned from ${oldSponsor} to ${newSponsor!.fullName} (${newSponsor!.id}) by Admin ${adminActor.name}`
+        );
+        updatedUser = { ...u };
+      }
+
+      // 2. Reassign active help links if requested
+      if (shouldTransferLinks && draft.helpCycles) {
+        draft.helpCycles.forEach((c) => {
+          if (c.userId === userId && c.status !== 'completed') {
+            let cycleChanged = false;
+            // Verification link ₹50
+            if (
+              c.verificationLink &&
+              (c.verificationLink.matchedWithUserId === 'H150-ADMIN01' ||
+                !c.verificationLink.matchedWithUserId ||
+                c.verificationLink.matchedWithUserId.includes('ADMIN')) &&
+              c.verificationLink.status !== 'completed'
+            ) {
+              c.verificationLink.matchedWithUserId = newSponsor!.id;
+              c.verificationLink.matchedWithUserName = newSponsor!.fullName;
+              c.verificationLink.matchedWithUpi = newSponsor!.upiId || `${newSponsor!.mobile}@upi`;
+              c.verificationLink.matchedWithMobile = newSponsor!.mobile;
+              c.verificationLink.matchedWithEmail = newSponsor!.email;
+              linksTransferred++;
+              cycleChanged = true;
+            }
+
+            // Second link ₹100
+            if (
+              c.secondLink &&
+              (c.secondLink.matchedWithUserId === 'H150-ADMIN01' ||
+                !c.secondLink.matchedWithUserId ||
+                c.secondLink.matchedWithUserId.includes('ADMIN')) &&
+              c.secondLink.status !== 'completed'
+            ) {
+              c.secondLink.matchedWithUserId = newSponsor!.id;
+              c.secondLink.matchedWithUserName = newSponsor!.fullName;
+              c.secondLink.matchedWithUpi = newSponsor!.upiId || `${newSponsor!.mobile}@upi`;
+              c.secondLink.matchedWithMobile = newSponsor!.mobile;
+              c.secondLink.matchedWithEmail = newSponsor!.email;
+              linksTransferred++;
+              cycleChanged = true;
+            }
+
+            if (cycleChanged) {
+              updatedCycle = { ...c };
+            }
+          }
+        });
+      }
+
+      // 3. Send Notification to new sponsor
+      draft.notifications.unshift({
+        id: `NOTIF-TRF-${Date.now().toString().slice(-6)}`,
+        userId: newSponsor!.id,
+        title: '🎉 नई डायरेक्ट आईडी आपकी टीम में जुड़ी!',
+        message: `एडमिन द्वारा सदस्य ${user.fullName} (${user.id}) को आपकी डायरेक्ट टीम में ट्रांसफर कर दिया गया है।`,
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+      });
+
+      // 4. Send Notification to user
+      draft.notifications.unshift({
+        id: `NOTIF-TRF2-${Date.now().toString().slice(-6)}`,
+        userId: user.id,
+        title: '🤝 स्पॉन्सर अपडेट सूचना',
+        message: `आपकी आईडी अब आधिकारिक रूप से ${newSponsor!.fullName} (${newSponsor!.id}) के अधीन जोड़ दी गई है।`,
+        type: 'info',
+        isRead: false,
+        createdAt: now,
+      });
+    });
+
+    if (updatedUser) {
+      firestoreSync.syncUser(updatedUser);
+      fetch('/api/admin/user/update-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, updates: { sponsorId: newSponsor.id } }),
+      }).catch((e) => console.warn('Server user sponsor transfer notice:', e));
+    }
+    if (updatedCycle) {
+      firestoreSync.syncCycle(updatedCycle);
+    }
+
+    logAudit(
+      adminActor,
+      'ADMIN_TRANSFER_USER_SPONSOR',
+      'User',
+      userId,
+      `Admin ${adminActor.name} transferred user ${user.fullName} (${userId}) from Admin to target user ${newSponsor.fullName} (${newSponsor.id}). Links transferred: ${linksTransferred}.`
+    );
+
+    return {
+      success: true,
+      data: {
+        user: updatedUser || user,
+        newSponsor,
+        linksTransferred,
+      },
+      message: `आईडी ${user.id} (${user.fullName}) को एडमिन से सफलतापूर्वक ${newSponsor.fullName} (${newSponsor.id}) में ट्रांसफर कर दिया गया है।`,
+    };
+  },
+
+  /**
+   * Bulk transfer multiple direct Admin IDs to a target User
+   */
+  async adminBulkTransferUsersFromAdmin(
+    adminActor: { id: string; name: string; role: string },
+    userIds: string[],
+    targetSponsorId: string,
+    options: { transferHelpLinks?: boolean } = {}
+  ): Promise<ApiResponse<{ totalTransferred: number; targetSponsor: User }>> {
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: 'कृपया कम से कम एक आईडी चुनें।' };
+    }
+
+    let successCount = 0;
+    let targetSponsorUser: User | null = null;
+
+    for (const uid of userIds) {
+      const res = await this.adminTransferUserFromAdmin(adminActor, uid, targetSponsorId, options);
+      if (res.success && res.data) {
+        successCount++;
+        targetSponsorUser = res.data.newSponsor;
+      }
+    }
+
+    if (successCount === 0 || !targetSponsorUser) {
+      return { success: false, error: 'किसी भी आईडी को ट्रांसफर नहीं किया जा सका।' };
+    }
+
+    return {
+      success: true,
+      data: { totalTransferred: successCount, targetSponsor: targetSponsorUser },
+      message: `कुल ${successCount} आईडी को एडमिन से सफलतापूर्वक ${targetSponsorUser.fullName} (${targetSponsorUser.id}) में ट्रांसफर कर दिया गया है।`,
+    };
   },
 
   async adminAdjustWallet(

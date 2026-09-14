@@ -19,7 +19,7 @@
  * - Interactive Modals & Sub-views for all 22 operations (User management, KYC desk, Help matching, Withdrawals, Settings, Report generator)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Menu,
   Crown,
@@ -79,6 +79,8 @@ import {
   Sparkles,
   Mail,
   MoreVertical,
+  ArrowRightLeft,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
@@ -116,7 +118,7 @@ export const AdminPanel: React.FC = () => {
   const [showAllPasswords, setShowAllPasswords] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'blocked' | 'direct_admin'>('all');
   const [editingUserPassword, setEditingUserPassword] = useState<{ userId: string; userName: string; currentPass: string; newPass: string } | null>(null);
   const [editingUserDetails, setEditingUserDetails] = useState<{
     userId: string;
@@ -135,6 +137,14 @@ export const AdminPanel: React.FC = () => {
     gpayPhonePeNumber: string;
   } | null>(null);
   const [showEditDetailsPassword, setShowEditDetailsPassword] = useState<boolean>(false);
+
+  // Transfer User from Admin to Target User State (एडमिन से यूजर में आईडी डालने का ऑप्शन)
+  const [transferTargetUser, setTransferTargetUser] = useState<User | null>(null);
+  const [targetSponsorInput, setTargetSponsorInput] = useState<string>('');
+  const [transferHelpLinks, setTransferHelpLinks] = useState<boolean>(true);
+  const [isTransferring, setIsTransferring] = useState<boolean>(false);
+  const [selectedUserIdsForBulk, setSelectedUserIdsForBulk] = useState<string[]>([]);
+  const [isBulkTransferModalOpen, setIsBulkTransferModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -155,6 +165,7 @@ export const AdminPanel: React.FC = () => {
   const [processingFee, setProcessingFee] = useState(settings.withdrawalProcessingFeePercent || 10);
   const [timerHours, setTimerHours] = useState(settings.timerDurationHours || 12);
   const [adminUpi, setAdminUpi] = useState(settings.adminUpiId || 'help150@okhdfcbank');
+  const [defaultDirectSponsorId, setDefaultDirectSponsorId] = useState(settings.defaultDirectSponsorId || '');
 
   // Interactive Action Feedback
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -177,6 +188,13 @@ export const AdminPanel: React.FC = () => {
     { id: 'member_link_box', label: 'Member-to-Member Link Box', icon: Send, hasArrow: true, badge: 'P2P' },
     { id: 'email_campaigns', label: 'Brevo Email Campaigns', icon: Mail, hasArrow: true, badge: 'Brevo' },
     { id: 'users', label: 'Users', icon: Users, hasArrow: true },
+    {
+      id: 'transfer_admin_ids',
+      label: 'एडमिन से यूजर में आईडी ट्रांसफर',
+      icon: ArrowRightLeft,
+      hasArrow: true,
+      badge: directAdminUsers.length > 0 ? `${directAdminUsers.length}` : undefined,
+    },
     { id: 'user_details', label: 'User Details', icon: UserCheck, hasArrow: true },
     { id: 'kyc', label: 'KYC', icon: ShieldCheck, hasArrow: true },
     { id: 'help_requests', label: 'Help Requests', icon: HeartHandshake, hasArrow: true },
@@ -225,13 +243,21 @@ export const AdminPanel: React.FC = () => {
       setActiveModal(null);
     } else if (itemId === 'logout') {
       logout();
+    } else if (itemId === 'transfer_admin_ids') {
+      setActiveModal('users');
+      setUserStatusFilter('direct_admin');
     } else {
       setActiveModal(itemId);
     }
   };
 
   const handleQuickAction = (actionId: string) => {
-    setActiveModal(actionId);
+    if (actionId === 'transfer_admin_ids') {
+      setActiveModal('users');
+      setUserStatusFilter('direct_admin');
+    } else {
+      setActiveModal(actionId);
+    }
   };
 
   // Actions
@@ -252,6 +278,109 @@ export const AdminPanel: React.FC = () => {
     refreshUserData();
   };
 
+  // Direct to Admin users (सदस्य जो सीधे एडमिन में लगे हैं)
+  const directAdminUsers = useMemo(() => {
+    return state.users.filter(
+      (u) =>
+        u.id !== 'H150-ADMIN01' &&
+        u.role !== 'admin' &&
+        (!u.sponsorId || u.sponsorId === 'H150-ADMIN01' || u.sponsorId.toUpperCase() === 'DIRECT')
+    );
+  }, [state.users]);
+
+  // Target sponsor match for transfer
+  const targetSponsorMatch = useMemo(() => {
+    if (!targetSponsorInput.trim()) return null;
+    const clean = targetSponsorInput.trim().toUpperCase();
+    const cleanDigits = targetSponsorInput.replace(/\D/g, '');
+    return (
+      state.users.find((u) => {
+        if (transferTargetUser && u.id === transferTargetUser.id) return false;
+        if (u.role === 'admin' || u.id === 'H150-ADMIN01') return false;
+        if (u.id.toUpperCase() === clean) return true;
+        if (u.id.toUpperCase() === `H150-${clean}`) return true;
+        if (cleanDigits.length >= 6 && u.mobile?.slice(-10) === cleanDigits) return true;
+        if (cleanDigits.length >= 6 && u.id.toUpperCase().endsWith(cleanDigits)) return true;
+        if (u.fullName.toLowerCase().includes(targetSponsorInput.toLowerCase().trim())) return true;
+        return false;
+      }) || null
+    );
+  }, [targetSponsorInput, state.users, transferTargetUser]);
+
+  const handleExecuteTransfer = async () => {
+    if (!transferTargetUser) return;
+    const finalTargetId = targetSponsorMatch?.id || targetSponsorInput.trim().toUpperCase();
+    if (!finalTargetId) {
+      showToast('कृपया टारगेट यूजर की ID या मोबाइल नंबर दर्ज करें।', 'error');
+      return;
+    }
+    setIsTransferring(true);
+    try {
+      const adminActor = {
+        id: currentUser?.id || 'H150-ADMIN01',
+        name: currentUser?.fullName || 'Super Admin',
+        role: 'admin',
+      };
+      const res = await api.adminTransferUserFromAdmin(
+        adminActor,
+        transferTargetUser.id,
+        finalTargetId,
+        { transferHelpLinks }
+      );
+      if (res.success && res.data) {
+        showToast(res.message || `आईडी ${transferTargetUser.id} सफलतापूर्वक यूजर में ट्रांसफर कर दी गई!`);
+        setTransferTargetUser(null);
+        setTargetSponsorInput('');
+        refreshUserData();
+      } else {
+        showToast(res.error || 'ट्रांसफर विफल रहा', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'ट्रांसफर विफल रहा', 'error');
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
+  const handleExecuteBulkTransfer = async () => {
+    if (selectedUserIdsForBulk.length === 0) {
+      showToast('कृपया कम से कम एक आईडी चुनें।', 'error');
+      return;
+    }
+    const finalTargetId = targetSponsorMatch?.id || targetSponsorInput.trim().toUpperCase();
+    if (!finalTargetId) {
+      showToast('कृपया टारगेट यूजर की ID या मोबाइल नंबर दर्ज करें।', 'error');
+      return;
+    }
+    setIsTransferring(true);
+    try {
+      const adminActor = {
+        id: currentUser?.id || 'H150-ADMIN01',
+        name: currentUser?.fullName || 'Super Admin',
+        role: 'admin',
+      };
+      const res = await api.adminBulkTransferUsersFromAdmin(
+        adminActor,
+        selectedUserIdsForBulk,
+        finalTargetId,
+        { transferHelpLinks }
+      );
+      if (res.success && res.data) {
+        showToast(res.message || `चयनित आईडी सफलतापूर्वक ट्रांसफर कर दी गईं!`);
+        setSelectedUserIdsForBulk([]);
+        setIsBulkTransferModalOpen(false);
+        setTargetSponsorInput('');
+        refreshUserData();
+      } else {
+        showToast(res.error || 'बल्क ट्रांसफर विफल रहा', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'बल्क ट्रांसफर विफल रहा', 'error');
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     await api.updateSettings(
       {
@@ -261,6 +390,7 @@ export const AdminPanel: React.FC = () => {
         withdrawalProcessingFeePercent: Number(processingFee),
         timerDurationHours: Number(timerHours),
         adminUpiId: adminUpi,
+        defaultDirectSponsorId: defaultDirectSponsorId.trim() || undefined,
       },
       currentUser?.id || 'ADMIN-1'
     );
@@ -1147,6 +1277,20 @@ export const AdminPanel: React.FC = () => {
                   <span className="px-1.5 py-0.5 rounded bg-blue-400/30 text-white text-[9px] font-mono">NEW</span>
                 </button>
 
+                {/* Admin to User ID Transfer (Purple & Gold Gradient) */}
+                <button
+                  onClick={() => handleQuickAction('transfer_admin_ids')}
+                  className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:brightness-110 text-white font-black text-xs flex items-center justify-between shadow-md shadow-purple-900/30 transition cursor-pointer border border-purple-400/30"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <ArrowRightLeft className="h-4 w-4 shrink-0 text-amber-300" />
+                    <span className="truncate uppercase tracking-wide">एडमिन से यूजर में आईडी ट्रांसफर</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black shrink-0">
+                    {directAdminUsers.length} Direct
+                  </span>
+                </button>
+
                 {/* 1. Manage Users (Royal Blue) */}
                 <button
                   onClick={() => handleQuickAction('users')}
@@ -1742,6 +1886,49 @@ export const AdminPanel: React.FC = () => {
               </span>
             </div>
 
+            {/* Admin to User ID Transfer Promotion Banner */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border border-purple-500/40 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0">
+                  <ArrowRightLeft className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="font-black text-sm text-white flex items-center gap-2 flex-wrap">
+                    <span>एडमिन से यूजर में आईडी डालने का विकल्प (ID Transfer to Member)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+                      {directAdminUsers.length} आईडी एडमिन में लगी हैं
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-purple-200">
+                    सीधे एडमिन में लगी हुई किसी भी आईडी को किसी भी यूजर (मेंबर) की टीम में ट्रांसफर करें। उनके हेल्प लिंक (₹50/₹100) भी री-असाइन हो जाएंगे।
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap w-full md:w-auto shrink-0">
+                {selectedUserIdsForBulk.length > 0 && (
+                  <button
+                    onClick={() => setIsBulkTransferModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition active:scale-95"
+                  >
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    <span>चयनित {selectedUserIdsForBulk.length} आईडी यूजर में डालें</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setUserStatusFilter('direct_admin')}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 cursor-pointer ${
+                    userStatusFilter === 'direct_admin'
+                      ? 'bg-purple-600 text-white border-purple-400 shadow-md'
+                      : 'bg-purple-900/50 hover:bg-purple-900/80 text-purple-200 border-purple-500/40'
+                  }`}
+                >
+                  <Crown className="h-3.5 w-3.5 text-amber-300" />
+                  <span>एडमिन डायरेक्ट आईडी देखें ({directAdminUsers.length})</span>
+                </button>
+              </div>
+            </div>
+
             {/* Quick Stats & Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
               {/* Search input */}
@@ -1765,7 +1952,7 @@ export const AdminPanel: React.FC = () => {
               </div>
 
               {/* Status Filter Tabs */}
-              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-full sm:w-auto flex-wrap">
                 <button
                   onClick={() => setUserStatusFilter('all')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
@@ -1798,6 +1985,17 @@ export const AdminPanel: React.FC = () => {
                   <span className="h-2 w-2 rounded-full bg-red-500"></span>
                   Blocked ({state.users.filter((u) => u.status === 'blocked').length})
                 </button>
+                <button
+                  onClick={() => setUserStatusFilter('direct_admin')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    userStatusFilter === 'direct_admin'
+                      ? 'bg-purple-700 text-white shadow-xs'
+                      : 'text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                  }`}
+                >
+                  <Crown className="h-3 w-3" />
+                  <span>एडमिन डायरेक्ट ({directAdminUsers.length})</span>
+                </button>
               </div>
             </div>
 
@@ -1806,16 +2004,34 @@ export const AdminPanel: React.FC = () => {
               <table className="w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
+                    <th className="py-3 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        title="Select All Direct Admin IDs"
+                        checked={
+                          directAdminUsers.length > 0 &&
+                          directAdminUsers.every((u) => selectedUserIdsForBulk.includes(u.id))
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedUserIdsForBulk(directAdminUsers.map((u) => u.id));
+                          } else {
+                            setSelectedUserIdsForBulk([]);
+                          }
+                        }}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer h-4 w-4"
+                      />
+                    </th>
                     <th className="py-3 px-3">#</th>
                     <th className="py-3 px-3">User ID (आईडी)</th>
                     <th className="py-3 px-3">Member Details (नाम / ईमेल)</th>
                     <th className="py-3 px-3">Mobile (मोबाइल)</th>
                     <th className="py-3 px-3">Password (पासवर्ड)</th>
                     <th className="py-3 px-3 text-center">Direct Login (सीधा यूजर लॉगिन)</th>
-                    <th className="py-3 px-3">Sponsor ID</th>
+                    <th className="py-3 px-3">Sponsor ID / Transfer</th>
                     <th className="py-3 px-3">KYC</th>
                     <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Action (एडिट डिटेल्स / ब्लॉक)</th>
+                    <th className="py-3 px-3 text-right">Action (एडिट / ट्रांसफर / ब्लॉक)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1823,6 +2039,14 @@ export const AdminPanel: React.FC = () => {
                     .filter((u) => {
                       if (userStatusFilter === 'active' && u.status !== 'active') return false;
                       if (userStatusFilter === 'blocked' && u.status !== 'blocked') return false;
+                      if (userStatusFilter === 'direct_admin') {
+                        const isDirectAdmin =
+                          u.id !== 'H150-ADMIN01' &&
+                          (!u.sponsorId ||
+                            u.sponsorId === 'H150-ADMIN01' ||
+                            u.sponsorId.toUpperCase() === 'DIRECT');
+                        if (!isDirectAdmin) return false;
+                      }
                       if (userSearchQuery.trim()) {
                         const q = userSearchQuery.toLowerCase().trim();
                         const matchId = u.id.toLowerCase().includes(q);

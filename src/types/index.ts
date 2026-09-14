@@ -370,6 +370,7 @@ export interface WebsiteSettings {
   systemNoticeText: string;
   complianceDisclaimerText: string;
   adminUpiId: string;
+  defaultDirectSponsorId?: string | null; // Default sponsor when new user registers directly without referral code
   autoDispatchMode?: boolean;
   autoDispatchOnRegistration?: boolean;
   defaultLinkReceiverType?: 'admin_treasury' | 'fifo_queue';
