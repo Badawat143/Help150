@@ -154,7 +154,7 @@ export const api = {
     }
 
     // Sponsor validation
-    let validSponsorId: string | null = null;
+    let validSponsorId: string = 'H150-ADMIN01';
     if (params.sponsorId && params.sponsorId.trim()) {
       const rawSponsor = params.sponsorId.trim();
       const cleanSponsor = rawSponsor.toUpperCase();
@@ -171,15 +171,8 @@ export const api = {
       }
       if (sponsor) {
         validSponsorId = sponsor.id;
-      }
-    }
-
-    if (!validSponsorId || validSponsorId === 'H150-ADMIN01') {
-      const activeRegular = state.users.filter((u) => u.id !== 'H150-ADMIN01' && u.role !== 'admin' && u.status === 'active');
-      if (activeRegular.length > 0) {
-        validSponsorId = activeRegular[0].id;
       } else {
-        validSponsorId = 'H150-784920';
+        validSponsorId = cleanSponsor.startsWith('H150-') ? cleanSponsor : `H150-${cleanSponsor}`;
       }
     }
 

@@ -335,9 +335,9 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Verify sponsor if provided
-    let validSponsorId: string | null = null;
+    let validSponsorId: string = 'H150-ADMIN01';
     let sponsorName: string | null = null;
-    if (sponsorId) {
+    if (sponsorId && String(sponsorId).trim()) {
       const rawSponsor = String(sponsorId).trim();
       const cleanSponsor = rawSponsor.toUpperCase();
       const cleanDigits = rawSponsor.replace(/\D/g, '');
@@ -364,15 +364,6 @@ app.post('/api/register', async (req, res) => {
         } else {
           validSponsorId = cleanSponsor;
         }
-      }
-    }
-
-    if (!validSponsorId || validSponsorId === 'H150-ADMIN01') {
-      const activeRegularMembers = dbData.users.filter((u: any) => u.id !== 'H150-ADMIN01' && u.role !== 'admin' && u.status === 'active');
-      if (activeRegularMembers.length > 0) {
-        validSponsorId = activeRegularMembers[0].id;
-      } else {
-        validSponsorId = 'H150-784920';
       }
     }
 
