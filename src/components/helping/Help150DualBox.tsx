@@ -302,19 +302,6 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       const finalSlip = slipUrl || inlineAttachedSlip.previewUrl || undefined;
       db.submitCycleProvideLink(currentUser.id, type, finalUtr, finalSlip);
 
-      // If user was previously blocked for late payment, unblock them on successful submission
-      if (currentUser.status === 'blocked') {
-        db.updateState((draft) => {
-          const u = draft.users.find((x) => x.id === currentUser.id);
-          if (u) {
-            u.status = 'active';
-            delete u.blockedAt;
-            delete u.autoDeleteAt;
-            delete u.blockedReason;
-          }
-        });
-      }
-
       setInlineUtr('');
       setInlineAttachedSlip({ file: null, previewUrl: null, fileName: null });
       if (inlineFileInputRef.current) {

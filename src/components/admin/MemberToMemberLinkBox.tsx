@@ -1265,7 +1265,14 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
                         {/* Receiver */}
                         <td className="py-3 px-3">
                           <div className="font-bold text-emerald-700">{req.matchedWithUserName || 'Treasury'}</div>
-                          <div className="text-[10px] text-slate-500 font-mono">{req.matchedWithUserId}</div>
+                          <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 flex-wrap">
+                            <span>{req.matchedWithUserId}</span>
+                            {(!req.matchedWithUserId || req.matchedWithUserId === 'H150-ADMIN01' || req.matchedWithUserId.toUpperCase().includes('ADMIN')) && (
+                              <span className="bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded text-[9px] font-black">
+                                👑 Admin ID
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Amount & UPI */}

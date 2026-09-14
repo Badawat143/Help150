@@ -315,7 +315,14 @@ export const PaymentVerificationDesk: React.FC<PaymentVerificationDeskProps> = (
                       Receiver (Help Beneficiary)
                     </span>
                     <p className="font-bold text-white">{req.matchedWithUserName || 'System Treasury'}</p>
-                    <p className="text-slate-400 font-mono text-[11px]">ID: {req.matchedWithUserId || 'H150-ADMIN01'}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-slate-400 font-mono text-[11px]">ID: {req.matchedWithUserId || 'H150-ADMIN01'}</p>
+                      {(!req.matchedWithUserId || req.matchedWithUserId === 'H150-ADMIN01' || req.matchedWithUserId.toUpperCase().includes('ADMIN')) && (
+                        <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-1.5 py-0.2 rounded text-[10px] font-black">
+                          👑 Admin Receiver ID
+                        </span>
+                      )}
+                    </div>
                     <p className="text-slate-400 text-[11px]">Mobile: {req.matchedWithMobile || '9876543210'}</p>
                     <p className="text-slate-400 text-[11px] truncate">UPI: {req.matchedWithUpi || 'help150.treasury@icici'}</p>
                   </div>

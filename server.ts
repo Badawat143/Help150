@@ -357,7 +357,6 @@ app.post('/api/register', async (req, res) => {
         validSponsorId = sponsorUser.id;
         sponsorName = sponsorUser.fullName;
       } else {
-        // Fallback: Never wipe user's sponsor! Normalize as H150-XXXXXX if 6 digits or preserve clean code
         if (cleanSponsor.startsWith('H150-')) {
           validSponsorId = cleanSponsor;
         } else if (cleanDigits.length === 6) {
@@ -365,6 +364,15 @@ app.post('/api/register', async (req, res) => {
         } else {
           validSponsorId = cleanSponsor;
         }
+      }
+    }
+
+    if (!validSponsorId || validSponsorId === 'H150-ADMIN01') {
+      const activeRegularMembers = dbData.users.filter((u: any) => u.id !== 'H150-ADMIN01' && u.role !== 'admin' && u.status === 'active');
+      if (activeRegularMembers.length > 0) {
+        validSponsorId = activeRegularMembers[0].id;
+      } else {
+        validSponsorId = 'H150-784920';
       }
     }
 

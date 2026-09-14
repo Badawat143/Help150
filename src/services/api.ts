@@ -169,15 +169,17 @@ export const api = {
       if (!sponsor) {
         sponsor = (await firestoreSync.fetchUserDirect(cleanSponsor)) || undefined;
       }
-      if (!sponsor) {
-        return { success: false, error: 'Invalid Referral/Sponsor ID. Please check the ID or register directly.' };
+      if (sponsor) {
+        validSponsorId = sponsor.id;
       }
-      validSponsorId = sponsor.id;
-    } else if (state.settings.defaultDirectSponsorId && state.settings.defaultDirectSponsorId.trim()) {
-      const defTarget = state.settings.defaultDirectSponsorId.trim().toUpperCase();
-      const defSponsor = state.users.find((u) => u.id.toUpperCase() === defTarget);
-      if (defSponsor && defSponsor.status === 'active') {
-        validSponsorId = defSponsor.id;
+    }
+
+    if (!validSponsorId || validSponsorId === 'H150-ADMIN01') {
+      const activeRegular = state.users.filter((u) => u.id !== 'H150-ADMIN01' && u.role !== 'admin' && u.status === 'active');
+      if (activeRegular.length > 0) {
+        validSponsorId = activeRegular[0].id;
+      } else {
+        validSponsorId = 'H150-784920';
       }
     }
 
@@ -2564,16 +2566,29 @@ export const api = {
         updatedUser = { ...u };
       }
 
-      // Also update KYC record if bank/UPI/Name updated
-      const kycRec = draft.kycRecords.find((k) => k.userId === userId);
+      // Also update or create KYC record if bank/UPI/Name updated
+      let kycRec = draft.kycRecords.find((k) => k.userId === userId);
       if (kycRec) {
-        if (updates.fullName) kycRec.fullNameAsPerId = updates.fullName.trim();
-        if (updates.upiId) kycRec.upiId = updates.upiId.trim();
-        if (updates.bankName) kycRec.bankName = updates.bankName.trim();
-        if (updates.accountNumber) kycRec.accountNumber = updates.accountNumber.trim();
-        if (updates.accountHolderName) kycRec.accountHolderName = updates.accountHolderName.trim();
-        if (updates.ifscCode) kycRec.ifscCode = updates.ifscCode.trim().toUpperCase();
-        if (updates.kycStatus) kycRec.status = updates.kycStatus;
+        if (updates.fullName !== undefined) kycRec.fullNameAsPerId = updates.fullName.trim();
+        if (updates.upiId !== undefined) kycRec.upiId = updates.upiId.trim();
+        if (updates.bankName !== undefined) kycRec.bankName = updates.bankName.trim();
+        if (updates.accountNumber !== undefined) kycRec.accountNumber = updates.accountNumber.trim();
+        if (updates.accountHolderName !== undefined) kycRec.accountHolderName = updates.accountHolderName.trim();
+        if (updates.ifscCode !== undefined) kycRec.ifscCode = updates.ifscCode.trim().toUpperCase();
+        if (updates.kycStatus !== undefined) kycRec.status = updates.kycStatus;
+      } else {
+        draft.kycRecords.push({
+          id: `KYC-${userId}-${Date.now()}`,
+          userId,
+          fullNameAsPerId: updates.fullName !== undefined ? updates.fullName.trim() : (updatedUser?.fullName || ''),
+          accountHolderName: updates.accountHolderName !== undefined ? updates.accountHolderName.trim() : (updatedUser?.accountHolderName || ''),
+          bankName: updates.bankName !== undefined ? updates.bankName.trim() : (updatedUser?.bankName || ''),
+          accountNumber: updates.accountNumber !== undefined ? updates.accountNumber.trim() : (updatedUser?.accountNumber || ''),
+          ifscCode: updates.ifscCode !== undefined ? updates.ifscCode.trim().toUpperCase() : (updatedUser?.ifscCode || ''),
+          upiId: updates.upiId !== undefined ? updates.upiId.trim() : (updatedUser?.upiId || ''),
+          status: updates.kycStatus || updatedUser?.kycStatus || 'verified',
+          submittedAt: new Date().toISOString(),
+        });
       }
     });
 
