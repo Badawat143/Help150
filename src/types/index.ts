@@ -148,6 +148,7 @@ export interface HelpRequest {
   matchedWithEmail?: string;
   matchedWithBankDetails?: {
     bankName: string;
+    accountHolderName?: string;
     accountNumber: string;
     ifscCode: string;
   };
@@ -203,6 +204,12 @@ export interface CycleLinkDetails {
   matchedWithUpi: string;
   matchedWithMobile: string;
   matchedWithEmail?: string;
+  matchedWithBankDetails?: {
+    bankName: string;
+    accountHolderName?: string;
+    accountNumber: string;
+    ifscCode: string;
+  };
   deadlineTime?: number; // 24-hour countdown deadline for ₹50 link
   proofReference?: string;
   slipUrl?: string;

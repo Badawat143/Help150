@@ -96,6 +96,14 @@ export const AdminPanel: React.FC = () => {
   const { currentUser, refreshUserData, logout, setActiveTab, loginAs } = useAuth();
   const state = db.getState();
   const settings = state.settings;
+  const [dbTick, setDbTick] = useState(0);
+
+  useEffect(() => {
+    const unsub = db.subscribe(() => {
+      setDbTick((t) => t + 1);
+    });
+    return () => unsub();
+  }, []);
 
   // Active navigation state
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('dashboard');

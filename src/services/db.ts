@@ -1150,10 +1150,16 @@ class DatabaseManager {
     // is the primary receiver designated to receive the help.
     const adminReceiver = {
       id: 'H150-ADMIN01',
-      fullName: 'HELP150 Central Treasury (Admin ID)',
-      mobile: '9800000001',
+      fullName: 'Yenkanna Badawat (Admin Treasury)',
+      mobile: '7066463676',
       email: 'admin@help150.org',
-      upi: this.state.settings.adminUpiId || 'help150.treasury@icici',
+      upi: '7066463676@naviaxis',
+      bankDetails: {
+        bankName: 'State Bank of India',
+        accountHolderName: 'Yenkanna Badawat',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
+      },
     };
 
     const now = new Date().toISOString();
@@ -1176,6 +1182,7 @@ class DatabaseManager {
         matchedWithUpi: adminReceiver.upi,
         matchedWithMobile: adminReceiver.mobile,
         matchedWithEmail: adminReceiver.email,
+        matchedWithBankDetails: adminReceiver.bankDetails,
         deadlineTime: isLinkEnabled ? Date.now() + 24 * 3600000 : undefined, // No deadline when links are paused
       },
       secondLink: {
@@ -1184,10 +1191,11 @@ class DatabaseManager {
         title: 'Second Link (₹100)',
         status: 'pending',
         matchedWithUserId: adminReceiver.id,
-        matchedWithUserName: 'Community Treasury (Admin ID)',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
         matchedWithUpi: adminReceiver.upi,
         matchedWithMobile: adminReceiver.mobile,
         matchedWithEmail: adminReceiver.email,
+        matchedWithBankDetails: adminReceiver.bankDetails,
       },
       timerDurationHours: 12,
       createdAt: now,

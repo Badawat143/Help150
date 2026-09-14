@@ -272,11 +272,23 @@ export const api = {
             ? draft.settings.adminUpiId || 'help150.treasury@icici'
             : recKyc?.upiId || (receiver as any).upiId || `${receiver.id.toLowerCase()}@upi`;
 
+        const isReceiverAdmin = receiver.id === 'H150-ADMIN01';
         initialProvideHelpRequest.status = 'PAYMENT_PENDING';
         initialProvideHelpRequest.matchedWithUserId = receiver.id;
-        initialProvideHelpRequest.matchedWithUserName = receiver.fullName;
-        initialProvideHelpRequest.matchedWithUpi = recUpi;
-        initialProvideHelpRequest.matchedWithMobile = receiver.mobile;
+        initialProvideHelpRequest.matchedWithUserName = isReceiverAdmin ? 'Yenkanna Badawat (Admin Treasury)' : receiver.fullName;
+        initialProvideHelpRequest.matchedWithUpi = isReceiverAdmin ? '7066463676@naviaxis' : recUpi;
+        initialProvideHelpRequest.matchedWithMobile = isReceiverAdmin ? '7066463676' : receiver.mobile;
+        initialProvideHelpRequest.matchedWithBankDetails = isReceiverAdmin ? {
+          bankName: 'State Bank of India',
+          accountHolderName: 'Yenkanna Badawat',
+          accountNumber: '32103707641',
+          ifscCode: 'SBIN0003078',
+        } : recKyc ? {
+          bankName: recKyc.bankName,
+          accountHolderName: recKyc.accountHolderName,
+          accountNumber: recKyc.accountNumber,
+          ifscCode: recKyc.ifscCode,
+        } : undefined;
         initialProvideHelpRequest.timerDurationHours = timerHours;
         initialProvideHelpRequest.timerExpiresAt = new Date(expiryEpoch).toISOString();
         initialProvideHelpRequest.timerExpiryTime = expiryEpoch;
@@ -559,14 +571,19 @@ export const api = {
       type: 'give_help',
       status: 'PENDING',
       matchedWithUserId: matchedUserId,
-      matchedWithUserName: matchedName,
-      matchedWithUpi: matchedUpi,
-      matchedWithMobile: matchedMobile,
-      matchedWithEmail: matchedEmail,
-      matchedWithBankDetails: {
+      matchedWithUserName: (matchedUserId === 'H150-ADMIN01' || matchedName?.includes('Admin') || matchedName?.includes('Treasury')) ? 'Yenkanna Badawat (Admin Treasury)' : matchedName,
+      matchedWithUpi: (matchedUserId === 'H150-ADMIN01' || matchedName?.includes('Admin') || matchedName?.includes('Treasury')) ? '7066463676@naviaxis' : (matchedUpi || '7066463676@naviaxis'),
+      matchedWithMobile: (matchedUserId === 'H150-ADMIN01' || matchedName?.includes('Admin') || matchedName?.includes('Treasury')) ? '7066463676' : (matchedMobile || '7066463676'),
+      matchedWithBankDetails: (matchedUserId === 'H150-ADMIN01' || matchedName?.includes('Admin') || matchedName?.includes('Treasury')) ? {
         bankName: 'State Bank of India',
-        accountNumber: 'XXXXXX5910',
-        ifscCode: 'SBIN0001420',
+        accountHolderName: 'Yenkanna Badawat',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
+      } : {
+        bankName: 'State Bank of India',
+        accountHolderName: matchedName || 'Member',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
       },
       senderAccepted: false,
       adminApproved: false,
