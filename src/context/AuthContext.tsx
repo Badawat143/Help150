@@ -79,8 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     draft.users[idx].status !== sUser.status ||
                     draft.users[idx].sponsorId !== sUser.sponsorId
                   ) {
-                    draft.users[idx] = { ...draft.users[idx], ...sUser };
-                    hasAnyUpdate = true;
+                    if (draft.users[idx].status === 'blocked' && sUser.status === 'active') {
+                      // Preserve local block status
+                    } else {
+                      draft.users[idx] = { ...draft.users[idx], ...sUser };
+                      hasAnyUpdate = true;
+                    }
                   }
                 }
               });
@@ -246,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUserData = useCallback(() => {
     const state = db.getState();
     if (currentUserId) {
-      const user = state.users.find((u) => u.id === currentUserId) || null;
+      const user = state.users.find((u) => u.id.toUpperCase() === currentUserId.toUpperCase()) || null;
       setCurrentUser(user);
       if (user) {
         const w = state.wallets[user.id] || null;

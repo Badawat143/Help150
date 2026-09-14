@@ -2433,6 +2433,12 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, status: newStatus, reason }),
       }).catch((e) => console.warn('Server user status sync notice:', e));
+
+      fetch('/api/sync/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: [updatedUser] }),
+      }).catch(() => {});
     }
 
     logAudit(
