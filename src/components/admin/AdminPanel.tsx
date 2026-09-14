@@ -2971,6 +2971,7 @@ export const AdminPanel: React.FC = () => {
               </div>
 
               <button
+                type="button"
                 onClick={handleSaveSettings}
                 className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition cursor-pointer mt-2"
               >
@@ -2995,6 +2996,7 @@ export const AdminPanel: React.FC = () => {
 
             <div className="pt-2 space-y-2">
               <button
+                type="button"
                 onClick={handleExportBackup}
                 className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
               >
@@ -3002,6 +3004,7 @@ export const AdminPanel: React.FC = () => {
                 <span>Download JSON Backup</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveModal('firebase_database')}
                 className="w-full py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
               >
@@ -3009,6 +3012,7 @@ export const AdminPanel: React.FC = () => {
                 <span>View Firebase Cloud DB Connection</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveModal(null)}
                 className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
               >
