@@ -126,9 +126,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'compliance@help150.org',
       password: 'Comp@150',
       passwordHash: btoa('Comp@150'),
-      role: 'admin',
-      isAdminAccount: true,
-      accountType: 'admin_pool',
+      role: 'user',
+      isAdminAccount: false,
+      accountType: 'registered_user',
       sponsorId: null,
       status: 'active',
       kycStatus: 'verified',
@@ -168,9 +168,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'priya.sharma@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'admin',
-      isAdminAccount: true,
-      accountType: 'admin_pool',
+      role: 'user',
+      isAdminAccount: false,
+      accountType: 'registered_user',
       sponsorId: 'H150-784920',
       status: 'active',
       kycStatus: 'verified',
@@ -180,7 +180,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(5),
       deviceInfo: 'iPhone 15 / Safari',
       ipAddress: '157.34.120.45',
-      internalNotes: ['Admin System Account - Peer Pool'],
+      internalNotes: ['Peer Pool User'],
     },
     {
       id: 'H150-449102',
@@ -189,9 +189,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'rahul.verma@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'admin',
-      isAdminAccount: true,
-      accountType: 'admin_pool',
+      role: 'user',
+      isAdminAccount: false,
+      accountType: 'registered_user',
       sponsorId: 'H150-784920',
       status: 'active',
       kycStatus: 'pending',
@@ -201,7 +201,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(6),
       deviceInfo: 'OnePlus 11 / Chrome',
       ipAddress: '157.34.120.46',
-      internalNotes: ['Admin System Account - Peer Pool'],
+      internalNotes: ['Peer Pool User'],
     },
     {
       id: 'H150-610293',
@@ -210,9 +210,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'sunita.patel@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'admin',
-      isAdminAccount: true,
-      accountType: 'admin_pool',
+      role: 'user',
+      isAdminAccount: false,
+      accountType: 'registered_user',
       sponsorId: 'H150-918234',
       status: 'active',
       kycStatus: 'verified',
@@ -222,7 +222,7 @@ function getSeedDatabase(): DatabaseState {
       lastLoginAt: pastHours(4),
       deviceInfo: 'Redmi Note 12 / Chrome',
       ipAddress: '157.34.120.47',
-      internalNotes: ['Admin System Account - Peer Pool'],
+      internalNotes: ['Peer Pool User'],
     },
     {
       id: 'H150-338291',
@@ -231,9 +231,9 @@ function getSeedDatabase(): DatabaseState {
       email: 'manoj.tiwari@example.com',
       password: 'Pass@123',
       passwordHash: btoa('Pass@123'),
-      role: 'admin',
-      isAdminAccount: true,
-      accountType: 'admin_pool',
+      role: 'user',
+      isAdminAccount: false,
+      accountType: 'registered_user',
       sponsorId: 'H150-610293',
       status: 'active',
       kycStatus: 'not_submitted',
@@ -911,23 +911,23 @@ class DatabaseManager {
               const numMatch = u.id.match(/(\d+)/);
               const num = numMatch ? parseInt(numMatch[1], 10) : 0;
               
-              if (u.id === 'H150-ADMIN01') {
-                u.bankName = 'State Bank of India';
-                u.accountHolderName = 'Yenkanna Badawat';
-                u.accountNumber = '32103707641';
-                u.ifscCode = 'SBIN0003078';
-                u.upiId = '7066463676@naviaxis';
-                u.fullName = 'Yenkanna Badawat';
-                u.mobile = '7066463676';
-              }
-              if (seedIds.includes(u.id) || (num > 0 && num < 304071) || u.role === 'admin' || u.id === 'H150-ADMIN01') {
+              if (u.id === 'H150-ADMIN01' || u.id === 'H150-784920') {
                 u.isAdminAccount = true;
                 u.accountType = 'admin_pool';
                 u.role = 'admin';
+                if (u.id === 'H150-ADMIN01') {
+                  u.bankName = 'State Bank of India';
+                  u.accountHolderName = 'Yenkanna Badawat';
+                  u.accountNumber = '32103707641';
+                  u.ifscCode = 'SBIN0003078';
+                  u.upiId = '7066463676@naviaxis';
+                  u.fullName = 'Yenkanna Badawat';
+                  u.mobile = '7066463676';
+                }
               } else {
                 u.isAdminAccount = false;
-                if (!u.accountType || u.accountType === 'admin_pool') u.accountType = 'registered_user';
-                if (!u.role || u.role === ('admin' as any)) u.role = 'user';
+                u.accountType = 'registered_user';
+                u.role = 'user';
               }
               if (!u.password) {
                 if (u.passwordHash) {
