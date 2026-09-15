@@ -329,23 +329,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     }
   };
 
-  // Receiver accepts Provide Help payment proof (₹50 or ₹100)
-  const handleAcceptProvideLink = (type: 'verification' | 'second') => {
-    try {
-      db.acceptCycleProvideLink(currentUser.id, type);
-      syncCycle();
-      refreshUserData();
-      setFeedback({
-        type: 'success',
-        message:
-          type === 'verification'
-            ? 'रिसीवर द्वारा Step 1 (₹50) भुगतान स्वीकार (Accept) कर लिया गया! अब Step 2 (₹100) लिंक सक्रिय हो गया है।'
-            : 'रिसीवर द्वारा Step 2 (₹100) भुगतान स्वीकार (Accept) कर लिया गया! 12 घंटे का टाइमर शुरू हो गया है।',
-      });
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message || 'Error accepting payment' });
-    }
-  };
+
 
   // Receiver accepts incoming provide help from other member
   const handleAcceptIncomingProvide = (providerUserId: string, type: 'verification' | 'second') => {
@@ -1011,20 +995,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         स्लिप रिसीवर <strong>{activeProvideBeneficiary.name}</strong> को भेजी गई है। रिसीवर द्वारा अपने खाते में राशि प्राप्त होने की पुष्टि कर 'एक्सेप्ट' करने के बाद आपका अगला स्टेप अनलॉक होगा।
                       </p>
 
-                      {/* Preview / Simulation testing helper */}
-                      <div className="pt-1 border-t border-slate-800 flex items-center justify-between">
-                        <span className="text-[9px] text-slate-400">
-                          (टेस्ट मोड: रिसीवर की तरफ से एक्सेप्ट करें)
-                        </span>
-                        <button
-                          onClick={() => handleAcceptProvideLink(activeProvideBeneficiary.type)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-[10px] shadow cursor-pointer transition flex items-center gap-1"
-                          title="टेस्टिंग हेतु रिसीवर की तरफ से स्वीकार करें"
-                        >
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>रिसीवर रूप में एक्सेप्ट (₹{activeProvideBeneficiary.amount})</span>
-                        </button>
-                      </div>
+
                     </div>
 
                     {/* Change / Re-upload Option if sent wrong slip */}
