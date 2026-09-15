@@ -139,14 +139,15 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       </div>
 
       {/* Countdown Digital Display */}
-      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-center my-3">
-        <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">
+      <div className="bg-gradient-to-r from-purple-950/70 via-indigo-950/80 to-slate-950 border-2 border-indigo-500/40 rounded-2xl p-4 text-center my-3 shadow-inner relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent pointer-events-none" />
+        <div className="text-3xl sm:text-5xl font-black font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.4)] animate-pulse">
           {status === 'active' ? formatTime(timeLeftMs) : status === 'completed' ? 'COMPLETED' : '12:00:00'}
         </div>
-        <div className="flex justify-center gap-12 sm:gap-16 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1 font-mono">
-          <span>Hours</span>
-          <span>Minutes</span>
-          <span>Seconds</span>
+        <div className="flex justify-center gap-10 sm:gap-14 text-[11px] font-bold text-indigo-300 uppercase tracking-widest mt-2 font-mono">
+          <span className="text-amber-400">Hours</span>
+          <span className="text-pink-400">Minutes</span>
+          <span className="text-cyan-400">Seconds</span>
         </div>
       </div>
 

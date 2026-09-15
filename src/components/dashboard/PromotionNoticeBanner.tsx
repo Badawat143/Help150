@@ -120,50 +120,86 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
 
   // When links are OFF (Promotion Mode Active)
   return (
-    <div className="mb-5 rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-amber-950/80 via-slate-900 to-indigo-950/80 border-2 border-amber-500/80 shadow-xl shadow-amber-950/40 relative overflow-hidden">
-      {/* Decorative background glow */}
-      <div className="absolute top-0 right-0 h-40 w-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 h-40 w-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="mb-6 rounded-3xl p-5 sm:p-7 bg-gradient-to-br from-[#0F1026] via-[#15193B] to-[#0A0D22] border-2 border-amber-400/80 shadow-2xl shadow-indigo-950/80 relative overflow-hidden">
+      {/* Decorative ambient color spots */}
+      <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 h-48 w-48 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-        {/* Left Column: Promotion Title, Message & Explainer */}
-        <div className="space-y-2.5 max-w-2xl">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
-              <Megaphone className="h-3.5 w-3.5 fill-current" />
-              <span>4-दिन प्री-लॉन्च प्रमोशन (Promotion Active)</span>
+      {/* Top Banner Row: Badges and Exact Provide Help / Receive Help Pills from user's image */}
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-4 mb-5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
+            <Megaphone className="h-3.5 w-3.5 fill-current" />
+            <span>4-दिन प्री-लॉन्च प्रमोशन (LIVE COUNTDOWN)</span>
+          </span>
+
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/20 border border-red-500/50 text-red-300 text-xs font-bold animate-pulse">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span>लिंक्स अभी बंद हैं • लाइव टाइमर जारी</span>
+          </span>
+        </div>
+
+        {/* Exact Provide Help & Receive Help Capsules matching User's uploaded screenshot */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('box-provide-help');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-2 border-emerald-400 shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Provide Help Card"
+          >
+            <span className="text-base sm:text-lg">🔥</span>
+            <span className="text-xs sm:text-sm font-black tracking-wider text-[#00FF44] font-heading uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+              PROVIDE HELP
             </span>
+          </button>
 
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 text-[11px] font-bold">
-              <span>🔴 लिंक्स अभी बंद हैं • टीम निर्माण का सुनहरा अवसर</span>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('box-receive-help');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 border-2 border-blue-600 shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Receive Help Card"
+          >
+            <span className="text-xs sm:text-sm font-black tracking-wider text-[#001E80] font-heading uppercase drop-shadow-[0_1px_2px_rgba(255,255,255,0.4)]">
+              RECEIVE HELP
             </span>
-          </div>
+          </button>
+        </div>
+      </div>
 
-          <h3 className="text-lg sm:text-xl font-black text-white font-heading tracking-tight leading-snug">
+      <div className="relative z-10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+        {/* Left Column: Promotion Title & Message */}
+        <div className="space-y-3 max-w-xl">
+          <h3 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-white font-heading tracking-tight leading-snug">
             {settings.promotionNoticeTitle || '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय है!'}
           </h3>
 
-          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
             {settings.promotionNoticeText ||
               'वर्तमान में 4 दिन का विशेष प्रमोशन चल रहा है। अभी लिंक्स बंद हैं ताकि सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। 4 दिन पूरे होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू कर दिए जाएंगे!'}
           </p>
 
           {/* Referral Link Quick Copy Bar */}
-          <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg">
-            <div className="flex-1 px-3 py-2 rounded-xl bg-slate-950/90 border border-amber-500/40 text-[11px] font-mono text-amber-300 truncate">
+          <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex-1 px-3 py-2 rounded-xl bg-slate-950/90 border border-amber-500/40 text-xs font-mono text-amber-300 truncate">
               {referralUrl}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow cursor-pointer shrink-0"
+                className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow cursor-pointer shrink-0"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? 'कॉपी हुआ!' : 'कॉपी लिंक'}</span>
               </button>
               <button
                 onClick={handleShareWhatsApp}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow cursor-pointer shrink-0"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow cursor-pointer shrink-0"
                 title="Share on WhatsApp"
               >
                 <Share2 className="h-3.5 w-3.5" />
@@ -173,42 +209,59 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
           </div>
         </div>
 
-        {/* Right Column: 4-Day Countdown Display Box */}
-        <div className="w-full md:w-auto shrink-0 bg-slate-950/80 border border-amber-500/50 rounded-2xl p-4 text-center shadow-lg">
-          <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2 flex items-center justify-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 animate-pulse text-amber-400" />
+        {/* Right Column: BIG & COLORFUL 4-DAY COUNTDOWN TIMER DISPLAY */}
+        <div className="w-full lg:w-auto shrink-0 bg-gradient-to-b from-slate-950/90 via-[#0B0D1F] to-slate-950 border-2 border-indigo-500/50 rounded-3xl p-4 sm:p-5 text-center shadow-2xl relative overflow-hidden">
+          <div className="text-xs sm:text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
+            <Clock className="h-4 w-4 animate-spin text-amber-400" />
             <span>ऑटो लिंक शुरू होने में समय शेष</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-2 min-w-[54px]">
-              <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
+          {/* 4 Extra-Large, Vibrant, Colorful Timer Boxes */}
+          <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
+            {/* 1. DAYS (Vibrant Ruby / Red Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-rose-600 via-red-600 to-rose-950 border-2 border-rose-400/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-rose-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 {countdown.days}
               </div>
-              <div className="text-[9px] font-semibold text-slate-400 uppercase mt-0.5">दिन (Days)</div>
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-rose-950/80 border border-rose-400/50 text-[9px] sm:text-[10px] font-black text-rose-200 uppercase tracking-wider">
+                दिन (Days)
+              </div>
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-2 min-w-[54px]">
-              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+
+            {/* 2. HOURS (Vibrant Amber / Sunset Orange Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-amber-500 via-orange-600 to-amber-950 border-2 border-amber-300/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-orange-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 {countdown.hours.toString().padStart(2, '0')}
               </div>
-              <div className="text-[9px] font-semibold text-slate-400 uppercase mt-0.5">घंटे (Hrs)</div>
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-300/50 text-[9px] sm:text-[10px] font-black text-amber-200 uppercase tracking-wider">
+                घंटे (Hrs)
+              </div>
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-2 min-w-[54px]">
-              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+
+            {/* 3. MINUTES (Vibrant Neon Fuchsia / Purple Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-fuchsia-600 via-purple-600 to-purple-950 border-2 border-fuchsia-400/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-purple-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 {countdown.minutes.toString().padStart(2, '0')}
               </div>
-              <div className="text-[9px] font-semibold text-slate-400 uppercase mt-0.5">मिनट (Min)</div>
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-purple-950/80 border border-fuchsia-400/50 text-[9px] sm:text-[10px] font-black text-fuchsia-200 uppercase tracking-wider">
+                मिनट (Min)
+              </div>
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-2 min-w-[54px]">
-              <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
+
+            {/* 4. SECONDS (Vibrant Radiant Cyan / Emerald Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-cyan-500 via-teal-600 to-teal-950 border-2 border-cyan-300/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-cyan-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] animate-pulse">
                 {countdown.seconds.toString().padStart(2, '0')}
               </div>
-              <div className="text-[9px] font-semibold text-slate-400 uppercase mt-0.5">सेकंड (Sec)</div>
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-teal-950/80 border border-cyan-300/50 text-[9px] sm:text-[10px] font-black text-cyan-200 uppercase tracking-wider">
+                सेकंड (Sec)
+              </div>
             </div>
           </div>
 
-          <div className="mt-3 pt-2.5 border-t border-slate-800 text-[10px] text-slate-400 font-medium">
-            प्रमोशन के बाद सभी सदस्यों को ऑटोमैटिक लिंक्स जाएंगे
+          <div className="mt-3.5 pt-2.5 border-t border-slate-800 text-[11px] text-amber-300/90 font-bold flex items-center justify-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>काउंटडाउन पूरा होते ही सभी सदस्यों को ऑटोमैटिक लिंक्स डिस्पैच होंगे</span>
           </div>
         </div>
       </div>

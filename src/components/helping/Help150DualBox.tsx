@@ -738,32 +738,32 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         </div>
       )}
 
-      {/* 4-Day Promotion Mode Indicator & Main Boxes Grid */}
-      {!settings.linkSystemEnabled ? (
-        <div className="rounded-3xl p-8 bg-gradient-to-br from-amber-950/90 via-slate-900 to-indigo-950/90 border-2 border-amber-500/60 shadow-2xl text-center space-y-6 my-4">
-          <div className="inline-flex h-16 w-16 rounded-2xl bg-amber-500/20 items-center justify-center text-amber-400 text-3xl shadow-inner border border-amber-500/40 mx-auto">
-            ⏳
-          </div>
-          <div className="space-y-3 max-w-xl mx-auto">
-            <h3 className="text-xl font-bold text-white font-heading">
-              4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय है
-            </h3>
-            <p className="text-sm text-amber-200/90 leading-relaxed">
-              वर्तमान में हेल्पिंग लिंक्स (Provide Help / Receive Help) अस्थायी रूप से विराम पर हैं। टाईमर के समाप्त होते ही ऑटोमैटिक लिंक्स शुरू हो जाएंगे! तब तक अधिक से अधिक सदस्य जोड़ें और अपनी टीम मजबूत करें।
-            </p>
+      {/* 4-Day Promotion Mode Sleek Notice (Shown when promotion mode is active) */}
+      {!settings.linkSystemEnabled && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-2 border-amber-500/60 shadow-lg text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 items-center justify-center shrink-0 text-lg border border-amber-500/40">
+              ⏳
+            </span>
+            <div>
+              <strong className="text-white text-sm">4-दिवसीय प्री-लॉन्च प्रमोशन अवधि:</strong>{' '}
+              हेल्पिंग लिंक्स अभी विराम पर हैं। ऊपर चल रहा टाइमर पूर्ण होते ही दोनों बॉक्स में ऑटोमैटिक लिंक्स शुरू हो जाएंगे!
+            </div>
           </div>
           {onNavigateTab && (
             <button
               onClick={() => onNavigateTab('referral')}
-              className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition cursor-pointer inline-flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shrink-0 transition shadow cursor-pointer flex items-center gap-1.5"
             >
-              <span>अपनी रेफरल टीम बनाएं & शेयर करें</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>रेफरल टीम बनाएं</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
+      )}
+
+      {/* THE TWO MAIN BOXES GRID (ALWAYS DISPLAYED ON DASHBOARD) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
         {/* 🔴 PROVIDE HELP BOX (COMPACT CARD - HALKA HARA RANG BORDER)               */}
         {/* ========================================================================= */}
@@ -775,12 +775,12 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <div className="absolute top-0 right-0 h-28 w-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔥 PROVIDE HELP + Step + 🚦 Active Link Signal + Live Timer + Amount Badge */}
+            {/* Header: 🔥 PROVIDE HELP (User exact style: Red capsule with bright green text) */}
             <div className="flex flex-wrap items-center justify-between border-b border-red-500/40 pb-2 gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600 border border-emerald-400/60 shadow-sm">
-                  <span className="text-xs">🔥</span>
-                  <h3 className="text-xs font-black text-emerald-300 font-heading uppercase tracking-wider">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-red-600 border-2 border-emerald-400 shadow-md">
+                  <span className="text-sm">🔥</span>
+                  <h3 className="text-xs sm:text-sm font-black text-[#00FF44] font-heading uppercase tracking-wider">
                     PROVIDE HELP
                   </h3>
                 </div>
@@ -1191,13 +1191,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <div className="absolute top-0 right-0 h-28 w-28 bg-sky-400/10 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔁 RECEIVED HELP + Status + Live Timer + Amount Badge */}
+            {/* Header: RECEIVE HELP (User exact style: Yellow/amber capsule with deep blue text) */}
             <div className="flex items-center justify-between border-b border-sky-400/40 pb-2">
               <div className="flex items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400 border border-amber-300 shadow-sm">
-                  <RotateCw className="w-3.5 h-3.5 text-blue-950 font-black stroke-[2.5]" />
-                  <h3 className="text-xs font-black text-blue-950 font-heading uppercase tracking-wider">
-                    RECEIVED HELP
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 border-2 border-blue-600 shadow-md">
+                  <RotateCw className="w-3.5 h-3.5 text-[#001E80] font-black stroke-[2.5]" />
+                  <h3 className="text-xs sm:text-sm font-black text-[#001E80] font-heading uppercase tracking-wider">
+                    RECEIVE HELP
                   </h3>
                 </div>
                 <span className="text-[11px] font-bold text-sky-200">
@@ -1529,7 +1529,6 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           </div>
         </div>
       </div>
-      )}
 
       {/* ========================================================================= */}
       {/* 💰 USER FINANCIAL DASHBOARD: TOTAL INCOME & RECEIVED TRACKER              */}
