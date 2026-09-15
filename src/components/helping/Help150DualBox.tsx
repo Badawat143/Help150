@@ -768,26 +768,26 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       {/* THE TWO MAIN BOXES GRID (ALWAYS DISPLAYED ON DASHBOARD) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
-        {/* 🔴 PROVIDE HELP BOX (COMPACT CARD - HALKA HARA RANG BORDER)               */}
+        {/* 🟣 PROVIDE HELP BOX (MATCHES MINUTE TIMER BOX: FUCHSIA / PURPLE)           */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-2xl bg-gradient-to-b from-red-950 via-red-900 to-red-950 border-2 border-emerald-400 shadow-md shadow-emerald-500/15 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-emerald-300 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-purple-950 via-[#27073b] to-purple-950 border-2 border-fuchsia-400/90 shadow-xl shadow-purple-950/40 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-fuchsia-300 transition-all text-white"
         >
           {/* Decorative glowing ambient */}
-          <div className="absolute top-0 right-0 h-28 w-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 h-28 w-28 bg-fuchsia-500/15 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔥 PROVIDE HELP (User exact style: Red capsule with bright green text) */}
-            <div className="flex flex-wrap items-center justify-between border-b border-red-500/40 pb-2 gap-2">
+            {/* Header: 🔥 PROVIDE HELP (Matches Minute Timer Box: Vibrant Fuchsia/Purple) */}
+            <div className="flex flex-wrap items-center justify-between border-b border-fuchsia-500/40 pb-2 gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-red-600 border-2 border-emerald-400 shadow-md">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-900 border-2 border-fuchsia-300 shadow-md shadow-purple-900/50">
                   <span className="text-sm">🔥</span>
-                  <h3 className="text-xs sm:text-sm font-black text-[#00FF44] font-heading uppercase tracking-wider">
+                  <h3 className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     PROVIDE HELP
                   </h3>
                 </div>
-                <span className="text-[11px] font-bold text-red-200">
+                <span className="text-[11px] font-bold text-fuchsia-200">
                   {isStep1Active ? 'Step 1' : isStep2Active ? 'Step 2' : ''}
                 </span>
 
@@ -799,7 +799,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               <div className="flex items-center gap-2">
                 {/* Live Countdown Timer Badge */}
                 {(isStep1Active || isStep2Active) && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-900/90 border border-red-400/50 text-amber-300 font-mono font-bold text-[10px] shadow-sm">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-900/90 border border-fuchsia-400/50 text-amber-300 font-mono font-bold text-[10px] shadow-sm">
                     <Clock className="h-3 w-3 animate-pulse" />
                     <span>{isStep1Active ? timerStep1String : '11:59:59'}</span>
                   </span>
@@ -822,14 +822,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (TIGHT TO SLIP UPLOAD BUTTON) */}
             {(isStep1Active || isStep2Active) && (
-              <div className="bg-red-950/80 border border-emerald-400/40 rounded-xl p-2.5 space-y-2 shadow-inner">
+              <div className="bg-purple-950/80 border border-fuchsia-400/40 rounded-xl p-2.5 space-y-2 shadow-inner">
                 {/* Row 1: Beneficiary Name & ID + Amount */}
-                <div className="flex items-center justify-between text-xs pb-1 border-b border-red-900/60">
+                <div className="flex items-center justify-between text-xs pb-1 border-b border-purple-900/60">
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="font-bold text-white text-xs sm:text-sm truncate">
                       {activeProvideBeneficiary.name}
                     </span>
-                    <span className="font-mono text-[9px] text-red-200 bg-red-900/80 px-1 py-0.5 rounded font-bold shrink-0">
+                    <span className="font-mono text-[9px] text-fuchsia-200 bg-purple-900/80 px-1 py-0.5 rounded font-bold shrink-0">
                       {activeProvideBeneficiary.id}
                     </span>
                   </div>
@@ -844,14 +844,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 {/* Row 2: Mobile & UPI with 1-click Copy and QR */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
                   {/* Mobile with Copy */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-red-900/40 border border-red-900/60">
-                    <div className="flex items-center gap-1 text-red-200 truncate">
-                      <Phone className="h-3 w-3 text-red-300 shrink-0" />
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-900/40 border border-purple-800/60">
+                    <div className="flex items-center gap-1 text-purple-200 truncate">
+                      <Phone className="h-3 w-3 text-purple-300 shrink-0" />
                       <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.mobile}</span>
                     </div>
                     <button
                       onClick={() => handleCopyText(activeProvideBeneficiary.mobile, 'mobile', 'Mobile')}
-                      className="p-1 rounded bg-red-800 hover:bg-red-700 text-white transition cursor-pointer text-[10px]"
+                      className="p-1 rounded bg-purple-800 hover:bg-purple-700 text-white transition cursor-pointer text-[10px]"
                       title="Copy Mobile"
                     >
                       {copiedKey === 'mobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
@@ -859,15 +859,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
 
                   {/* UPI ID with Copy & QR */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-red-900/40 border border-red-900/60">
-                    <div className="flex items-center gap-1 text-red-200 truncate">
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-900/40 border border-purple-800/60">
+                    <div className="flex items-center gap-1 text-purple-200 truncate">
                       <CreditCard className="h-3 w-3 text-amber-300 shrink-0" />
                       <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.upi}</span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleCopyText(activeProvideBeneficiary.upi, 'upi', 'UPI ID')}
-                        className="px-1.5 py-0.5 rounded bg-white text-red-700 font-black text-[9px] cursor-pointer"
+                        className="px-1.5 py-0.5 rounded bg-white text-purple-900 font-black text-[9px] cursor-pointer"
                         title="Copy UPI"
                       >
                         {copiedKey === 'upi' ? '✓' : 'Copy'}
@@ -879,7 +879,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                           amount: activeProvideBeneficiary.amount,
                           title: activeProvideBeneficiary.title,
                         })}
-                        className="p-1 rounded bg-red-950 text-white border border-red-500/50 cursor-pointer"
+                        className="p-1 rounded bg-purple-950 text-white border border-fuchsia-500/50 cursor-pointer"
                         title="Scan QR Code"
                       >
                         <QrCode className="h-3 w-3" />
@@ -1046,7 +1046,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         className={`flex-1 py-1.5 px-2 rounded-lg font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer ${
                           isCurrentLinkSlipUploaded
                             ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400'
-                            : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white'
+                            : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-800 hover:from-fuchsia-500 hover:to-purple-700 text-white'
                         }`}
                         title="स्लिप अपलोड मोडल खोलें"
                       >
@@ -1065,7 +1065,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                       </button>
                       <button
                         onClick={() => inlineFileInputRef.current?.click()}
-                        className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        className="py-1.5 px-2 rounded-lg bg-purple-900/80 hover:bg-purple-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                         title="सीधे डिवाइस से स्लिप चुनें"
                       >
                         <Paperclip className="h-3.5 w-3.5" />
@@ -1080,7 +1080,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                             title: activeProvideBeneficiary.title,
                           })
                         }
-                        className="py-1.5 px-2 rounded-lg bg-red-900/80 hover:bg-red-800 text-amber-300 border border-red-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        className="py-1.5 px-2 rounded-lg bg-purple-900/80 hover:bg-purple-800 text-amber-300 border border-fuchsia-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <QrCode className="h-3.5 w-3.5" />
                         <span>Pay QR</span>
@@ -1094,7 +1094,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         value={inlineUtr}
                         onChange={(e) => setInlineUtr(e.target.value)}
                         placeholder="Enter 12-digit UPI UTR"
-                        className="flex-1 px-2.5 py-1 rounded-lg bg-red-950 border border-red-400/50 text-white text-[11px] font-mono placeholder:text-red-300/40 focus:outline-none focus:border-emerald-300"
+                        className="flex-1 px-2.5 py-1 rounded-lg bg-purple-950 border border-fuchsia-400/50 text-white text-[11px] font-mono placeholder:text-purple-300/40 focus:outline-none focus:border-fuchsia-300"
                       />
                       <button
                         onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
@@ -1112,7 +1112,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* B. SCENARIO 2: 12-HOUR MATURATION TIMER ACTIVE (COMPACT) */}
             {isTimerActive && (
-              <div className="bg-red-950/80 border border-amber-400/60 rounded-xl p-3 text-center space-y-1.5 shadow-inner">
+              <div className="bg-purple-950/80 border border-amber-400/60 rounded-xl p-3 text-center space-y-1.5 shadow-inner">
                 <div className="flex items-center justify-center gap-2">
                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
                     <Clock className="h-3 w-3 animate-spin" />
@@ -1123,13 +1123,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <div className="font-mono font-black text-2xl text-white tracking-widest drop-shadow">
                   {timer12hString}
                 </div>
-                <div className="w-full bg-red-950 rounded-full h-1.5 border border-red-500/50 overflow-hidden p-0.5">
+                <div className="w-full bg-purple-950 rounded-full h-1.5 border border-purple-500/50 overflow-hidden p-0.5">
                   <div
                     className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
                     style={{ width: `${timer12h.percent}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-red-100 font-medium">
+                <p className="text-[10px] text-purple-100 font-medium">
                   Provide Help (₹50 + ₹100) पूरा हुआ और दोनों स्लिप सत्यापित हैं ✅। टाइमर पूरा होते ही दाएँ बॉक्स में ₹200 रिसीव लिंक सक्रिय होगा।
                 </p>
                 {currentUser.role === 'admin' && (
@@ -1146,7 +1146,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* C. SCENARIO 3: RECEIVE HELP IS ACTIVE (PROVIDE HELP IS LOCKED) */}
             {isReceiveActive && (
-              <div className="bg-red-950/80 border border-amber-400/60 rounded-xl p-3 text-center space-y-2 shadow-inner">
+              <div className="bg-purple-950/80 border border-amber-400/60 rounded-xl p-3 text-center space-y-2 shadow-inner">
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="p-0.5 rounded bg-amber-400/20 text-amber-300">
                     <Lock className="h-3.5 w-3.5" />
@@ -1156,7 +1156,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </span>
                 </div>
 
-                <p className="text-[10px] text-red-100 font-medium">
+                <p className="text-[10px] text-purple-100 font-medium">
                   दाएँ बॉक्स में <strong>₹200 Receive Help</strong> कन्फर्म होने के बाद ही अगला Provide Help (साइकिल #{cycle.cycleNumber + 1}) खुलेगा।
                 </p>
                 <button
@@ -1164,7 +1164,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     const el = document.getElementById('box-receive-help');
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-sky-500 to-teal-500 text-slate-950 font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
+                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
                 >
                   <span>👉 दाएँ बॉक्स में ₹200 कन्फर्म करें ➔</span>
                 </button>
@@ -1173,8 +1173,8 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED - NO LINK SENT) */}
             {isPaused && (
-              <div className="bg-red-950/90 border border-amber-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-800/80 border border-red-400/60 text-red-200 text-xs font-bold uppercase tracking-wider">
+              <div className="bg-purple-950/90 border border-fuchsia-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-900/80 border border-fuchsia-400/60 text-fuchsia-200 text-xs font-bold uppercase tracking-wider">
                   <span>⏳ 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि</span>
                 </div>
 
@@ -1182,7 +1182,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   हेल्पिंग लिंक्स अभी विराम (Paused) पर हैं
                 </h4>
 
-                <p className="text-[11px] sm:text-xs text-red-100/90 leading-relaxed max-w-sm mx-auto">
+                <p className="text-[11px] sm:text-xs text-purple-100/90 leading-relaxed max-w-sm mx-auto">
                   नई आईडी पर कोई भी लिंक नहीं भेजा गया है। पुराने सभी लिंक्स हटा दिए गए हैं। ऊपर चल रहा लाइव टाइमर पूर्ण होते ही ऑटोमैटिक सिस्टम से आपको पहला ₹50 का प्रोवाइड हेल्प लिंक प्राप्त होगा।
                 </p>
 
@@ -1202,9 +1202,9 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             )}
           </div>
 
-          {/* Compact Box Footer Stats (shown when not in active input to keep height fitted to slip upload button) */}
+          {/* Compact Box Footer Stats */}
           {(isTimerActive || isReceiveActive) && (
-            <div className="mt-2 pt-1.5 border-t border-red-500/30 flex items-center justify-between text-[10px] text-red-200 relative z-10 font-medium">
+            <div className="mt-2 pt-1.5 border-t border-purple-500/30 flex items-center justify-between text-[10px] text-purple-200 relative z-10 font-medium">
               <span>Cycle Provide Completed:</span>
               <strong className="text-emerald-300 font-mono font-bold">
                 ₹{(step1.status === 'completed' ? 50 : 0) + (step2.status === 'completed' ? 100 : 0)} / ₹150
@@ -1214,26 +1214,26 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         </div>
 
         {/* ========================================================================= */}
-        {/* 🔵 RECEIVE HELP BOX (COMPACT CARD - MATCHING HEIGHT)                      */}
+        {/* 🔵 RECEIVE HELP BOX (MATCHES SECONDS TIMER BOX: RADIANT CYAN / TEAL)     */}
         {/* ========================================================================= */}
         <div
           id="box-receive-help"
-          className="rounded-2xl bg-gradient-to-b from-sky-950 via-sky-900 to-cyan-950 border-2 border-sky-400/80 shadow-md p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden group hover:border-sky-300 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-cyan-950 via-[#032428] to-teal-950 border-2 border-cyan-300/90 shadow-xl shadow-cyan-950/40 p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden group hover:border-cyan-200 transition-all text-white"
         >
           {/* Decorative glowing ambient */}
-          <div className="absolute top-0 right-0 h-28 w-28 bg-sky-400/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 h-28 w-28 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: RECEIVE HELP (User exact style: Yellow/amber capsule with deep blue text) */}
-            <div className="flex items-center justify-between border-b border-sky-400/40 pb-2">
+            {/* Header: RECEIVE HELP (Matches Seconds Timer Box: Radiant Cyan / Teal) */}
+            <div className="flex items-center justify-between border-b border-cyan-400/40 pb-2">
               <div className="flex items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 border-2 border-blue-600 shadow-md">
-                  <RotateCw className="w-3.5 h-3.5 text-[#001E80] font-black stroke-[2.5]" />
-                  <h3 className="text-xs sm:text-sm font-black text-[#001E80] font-heading uppercase tracking-wider">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-900 border-2 border-cyan-200 shadow-md shadow-cyan-900/50">
+                  <RotateCw className="w-3.5 h-3.5 text-white font-black stroke-[2.5]" />
+                  <h3 className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     RECEIVE HELP
                   </h3>
                 </div>
-                <span className="text-[11px] font-bold text-sky-200">
+                <span className="text-[11px] font-bold text-cyan-200">
                   {isReceiveActive ? 'Slip Submitted' : ''}
                 </span>
               </div>
@@ -1504,7 +1504,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* B. SCENARIO 2: AWAITING PROVIDE HELP (LOCKED COMPACT) */}
             {(isStep1Active || isStep2Active) && (
-              <div className="bg-sky-950/80 border border-amber-400/50 rounded-xl p-3 text-center space-y-2 shadow-inner">
+              <div className="bg-teal-950/80 border border-cyan-400/50 rounded-xl p-3 text-center space-y-2 shadow-inner">
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="p-0.5 rounded bg-amber-400/20 text-amber-300">
                     <Lock className="h-3.5 w-3.5" />
@@ -1513,11 +1513,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     Receive Help अभी लॉक है
                   </span>
                 </div>
-                <p className="text-[10px] text-sky-100 font-medium">
-                  बाएँ लाल बॉक्स में Provide Help (₹50 + ₹100) पूरा होने और 12-घंटे टाइमर के बाद यहाँ <strong>₹200 लिंक</strong> आएगा।
+                <p className="text-[10px] text-cyan-100 font-medium">
+                  बाएँ पर्पल बॉक्स में Provide Help (₹50 + ₹100) पूरा होने और 12-घंटे टाइमर के बाद यहाँ <strong>₹200 लिंक</strong> आएगा।
                 </p>
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-sky-900/60 border border-sky-400/30 text-xs">
-                  <span className="text-sky-200 text-[10px]">Expected Assistance:</span>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-900/60 border border-cyan-400/30 text-xs">
+                  <span className="text-cyan-200 text-[10px]">Expected Assistance:</span>
                   <span className="font-mono font-bold text-amber-300 text-xs">₹200 (+₹50 Gain)</span>
                 </div>
                 <button
@@ -1525,16 +1525,16 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     const el = document.getElementById('box-provide-help');
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
+                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
                 >
-                  <span>🔴 Complete Provide Help First ➔</span>
+                  <span>🟣 Complete Provide Help First ➔</span>
                 </button>
               </div>
             )}
 
             {/* C. SCENARIO 3: DURING 12-HOUR TIMER (COMPACT) */}
             {isTimerActive && (
-              <div className="bg-sky-950/80 border border-sky-400/60 rounded-xl p-3 text-center space-y-1.5 shadow-inner">
+              <div className="bg-teal-950/80 border border-cyan-400/60 rounded-xl p-3 text-center space-y-1.5 shadow-inner">
                 <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
                   <Clock className="h-3 w-3 animate-spin" />
                   <span>12-Hour Timer Running</span>
@@ -1542,11 +1542,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <div className="font-mono font-black text-2xl text-white tracking-widest">
                   {timer12hString}
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-sky-900/60 border border-sky-400/30 text-xs">
-                  <span className="text-sky-200 text-[10px]">Expected Payout:</span>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-900/60 border border-cyan-400/30 text-xs">
+                  <span className="text-cyan-200 text-[10px]">Expected Payout:</span>
                   <span className="font-mono font-bold text-amber-300 text-xs">₹200 (+₹50 Net Gain)</span>
                 </div>
-                <p className="text-[10px] text-sky-100 font-medium">
+                <p className="text-[10px] text-cyan-100 font-medium">
                   टाइमर 00:00:00 होते ही प्रेषक सदस्य का विवरण और पेमेंट स्लिप यहाँ सक्रिय हो जाएगी।
                 </p>
               </div>
@@ -1554,8 +1554,8 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED) */}
             {isPaused && (
-              <div className="bg-sky-950/90 border border-sky-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-800/80 border border-sky-400/60 text-sky-200 text-xs font-bold uppercase tracking-wider">
+              <div className="bg-teal-950/90 border border-cyan-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-800/80 border border-cyan-400/60 text-cyan-200 text-xs font-bold uppercase tracking-wider">
                   <span>🎁 ₹200 सहायता प्राप्ति चक्र</span>
                 </div>
 
@@ -1563,7 +1563,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   रिसीव हेल्प लिंक्स विराम (Paused) पर हैं
                 </h4>
 
-                <p className="text-[11px] sm:text-xs text-sky-100/90 leading-relaxed max-w-sm mx-auto">
+                <p className="text-[11px] sm:text-xs text-cyan-100/90 leading-relaxed max-w-sm mx-auto">
                   प्रमोशन टाइमर समाप्त होने तथा प्रोवाइड हेल्प (₹50 + ₹100) पूरा करने के बाद आपको सीधे आपके बैंक खाते व UPI पर ₹200 का रिसीव हेल्प लिंक प्राप्त होगा।
                 </p>
 
@@ -1576,7 +1576,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           </div>
 
           {/* Compact Box Footer Stats */}
-          <div className="mt-2 pt-1.5 border-t border-sky-400/30 flex items-center justify-between text-[10px] text-sky-200 relative z-10 font-medium">
+          <div className="mt-2 pt-1.5 border-t border-cyan-400/30 flex items-center justify-between text-[10px] text-cyan-200 relative z-10 font-medium">
             <span>Cycle Receive Benefit:</span>
             <strong className="text-emerald-300 font-mono font-bold">
               ₹200 (Net Profit: +₹50)

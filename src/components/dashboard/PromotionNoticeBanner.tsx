@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Megaphone,
   ArrowRight,
+  RotateCw,
 } from 'lucide-react';
 import { db } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
@@ -139,7 +140,7 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
           </span>
         </div>
 
-        {/* Exact Provide Help & Receive Help Capsules matching User's uploaded screenshot */}
+        {/* Exact Provide Help & Receive Help Capsules matching Minute & Second Timer Boxes */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           <button
             type="button"
@@ -147,11 +148,11 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-provide-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-2 border-emerald-400 shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            title="Provide Help Card"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-900 hover:from-fuchsia-500 hover:to-purple-800 border-2 border-fuchsia-300 shadow-lg shadow-purple-900/50 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Provide Help Card (मिनट टाइमर बॉक्स का रंग)"
           >
             <span className="text-base sm:text-lg">🔥</span>
-            <span className="text-xs sm:text-sm font-black tracking-wider text-[#00FF44] font-heading uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+            <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
               PROVIDE HELP
             </span>
           </button>
@@ -162,10 +163,11 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-receive-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 border-2 border-blue-600 shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            title="Receive Help Card"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-900 hover:from-cyan-400 hover:to-teal-800 border-2 border-cyan-300 shadow-lg shadow-cyan-900/50 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Receive Help Card (सेकंड टाइमर बॉक्स का रंग)"
           >
-            <span className="text-xs sm:text-sm font-black tracking-wider text-[#001E80] font-heading uppercase drop-shadow-[0_1px_2px_rgba(255,255,255,0.4)]">
+            <RotateCw className="w-3.5 h-3.5 text-white font-black stroke-[2.5]" />
+            <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
               RECEIVE HELP
             </span>
           </button>
