@@ -2,6 +2,7 @@
  * HELP150 — Premium Modern Community Home Page
  * World-class Fintech & Mutual Community Template
  * Bilingual (Hindi/English), High-Converting, Transparent, and Mobile-First
+ * Includes Official Business Plan PDF Download & Interactive Slides Viewer
  */
 
 import React, { useState, useEffect } from 'react';
@@ -43,12 +44,18 @@ import {
   Activity,
   ArrowUpRight,
   CheckCircle,
+  Download,
+  FileText,
+  Eye,
+  FileDown,
 } from 'lucide-react';
 import { ReferralBox } from '../common/ReferralBox';
+import { PlanPresentationModal } from '../common/PlanPresentationModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { db } from '../../services/db';
 import { referralTracker, SponsorLookupResult } from '../../services/referralTracker';
+import { generateHelp150PlanPdf } from '../../services/pdfPlanGenerator';
 
 interface HomePageProps {
   onOpenLogin: () => void;
@@ -62,7 +69,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [trackedSponsor, setTrackedSponsor] = useState<SponsorLookupResult | null>(null);
   const [teamSizeInput, setTeamSizeInput] = useState<number>(3);
-  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState<boolean>(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
 
   // Live countdown timer for the 4-day promotion
   const [countdown, setCountdown] = useState({
@@ -114,6 +123,20 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
     return () => clearInterval(interval);
   }, [state.settings.promotionEndDate]);
 
+  const handleDownloadPdf = () => {
+    try {
+      setIsDownloadingPdf(true);
+      generateHelp150PlanPdf();
+      setDownloadSuccess(true);
+      toast.success('HELP150 ऑफिशियल बिजनेस प्लान PDF डाउनलोड हो गया है।', 'सफलतापूर्वक डाउनलोड!');
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err) {
+      toast.error('PDF जनरेट करने में समस्या आई, कृपया पुनः प्रयास करें।', 'त्रुटि');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const stats = {
     totalUsers: state.users.length,
     activeHelps: state.helpRequests.filter((r) => r.status === 'completed').length,
@@ -127,6 +150,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
     {
       q: 'HELP150 क्या है और यह कैसे काम करता है? (What is HELP150?)',
       a: 'HELP150 एक पारदर्शी, सुरक्षित और प्रत्यक्ष पीयर-टू-पीयर (P2P) कम्युनिटी म्यूचुअल हेल्पिंग मंच है। यहाँ सदस्य स्वेच्छा से ₹150 की सहायता (₹50 वेरिफिकेशन लिंक + ₹100 सेकंड लिंक) प्रदान करते हैं। 12-घंटे के सर्वर टाइमर के बाद वे ₹200 की सीधी सहायता अपने बैंक/UPI में प्राप्त करते हैं।',
+    },
+    {
+      q: 'बिजनेस प्लान PDF कैसे और कहाँ से डाउनलोड करें?',
+      a: 'होमपेज पर दिए गए "डाउनलोड बिजनेस प्लान (PDF)" बटन पर क्लिक करके आप 12-स्लाइड्स का पूरा आधिकारिक प्रेजेंटेशन PDF अपने फोन या कंप्यूटर में तुरंत डाउनलोड कर सकते हैं। आप "स्लाइड्स ऑनलाइन देखें" पर क्लिक करके इसे सीधे स्क्रीन पर भी पढ़ सकते हैं।',
     },
     {
       q: 'क्या 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि में रजिस्ट्रेशन खुला है?',
@@ -153,8 +180,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   // Recent ticker updates
   const recentCommunityActivities = [
     { text: 'New member H150-304082 registered from Maharashtra', time: 'Just now' },
-    { text: 'Level 1 direct referral bonus ₹5 credited to member wallet', time: '1 min ago' },
-    { text: 'User H150-784920 completed KYC verification successfully', time: '3 mins ago' },
+    { text: 'Official Plan PDF downloaded by member H150-784920', time: '1 min ago' },
+    { text: 'Level 1 direct referral bonus ₹5 credited to member wallet', time: '2 mins ago' },
+    { text: 'User H150-784920 completed KYC verification successfully', time: '4 mins ago' },
     { text: 'New member H150-304091 joined under Sponsor H150-ADMIN01', time: '5 mins ago' },
     { text: '12-Hour timer maturation completed for Cycle #1', time: '8 mins ago' },
   ];
@@ -173,12 +201,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   const handleShareWhatsApp = () => {
     const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://help150.org';
     const text = encodeURIComponent(
-      `🎉 *HELP150 कम्युनिटी - 4-दिवसीय प्री-लॉन्च प्रमोशन सक्रिय!*\n\n` +
+      `🎉 *HELP150 कम्युनिटी - ऑफिशियल बिजनेस प्लान (PDF)*\n\n` +
       `🔥 *प्लान साइकिल:* ₹50 वेरिफिकेशन + ₹100 सेकंड लिंक ➔ 12 घंटे टाइमर ➔ ₹200 रिसीव लिंक (+₹50 नेट लाभ)\n` +
       `👥 6-लेवल की शानदार रेफरल इनकम\n` +
       `⚡ 100% डायरेक्ट UPI / बैंक ट्रांसफर\n\n` +
-      `📌 अभी तुरंत फ्री रजिस्ट्रेशन करें और अपनी टीम बनाएं:\n${siteUrl}\n\n` +
-      `🚀 टाइमर समाप्त होते ही लिंक्स चालू हो जाएंगे!`
+      `📥 पूरा प्लान PDF यहाँ से डाउनलोड करें:\n${siteUrl}\n\n` +
+      `🚀 अभी तुरंत फ्री रजिस्ट्रेशन करें और अपनी टीम बनाएं!`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -186,7 +214,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   return (
     <div id="home-page-root" className="w-full pb-20 overflow-x-hidden text-slate-100 font-sans">
       {/* ========================================================================= */}
-      {/* 1. TOP ANNOUNCEMENT BANNER: 4-DAY PRE-LAUNCH COUNTDOWN TICKER            */}
+      {/* 1. TOP ANNOUNCEMENT BANNER: 4-DAY PRE-LAUNCH COUNTDOWN TICKER & PDF CTA   */}
       {/* ========================================================================= */}
       {isPromotionActive && (
         <div className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-rose-600 text-slate-950 font-black py-2.5 px-4 shadow-lg text-xs sm:text-sm">
@@ -201,13 +229,24 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
               </span>
             </div>
 
-            {/* Compact Top Timer */}
-            <div className="inline-flex items-center gap-1.5 bg-black/90 text-amber-300 px-3 py-1 rounded-full font-mono text-xs font-bold border border-amber-400/50 shadow-inner">
-              <Clock className="h-3.5 w-3.5 text-rose-400 animate-pulse" />
-              <span>
-                {String(countdown.days).padStart(2, '0')}d : {String(countdown.hours).padStart(2, '0')}h :{' '}
-                {String(countdown.minutes).padStart(2, '0')}m : {String(countdown.seconds).padStart(2, '0')}s
-              </span>
+            <div className="flex items-center gap-2">
+              {/* Quick Download PDF Button in Top Bar */}
+              <button
+                onClick={handleDownloadPdf}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-300 hover:bg-black font-bold text-[11px] border border-amber-400/80 shadow cursor-pointer transition active:scale-95 shrink-0"
+              >
+                <FileText className="h-3 w-3 text-rose-400" />
+                <span>प्लान PDF</span>
+              </button>
+
+              {/* Compact Top Timer */}
+              <div className="inline-flex items-center gap-1.5 bg-black/90 text-amber-300 px-3 py-1 rounded-full font-mono text-xs font-bold border border-amber-400/50 shadow-inner">
+                <Clock className="h-3.5 w-3.5 text-rose-400 animate-pulse" />
+                <span>
+                  {String(countdown.days).padStart(2, '0')}d : {String(countdown.hours).padStart(2, '0')}h :{' '}
+                  {String(countdown.minutes).padStart(2, '0')}m : {String(countdown.seconds).padStart(2, '0')}s
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -283,7 +322,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
             </div>
           )}
 
-          {/* 4 Hero Action Buttons */}
+          {/* Hero Action Buttons (Including DOWNLOAD PDF Option) */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-12">
             {currentUser ? (
               <button
@@ -316,25 +355,34 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
               </>
             )}
 
+            {/* DOWNLOAD PDF PRIMARY BUTTON */}
             <button
-              id="hero-btn-how-it-works"
-              onClick={() => {
-                const el = document.getElementById('plan-cycle-visualizer');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-6 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-sm transition flex items-center gap-2 cursor-pointer"
+              id="hero-btn-download-pdf"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer border-2 border-amber-300"
             >
-              <Repeat className="h-4 w-4 text-cyan-400" />
-              <span>प्लान कैसे काम करता है?</span>
+              <Download className="h-4.5 w-4.5 stroke-[2.5]" />
+              <span>{isDownloadingPdf ? 'डाउनलोडिंग...' : 'डाउनलोड बिजनेस प्लान (PDF)'}</span>
+            </button>
+
+            {/* VIEW SLIDES BUTTON */}
+            <button
+              id="hero-btn-view-slides"
+              onClick={() => setIsPlanModalOpen(true)}
+              className="px-5 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border-2 border-slate-700 text-slate-200 font-bold text-sm transition flex items-center gap-2 cursor-pointer"
+            >
+              <Eye className="h-4 w-4 text-cyan-400" />
+              <span>स्लाइड्स देखें</span>
             </button>
 
             <button
               id="hero-btn-whatsapp-share"
               onClick={handleShareWhatsApp}
-              className="px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-sm shadow-lg transition flex items-center gap-2 cursor-pointer"
+              className="px-5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-sm shadow-lg transition flex items-center gap-2 cursor-pointer"
             >
               <MessageCircle className="h-4 w-4" />
-              <span>WhatsApp पर शेयर करें</span>
+              <span>WhatsApp पर शेयर</span>
             </button>
           </div>
 
@@ -396,12 +444,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
                 <Sparkles className="h-4 w-4 text-yellow-400" />
                 <span>अभी अपनी टीम बनाएं: लेवल 1 से 6 तक अनलिमिटेड इनकम का अवसर!</span>
               </div>
-              <button
-                onClick={onOpenRegister}
-                className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs hover:brightness-110 cursor-pointer shadow"
-              >
-                फ्री आईडी बनाएं ➔
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadPdf}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs border border-amber-400/50 cursor-pointer shadow flex items-center gap-1"
+                >
+                  <Download className="h-3 w-3" />
+                  <span>प्लान PDF</span>
+                </button>
+                <button
+                  onClick={onOpenRegister}
+                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs hover:brightness-110 cursor-pointer shadow"
+                >
+                  फ्री आईडी बनाएं ➔
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -429,7 +486,101 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </div>
 
       {/* ========================================================================= */}
-      {/* 5. VISUAL DUAL-BOX ARCHITECTURE PREVIEW (Red & Sky Blue Cards)            */}
+      {/* 5. DEDICATED PDF DOWNLOAD SHOWCASE SECTION                                */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
+        <div className="rounded-3xl p-6 sm:p-10 bg-gradient-to-r from-[#0C1130] via-[#111745] to-[#0A0E2B] border-2 border-amber-400/80 shadow-2xl relative overflow-hidden">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute -top-20 -right-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="space-y-4 text-center lg:text-left max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold uppercase tracking-wider">
+                <FileDown className="h-4 w-4 text-yellow-300 animate-bounce" />
+                <span>OFFICIAL BUSINESS PLAN PRESENTATION (PDF)</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-4xl font-black text-white font-heading leading-tight">
+                डाउनलोड करें HELP150 का ऑफिशियल बिजनेस प्लान (PDF)
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                पूरा 12-स्लाइड्स का हाई-डेफिनिशन बिजनेस प्लान PDF डाउनलोड करें। इसमें ₹150 प्रोवाइड हेल्प (₹50+₹100), 12-घंटे सर्वर टाइमर, ₹200 रिसीव सहायता, 6-लेवल सपोर्ट रिवार्ड्स एवं सभी नियम स्पष्ट रूप से दिए गए हैं।
+              </p>
+
+              {/* 3 Badges */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1 text-xs">
+                <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-amber-400/40 text-amber-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>12-स्लाइड्स प्रेजेंटेशन</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-cyan-400/40 text-cyan-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>6-लेवल इनकम चार्ट</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>100% P2P नियम व शर्तें</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Right Action Box */}
+            <div className="w-full lg:w-auto shrink-0 p-6 rounded-2xl bg-slate-950/80 border-2 border-slate-700 shadow-xl flex flex-col gap-3 min-w-[280px] sm:min-w-[340px]">
+              <div className="text-center pb-2 border-b border-slate-800">
+                <div className="text-xs font-bold text-slate-400">फाइल साइज: ~250 KB • 16:9 Landscape</div>
+                <div className="text-base font-black text-white font-heading mt-0.5">
+                  HELP150_Official_Business_Plan.pdf
+                </div>
+              </div>
+
+              {/* Main Download Button */}
+              <button
+                id="btn-section-download-pdf"
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-sm uppercase shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                {downloadSuccess ? (
+                  <>
+                    <Check className="h-5 w-5 stroke-[3]" />
+                    <span>डाउनलोड सफल! (Downloaded)</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5 stroke-[2.5]" />
+                    <span>{isDownloadingPdf ? 'डाउनलोडिंग...' : 'डाउनलोड PDF फाइल (Download PDF)'}</span>
+                  </>
+                )}
+              </button>
+
+              {/* Online View Button */}
+              <button
+                id="btn-section-view-slides"
+                onClick={() => setIsPlanModalOpen(true)}
+                className="w-full py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Eye className="h-4 w-4 text-cyan-400" />
+                <span>सभी 12 स्लाइड्स ऑनलाइन देखें (View Online)</span>
+              </button>
+
+              {/* Share on WhatsApp */}
+              <button
+                id="btn-section-whatsapp-pdf"
+                onClick={handleShareWhatsApp}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-700/60 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <MessageCircle className="h-4 w-4 text-emerald-300" />
+                <span>WhatsApp पर प्लान भेजें</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. VISUAL DUAL-BOX ARCHITECTURE PREVIEW (Red & Sky Blue Cards)            */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="text-center max-w-2xl mx-auto mb-10">
@@ -532,7 +683,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. PLAN CYCLE VISUALIZER (4-Step Animated Roadmap)                        */}
+      {/* 7. PLAN CYCLE VISUALIZER (4-Step Animated Roadmap)                        */}
       {/* ========================================================================= */}
       <section id="plan-cycle-visualizer" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 scroll-mt-20">
         <div className="text-center max-w-3xl mx-auto mb-12">
@@ -647,7 +798,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 7. INTERACTIVE 6-LEVEL REFERRAL INCOME CALCULATOR                         */}
+      {/* 8. INTERACTIVE 6-LEVEL REFERRAL INCOME CALCULATOR                         */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="rounded-3xl p-6 sm:p-10 bg-gradient-to-br from-[#0F112E] via-[#14183E] to-[#0A0D24] border-2 border-indigo-500/40 shadow-2xl relative overflow-hidden">
@@ -751,14 +902,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 8. PROMINENT RED + BLUE GRADIENT REFERRAL LINK WIDGET                     */}
+      {/* 9. PROMINENT RED + BLUE GRADIENT REFERRAL LINK WIDGET                     */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <ReferralBox />
       </section>
 
       {/* ========================================================================= */}
-      {/* 9. THREE CORE PILLARS OF HELP150                                          */}
+      {/* 10. THREE CORE PILLARS OF HELP150                                         */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="text-center max-w-2xl mx-auto mb-10">
@@ -843,7 +994,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 10. REAL-TIME COMMUNITY PLATFORM STATS                                    */}
+      {/* 11. REAL-TIME COMMUNITY PLATFORM STATS                                    */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8">
@@ -900,7 +1051,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 11. FAQ ACCORDION SECTION (Bilingual)                                     */}
+      {/* 12. FAQ ACCORDION SECTION (Bilingual)                                     */}
       {/* ========================================================================= */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="text-center mb-8">
@@ -942,7 +1093,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 12. JOIN TELEGRAM & WHATSAPP COMMUNITY SECTION                           */}
+      {/* 13. JOIN TELEGRAM & WHATSAPP COMMUNITY SECTION                            */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border border-blue-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -979,7 +1130,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       </section>
 
       {/* ========================================================================= */}
-      {/* 13. RICH FOOTER                                                           */}
+      {/* 14. RICH FOOTER                                                           */}
       {/* ========================================================================= */}
       <footer className="border-t border-slate-800/80 pt-12 text-slate-400 text-xs max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
@@ -1003,6 +1154,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">प्लेटफ़ॉर्म नेविगेशन</h4>
             <ul className="space-y-2 text-xs">
+              <li>
+                <button onClick={handleDownloadPdf} className="hover:text-amber-300 transition cursor-pointer flex items-center gap-1.5 text-amber-300 font-bold">
+                  <Download className="h-3.5 w-3.5" />
+                  <span>ऑफिशियल बिजनेस प्लान (PDF)</span>
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setIsPlanModalOpen(true)} className="hover:text-amber-300 transition cursor-pointer flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>प्लान स्लाइड्स देखें</span>
+                </button>
+              </li>
               <li>
                 <button onClick={() => setActiveTab('help')} className="hover:text-amber-300 transition cursor-pointer">
                   ₹150 सहायता साइकिल
@@ -1068,6 +1231,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
           <p className="text-amber-400 font-semibold">“Together For A Better Tomorrow”</p>
         </div>
       </footer>
+
+      {/* Interactive Plan Presentation & Download Modal */}
+      <PlanPresentationModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+      />
     </div>
   );
 };
