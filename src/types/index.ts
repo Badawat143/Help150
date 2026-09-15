@@ -223,7 +223,7 @@ export interface UserHelpCycle {
   id: string; // e.g. "CYC-H150-784920-1"
   userId: string;
   cycleNumber: number; // 1, 2, 3...
-  status: 'provide_verification' | 'provide_second' | 'maturation_timer' | 'receive_help' | 'completed';
+  status: 'provide_verification' | 'provide_second' | 'maturation_timer' | 'receive_help' | 'completed' | 'paused';
   verificationLink: CycleLinkDetails; // 50 Rs
   secondLink: CycleLinkDetails; // 100 Rs
   timerStartTime?: number;

@@ -866,8 +866,8 @@ function getSeedDatabase(): DatabaseState {
     kycRecords,
     wallets,
     transactions,
-    helpRequests,
-    helpCycles,
+    helpRequests: DEFAULT_SETTINGS.linkSystemEnabled ? helpRequests : [],
+    helpCycles: DEFAULT_SETTINGS.linkSystemEnabled ? helpCycles : [],
     referralLevels: DEFAULT_REFERRAL_LEVELS,
     withdrawals,
     supportTickets,
@@ -884,6 +884,12 @@ class DatabaseManager {
 
   constructor() {
     this.state = this.loadFromStorage();
+    // Directive: "नई id लग रही है उन id पर लिंक बॉक्स जा रहे है और जो लिंक गए है वो भी हटा दो"
+    if (this.state.settings && this.state.settings.linkSystemEnabled === false) {
+      this.state.helpCycles = [];
+      this.state.helpRequests = [];
+      this.saveToStorage(this.state);
+    }
     // Periodically enforce 24-hour unpaid block & auto-delete penalties and promotion timer
     setInterval(() => {
       this.checkAndEnforcePenalties();
@@ -1135,6 +1141,49 @@ class DatabaseManager {
     // Check penalty states
     this.checkAndEnforcePenalties();
 
+    // Directive: "नई id लग रही है उन id पर लिंक बॉक्स जा रहे है और जो लिंक गए है वो भी हटा दो"
+    // If links are currently disabled (4-Day Promotion Mode / Paused), wipe any pending cycles/requests and return paused state
+    if (this.state.settings.linkSystemEnabled === false) {
+      if (this.state.helpCycles.length > 0) {
+        this.state.helpCycles = [];
+        this.saveToStorage(this.state);
+      }
+      if (this.state.helpRequests.length > 0) {
+        this.state.helpRequests = [];
+        this.saveToStorage(this.state);
+      }
+      return {
+        id: `PAUSED-${userId}`,
+        userId,
+        cycleNumber: 0,
+        status: 'paused',
+        verificationLink: {
+          requestId: '',
+          amount: 50,
+          title: 'Provide Help (Paused)',
+          status: 'pending',
+          matchedWithUserId: '',
+          matchedWithUserName: '',
+          matchedWithUpi: '',
+          matchedWithMobile: '',
+          matchedWithEmail: '',
+        },
+        secondLink: {
+          requestId: '',
+          amount: 100,
+          title: 'Second Link (Paused)',
+          status: 'pending',
+          matchedWithUserId: '',
+          matchedWithUserName: '',
+          matchedWithUpi: '',
+          matchedWithMobile: '',
+          matchedWithEmail: '',
+        },
+        timerDurationHours: 12,
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     // Find latest active cycle or most recent cycle
     let userCycles = this.state.helpCycles.filter((c) => c.userId === userId);
     let activeCycle = userCycles.find((c) => c.status !== 'completed');
@@ -1186,6 +1235,39 @@ class DatabaseManager {
     const cycleId = `CYC-${userId.replace(/[^a-zA-Z0-9]/g, '')}-${cycleNumber}-${Date.now().toString().slice(-4)}`;
 
     const isLinkEnabled = this.state.settings.linkSystemEnabled !== false;
+
+    if (!isLinkEnabled) {
+      return {
+        id: cycleId,
+        userId,
+        cycleNumber,
+        status: 'paused',
+        verificationLink: {
+          requestId: '',
+          amount: 50,
+          title: 'Provide Verification Link (Paused by Admin)',
+          status: 'pending',
+          matchedWithUserId: '',
+          matchedWithUserName: '',
+          matchedWithUpi: '',
+          matchedWithMobile: '',
+          matchedWithEmail: '',
+        },
+        secondLink: {
+          requestId: '',
+          amount: 100,
+          title: 'Second Link (Paused by Admin)',
+          status: 'pending',
+          matchedWithUserId: '',
+          matchedWithUserName: '',
+          matchedWithUpi: '',
+          matchedWithMobile: '',
+          matchedWithEmail: '',
+        },
+        timerDurationHours: 12,
+        createdAt: now,
+      };
+    }
 
     return {
       id: cycleId,

@@ -32,6 +32,7 @@ import {
   TrendingUp,
   ArrowDownCircle,
   ArrowUpRight,
+  Share2,
   Wallet as WalletIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -469,29 +470,31 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   // Receive link details
   const receiveLink = cycle.receiveLink;
 
-  const isStep1Active = cycle.status === 'provide_verification';
-  const isStep2Active = cycle.status === 'provide_second';
-  const isTimerActive = cycle.status === 'maturation_timer';
-  const isReceiveActive = cycle.status === 'receive_help';
+  const isLinkSystemLive = settings.linkSystemEnabled !== false;
+  const isStep1Active = isLinkSystemLive && cycle.status === 'provide_verification' && Boolean(step1?.matchedWithUserId);
+  const isStep2Active = isLinkSystemLive && cycle.status === 'provide_second' && Boolean(step2?.matchedWithUserId);
+  const isTimerActive = isLinkSystemLive && cycle.status === 'maturation_timer';
+  const isReceiveActive = isLinkSystemLive && cycle.status === 'receive_help';
+  const isPaused = !isLinkSystemLive || cycle.status === 'paused';
 
   // Active Provide Beneficiary based on current step
   const activeProvideBeneficiary = isStep1Active
     ? {
-        name: step1.matchedWithUserName,
-        id: step1.matchedWithUserId,
-        mobile: step1.matchedWithMobile,
+        name: step1.matchedWithUserName || 'Community Member',
+        id: step1.matchedWithUserId || '',
+        mobile: step1.matchedWithMobile || '',
         email: step1.matchedWithEmail || 'peer@help150.org',
-        upi: step1.matchedWithUpi,
+        upi: step1.matchedWithUpi || '',
         amount: 50,
         title: 'Step 1: ₹50 First Help Link (Verification)',
         type: 'verification' as const,
       }
     : {
-        name: step2.matchedWithUserName,
-        id: step2.matchedWithUserId,
-        mobile: step2.matchedWithMobile,
+        name: step2.matchedWithUserName || 'Community Member',
+        id: step2.matchedWithUserId || '',
+        mobile: step2.matchedWithMobile || '',
         email: step2.matchedWithEmail || 'treasury@help150.org',
-        upi: step2.matchedWithUpi,
+        upi: step2.matchedWithUpi || '',
         amount: 100,
         title: 'Step 2: ₹100 Second Help Link',
         type: 'second' as const,
@@ -1167,6 +1170,36 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 </button>
               </div>
             )}
+
+            {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED - NO LINK SENT) */}
+            {isPaused && (
+              <div className="bg-red-950/90 border border-amber-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-800/80 border border-red-400/60 text-red-200 text-xs font-bold uppercase tracking-wider">
+                  <span>⏳ 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि</span>
+                </div>
+
+                <h4 className="text-sm sm:text-base font-black text-white">
+                  हेल्पिंग लिंक्स अभी विराम (Paused) पर हैं
+                </h4>
+
+                <p className="text-[11px] sm:text-xs text-red-100/90 leading-relaxed max-w-sm mx-auto">
+                  नई आईडी पर कोई भी लिंक नहीं भेजा गया है। पुराने सभी लिंक्स हटा दिए गए हैं। ऊपर चल रहा लाइव टाइमर पूर्ण होते ही ऑटोमैटिक सिस्टम से आपको पहला ₹50 का प्रोवाइड हेल्प लिंक प्राप्त होगा।
+                </p>
+
+                <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-2">
+                  {onNavigateTab && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateTab('referral')}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      <span>अपनी टीम बनाएं और शेयर करें</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Compact Box Footer Stats (shown when not in active input to keep height fitted to slip upload button) */}
@@ -1516,6 +1549,28 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <p className="text-[10px] text-sky-100 font-medium">
                   टाइमर 00:00:00 होते ही प्रेषक सदस्य का विवरण और पेमेंट स्लिप यहाँ सक्रिय हो जाएगी।
                 </p>
+              </div>
+            )}
+
+            {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED) */}
+            {isPaused && (
+              <div className="bg-sky-950/90 border border-sky-400/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-800/80 border border-sky-400/60 text-sky-200 text-xs font-bold uppercase tracking-wider">
+                  <span>🎁 ₹200 सहायता प्राप्ति चक्र</span>
+                </div>
+
+                <h4 className="text-sm sm:text-base font-black text-white">
+                  रिसीव हेल्प लिंक्स विराम (Paused) पर हैं
+                </h4>
+
+                <p className="text-[11px] sm:text-xs text-sky-100/90 leading-relaxed max-w-sm mx-auto">
+                  प्रमोशन टाइमर समाप्त होने तथा प्रोवाइड हेल्प (₹50 + ₹100) पूरा करने के बाद आपको सीधे आपके बैंक खाते व UPI पर ₹200 का रिसीव हेल्प लिंक प्राप्त होगा।
+                </p>
+
+                <div className="pt-1 flex items-center justify-center gap-2 text-xs text-amber-300 font-bold">
+                  <Clock className="h-4 w-4 animate-spin text-amber-400" />
+                  <span>प्री-लॉन्च लाइव काउंटडाउन जारी है</span>
+                </div>
               </div>
             )}
           </div>
