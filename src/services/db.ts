@@ -884,10 +884,26 @@ class DatabaseManager {
 
   constructor() {
     this.state = this.loadFromStorage();
-    // Periodically enforce 24-hour unpaid block & auto-delete penalties
+    // Periodically enforce 24-hour unpaid block & auto-delete penalties and promotion timer
     setInterval(() => {
       this.checkAndEnforcePenalties();
-    }, 10000);
+      this.checkPromotionTimer();
+    }, 5000);
+  }
+
+  public checkPromotionTimer(): void {
+    const now = Date.now();
+    if (this.state.settings && this.state.settings.linkSystemEnabled === false && this.state.settings.promotionEndDate) {
+      const endTime = new Date(this.state.settings.promotionEndDate).getTime();
+      if (now >= endTime) {
+        this.state.settings.linkSystemEnabled = true;
+        this.state.settings.promotionMode = false;
+        this.state.settings.autoDispatchMode = true;
+        this.state.settings.autoDispatchOnRegistration = true;
+        this.saveToStorage(this.state);
+        this.notifySubscribers();
+      }
+    }
   }
 
   private loadFromStorage(): DatabaseState {
@@ -903,6 +919,10 @@ class DatabaseManager {
           };
           if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
+          }
+          if (loadedState.settings && loadedState.settings.linkSystemEnabled === false) {
+            loadedState.helpCycles = [];
+            loadedState.helpRequests = [];
           }
           // Ensure all users have valid passwords, hashes, and designate pre-existing IDs (before H150-304071) as Admin IDs
           if (Array.isArray(loadedState.users)) {
@@ -1608,14 +1628,9 @@ class DatabaseManager {
         draft.settings.promotionDaysTotal = promotionDays;
         draft.settings.promotionStartDate = now.toISOString();
         draft.settings.promotionEndDate = new Date(now.getTime() + promotionDays * 24 * 3600000).toISOString();
-        // Remove 24-hour urgency countdown when links are stopped/paused
-        if (draft.helpCycles) {
-          draft.helpCycles.forEach((c) => {
-            if (c.status === 'provide_verification' && c.verificationLink?.status === 'pending') {
-              c.verificationLink.deadlineTime = undefined;
-            }
-          });
-        }
+        // Clear all active help cycles and requests when links are paused/stopped ("और जो लिंक गए है वो भी हटा दो")
+        draft.helpCycles = [];
+        draft.helpRequests = [];
       } else {
         // Set fresh 24-hour countdown when links are resumed
         if (draft.helpCycles) {

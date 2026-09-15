@@ -754,31 +754,32 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         </div>
       )}
 
-      {/* 4-Day Promotion Mode Indicator */}
-      {!settings.linkSystemEnabled && (
-        <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 rounded-lg bg-amber-500/20 text-amber-300 items-center justify-center shrink-0">
-              ⏸️
-            </span>
-            <div>
-              <strong className="text-white">4-दिवसीय प्री-लॉन्च प्रमोशन जारी है:</strong>{' '}
-              हेल्पिंग लिंक अभी विराम पर हैं। 4 दिन पूरे होने पर या एडमिन द्वारा ऑन करने पर ऑटोमैटिक लिंक्स भेजे जाएंगे।
-            </div>
+      {/* 4-Day Promotion Mode Indicator & Main Boxes Grid */}
+      {!settings.linkSystemEnabled ? (
+        <div className="rounded-3xl p-8 bg-gradient-to-br from-amber-950/90 via-slate-900 to-indigo-950/90 border-2 border-amber-500/60 shadow-2xl text-center space-y-6 my-4">
+          <div className="inline-flex h-16 w-16 rounded-2xl bg-amber-500/20 items-center justify-center text-amber-400 text-3xl shadow-inner border border-amber-500/40 mx-auto">
+            ⏳
+          </div>
+          <div className="space-y-3 max-w-xl mx-auto">
+            <h3 className="text-xl font-bold text-white font-heading">
+              4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय है
+            </h3>
+            <p className="text-sm text-amber-200/90 leading-relaxed">
+              वर्तमान में हेल्पिंग लिंक्स (Provide Help / Receive Help) अस्थायी रूप से विराम पर हैं। टाईमर के समाप्त होते ही ऑटोमैटिक लिंक्स शुरू हो जाएंगे! तब तक अधिक से अधिक सदस्य जोड़ें और अपनी टीम मजबूत करें।
+            </p>
           </div>
           {onNavigateTab && (
             <button
               onClick={() => onNavigateTab('referral')}
-              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] shrink-0 self-start sm:self-auto cursor-pointer"
+              className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition cursor-pointer inline-flex items-center gap-2"
             >
-              रेफरल टीम बनाएं ➔
+              <span>अपनी रेफरल टीम बनाएं & शेयर करें</span>
+              <ArrowRight className="h-4 w-4" />
             </button>
           )}
         </div>
-      )}
-
-      {/* THE TWO MAIN BOXES GRID (COMPACT HEIGHT - FITS TO AMOUNT LEVEL) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
         {/* 🔴 PROVIDE HELP BOX (COMPACT CARD - HALKA HARA RANG BORDER)               */}
         {/* ========================================================================= */}
@@ -1557,6 +1558,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           </div>
         </div>
       </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 💰 USER FINANCIAL DASHBOARD: TOTAL INCOME & RECEIVED TRACKER              */}

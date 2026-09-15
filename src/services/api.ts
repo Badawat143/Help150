@@ -297,12 +297,13 @@ export const api = {
         initialProvideHelpRequest.adminNotes = 'Auto-dispatched on registration by Auto Mode';
       }
 
-      // Generate initial ₹50 verification cycle link immediately upon registration
-      if (!draft.helpCycles) draft.helpCycles = [];
-      const newCycle = db.createNewCycle(newUserId, 1);
-      draft.helpCycles.unshift(newCycle);
-
-      draft.helpRequests.unshift(initialProvideHelpRequest);
+      // Generate initial ₹50 verification cycle link only if links are active
+      if (isLinksActive) {
+        if (!draft.helpCycles) draft.helpCycles = [];
+        const newCycle = db.createNewCycle(newUserId, 1);
+        draft.helpCycles.unshift(newCycle);
+        draft.helpRequests.unshift(initialProvideHelpRequest);
+      }
 
       draft.notifications.unshift({
         id: `NOTIF-${Date.now().toString().slice(-6)}`,
