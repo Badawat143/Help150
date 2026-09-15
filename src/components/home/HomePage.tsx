@@ -596,11 +596,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* Box 1 Preview: Provide Help (Matches Minute Timer Box: Fuchsia/Purple) */}
-          <div className="rounded-3xl bg-gradient-to-b from-purple-950 via-[#27073b] to-purple-950 border-2 border-fuchsia-400 shadow-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+          {/* Box 1 Preview: Provide Help (Light & Vibrant Fuchsia/Purple) */}
+          <div className="rounded-3xl bg-gradient-to-b from-fuchsia-600 via-purple-700 to-purple-800 border-2 border-fuchsia-300 shadow-2xl p-6 relative overflow-hidden flex flex-col justify-between text-white">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-fuchsia-500/40 pb-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-900 border-2 border-fuchsia-300 shadow-lg">
+              <div className="flex items-center justify-between border-b border-fuchsia-300/40 pb-3">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 border-2 border-white shadow-lg">
                   <span className="text-sm">🔥</span>
                   <span className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     PROVIDE HELP
@@ -613,36 +613,36 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
 
               <div className="space-y-3">
                 <h4 className="text-lg font-bold text-white">1. सहायता प्रदान करें (Provide Help Phase)</h4>
-                <p className="text-xs text-purple-100 leading-relaxed">
+                <p className="text-xs text-purple-100 leading-relaxed font-medium">
                   प्रत्येक चक्र में दो चरण होते हैं:
                 </p>
                 <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-xl bg-purple-900/60 border border-fuchsia-800/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-purple-950/40 border border-fuchsia-300/40 flex items-center justify-between backdrop-blur-xs">
                     <span className="font-semibold text-white">स्टेप 1: वेरिफिकेशन लिंक (₹50)</span>
-                    <span className="font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded">₹50</span>
+                    <span className="font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded border border-emerald-400/40">₹50</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-purple-900/60 border border-fuchsia-800/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-purple-950/40 border border-fuchsia-300/40 flex items-center justify-between backdrop-blur-xs">
                     <span className="font-semibold text-white">स्टेप 2: सेकंड लिंक (₹100)</span>
-                    <span className="font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded">₹100</span>
+                    <span className="font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded border border-emerald-400/40">₹100</span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-black/40 border border-fuchsia-400/30 text-[11px] text-fuchsia-200">
+                <div className="p-2.5 rounded-xl bg-black/30 border border-fuchsia-300/40 text-[11px] text-fuchsia-100 font-medium">
                   ⚡ 100% सदस्य-से-सदस्य डायरेक्ट UPI ट्रांसफर। UTR नंबर व स्लिप अपलोड की तुरंत सुविधा।
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-fuchsia-500/30 flex items-center justify-between text-xs text-purple-200">
+            <div className="mt-5 pt-3 border-t border-fuchsia-300/30 flex items-center justify-between text-xs text-purple-100 font-medium">
               <span>कुल प्रदान राशि:</span>
               <span className="font-mono font-black text-emerald-300 text-sm">₹150 प्रति चक्र</span>
             </div>
           </div>
 
-          {/* Box 2 Preview: Receive Help (Matches Second Timer Box: Cyan/Teal) */}
-          <div className="rounded-3xl bg-gradient-to-b from-cyan-950 via-[#032428] to-teal-950 border-2 border-cyan-300 shadow-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+          {/* Box 2 Preview: Receive Help (Light & Radiant Cyan/Teal) */}
+          <div className="rounded-3xl bg-gradient-to-b from-cyan-500 via-teal-600 to-teal-800 border-2 border-cyan-200 shadow-2xl p-6 relative overflow-hidden flex flex-col justify-between text-white">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-cyan-400/40 pb-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-900 border-2 border-cyan-200 shadow-lg">
+              <div className="flex items-center justify-between border-b border-cyan-200/40 pb-3">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-teal-500 to-teal-700 border-2 border-white shadow-lg">
                   <Repeat className="w-3.5 h-3.5 text-white font-black" />
                   <span className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     RECEIVE HELP
@@ -655,26 +655,26 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
 
               <div className="space-y-3">
                 <h4 className="text-lg font-bold text-white">2. सहायता प्राप्त करें (Receive Help Phase)</h4>
-                <p className="text-xs text-cyan-100 leading-relaxed">
+                <p className="text-xs text-cyan-100 leading-relaxed font-medium">
                   प्रोवाइड हेल्प पूरा करने और 12-घंटे का टाइमर समाप्त होने पर:
                 </p>
                 <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-xl bg-teal-900/60 border border-teal-800/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-teal-950/40 border border-cyan-200/40 flex items-center justify-between backdrop-blur-xs">
                     <span className="font-semibold text-white">12-घंटे सर्वर मैच्योरिटी टाइमर</span>
-                    <span className="font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded">12:00:00</span>
+                    <span className="font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded border border-cyan-300/40">12:00:00</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-teal-900/60 border border-teal-800/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-teal-950/40 border border-cyan-200/40 flex items-center justify-between backdrop-blur-xs">
                     <span className="font-semibold text-white">सीधा बैंक/UPI भुगतान प्राप्ति</span>
-                    <span className="font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded">₹200 (+₹50 Net)</span>
+                    <span className="font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded border border-cyan-300/40">₹200 (+₹50 Net)</span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-black/40 border border-cyan-400/30 text-[11px] text-cyan-200">
+                <div className="p-2.5 rounded-xl bg-black/30 border border-cyan-200/40 text-[11px] text-cyan-100 font-medium">
                   🎯 प्राप्तकर्ता खुद स्लिप देखकर ₹200 "ACCEPT" करता है और राशि तुरंत उसके टोटल रिसीव में दर्ज होती है।
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-cyan-400/30 flex items-center justify-between text-xs text-cyan-200">
+            <div className="mt-5 pt-3 border-t border-cyan-200/30 flex items-center justify-between text-xs text-cyan-100 font-medium">
               <span>शुद्ध लाभ (Net Benefit):</span>
               <span className="font-mono font-black text-amber-300 text-sm">+₹50 शुद्ध लाभ हर चक्र में</span>
             </div>

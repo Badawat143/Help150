@@ -148,8 +148,8 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-provide-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-900 hover:from-fuchsia-500 hover:to-purple-800 border-2 border-fuchsia-300 shadow-lg shadow-purple-900/50 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
-            title="Provide Help Card (मिनट टाइमर बॉक्स का रंग)"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 hover:from-fuchsia-400 hover:to-purple-600 border-2 border-white shadow-lg shadow-purple-900/40 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Provide Help Card (हल्का मिनट टाइमर बॉक्स रंग)"
           >
             <span className="text-base sm:text-lg">🔥</span>
             <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
@@ -163,8 +163,8 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-receive-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-900 hover:from-cyan-400 hover:to-teal-800 border-2 border-cyan-300 shadow-lg shadow-cyan-900/50 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
-            title="Receive Help Card (सेकंड टाइमर बॉक्स का रंग)"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-cyan-400 via-teal-500 to-teal-700 hover:from-cyan-300 hover:to-teal-600 border-2 border-white shadow-lg shadow-teal-900/40 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Receive Help Card (हल्का सेकंड टाइमर बॉक्स रंग)"
           >
             <RotateCw className="w-3.5 h-3.5 text-white font-black stroke-[2.5]" />
             <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
