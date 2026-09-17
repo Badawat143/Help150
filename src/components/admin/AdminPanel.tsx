@@ -91,6 +91,15 @@ import { MemberToMemberLinkBox } from './MemberToMemberLinkBox';
 import { BrevoCampaignDesk } from './BrevoCampaignDesk';
 import { FirebaseConnectionModal } from '../common/FirebaseConnectionModal';
 import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
+import { TransactionsDesk } from './TransactionsDesk';
+import { WalletManagementDesk } from './WalletManagementDesk';
+import { ReferralDesk } from './ReferralDesk';
+import { NotificationsDesk } from './NotificationsDesk';
+import { SupportTicketsDesk } from './SupportTicketsDesk';
+import { ReportsDesk } from './ReportsDesk';
+import { FraudDetectionDesk } from './FraudDetectionDesk';
+import { AuditLogsDesk } from './AuditLogsDesk';
+import { PlatformContentDesk } from './PlatformContentDesk';
 
 export const AdminPanel: React.FC = () => {
   const { currentUser, refreshUserData, logout, setActiveTab, loginAs } = useAuth();
@@ -168,6 +177,12 @@ export const AdminPanel: React.FC = () => {
   const [isTransferring, setIsTransferring] = useState<boolean>(false);
   const [selectedUserIdsForBulk, setSelectedUserIdsForBulk] = useState<string[]>([]);
   const [isBulkTransferModalOpen, setIsBulkTransferModalOpen] = useState<boolean>(false);
+
+  // User Deletion & Transaction Clearing States
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState<boolean>(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState<boolean>(false);
+  const [openClearTransactionsDirectly, setOpenClearTransactionsDirectly] = useState<boolean>(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -401,6 +416,61 @@ export const AdminPanel: React.FC = () => {
       showToast(err?.message || 'बल्क ट्रांसफर विफल रहा', 'error');
     } finally {
       setIsTransferring(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (!user || user.id === 'H150-ADMIN01') {
+      showToast('Master Super Admin ID को डिलीट नहीं किया जा सकता।', 'error');
+      return;
+    }
+    setIsDeletingUser(true);
+    try {
+      const adminActor = {
+        id: currentUser?.id || 'H150-ADMIN01',
+        name: currentUser?.fullName || 'Super Admin',
+        role: 'admin',
+      };
+      const res = await api.adminDeleteUser(adminActor, user.id);
+      if (res.success) {
+        showToast(res.message || `यूजर ID ${user.id} (${user.fullName}) को सफलतापूर्वक डिलीट कर दिया गया है!`);
+        setUserToDelete(null);
+        refreshUserData();
+      } else {
+        showToast(res.error || 'यूजर डिलीट करने में विफल', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'यूजर डिलीट करने में विफल', 'error');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+  const handleBulkDeleteUsers = async () => {
+    if (selectedUserIdsForBulk.length === 0) {
+      showToast('कृपया कम से कम एक आईडी चुनें।', 'error');
+      return;
+    }
+    setIsDeletingUser(true);
+    try {
+      const adminActor = {
+        id: currentUser?.id || 'H150-ADMIN01',
+        name: currentUser?.fullName || 'Super Admin',
+        role: 'admin',
+      };
+      const res = await api.adminBulkDeleteUsers(adminActor, selectedUserIdsForBulk);
+      if (res.success) {
+        showToast(res.message || `कुल ${selectedUserIdsForBulk.length} आईडी सफलतापूर्वक डिलीट कर दी गईं!`);
+        setSelectedUserIdsForBulk([]);
+        setIsBulkDeleteModalOpen(false);
+        refreshUserData();
+      } else {
+        showToast(res.error || 'बल्क डिलीट विफल रहा', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'बल्क डिलीट विफल रहा', 'error');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -824,24 +894,53 @@ export const AdminPanel: React.FC = () => {
           </button>
 
           {/* Top Bar with Prominent 3-Dots Button & Menu Trigger */}
-          <div className="w-full flex items-center justify-between gap-3 pb-1">
-            <button
-              id="btn-admin-3dots-menu"
-              onClick={() => setIsSidebarOpen(true)}
-              className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#091325] text-white hover:bg-slate-900 border border-slate-700 hover:border-amber-400/70 shadow-md transition cursor-pointer group"
-              title="3 डॉट पर क्लिक करें - सभी 22 ऑप्शन्स खुलेंगे"
-            >
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-slate-950 transition">
-                <MoreVertical className="h-5 w-5" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-black text-amber-300 group-hover:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>एडमिन मेन्यू ऑप्शन्स</span>
-                  <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">3 डॉट</span>
+          <div className="w-full flex items-center justify-between gap-3 pb-1 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                id="btn-admin-3dots-menu"
+                onClick={() => setIsSidebarOpen(true)}
+                className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#091325] text-white hover:bg-slate-900 border border-slate-700 hover:border-amber-400/70 shadow-md transition cursor-pointer group"
+                title="3 डॉट पर क्लिक करें - सभी 22 ऑप्शन्स खुलेंगे"
+              >
+                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-slate-950 transition">
+                  <MoreVertical className="h-5 w-5" />
                 </div>
-                <div className="text-[10px] text-slate-400">क्लिक करके सभी 22 विकल्प खोलें</div>
-              </div>
-            </button>
+                <div className="text-left">
+                  <div className="text-xs font-black text-amber-300 group-hover:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>एडमिन मेन्यू ऑप्शन्स</span>
+                    <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">3 डॉट</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">क्लिक करके सभी विकल्प खोलें</div>
+                </div>
+              </button>
+
+              {/* Quick 3-Dot Action 1: Remove Transaction History */}
+              <button
+                id="btn-3dots-clear-transactions"
+                onClick={() => {
+                  setOpenClearTransactionsDirectly(true);
+                  setActiveModal('transactions');
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black transition cursor-pointer shadow-sm active:scale-95"
+                title="3 डॉट: ट्रांजेक्शन हिस्ट्री रिमूव / साफ़ करने का ऑप्शन"
+              >
+                <Trash2 className="h-4 w-4 text-amber-400" />
+                <span>ट्रांजेक्शन हिस्ट्री रिमूव</span>
+              </button>
+
+              {/* Quick 3-Dot Action 2: Delete Extra User IDs */}
+              <button
+                id="btn-3dots-delete-users"
+                onClick={() => {
+                  setActiveModal('users');
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black transition cursor-pointer shadow-sm active:scale-95"
+                title="3 डॉट: एक्स्ट्रा यूजर ID डिलीट करने का ऑप्शन"
+              >
+                <Trash2 className="h-4 w-4 text-rose-400" />
+                <span>एक्स्ट्रा यूजर ID हटाएं</span>
+              </button>
+            </div>
 
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs">
@@ -1495,14 +1594,14 @@ export const AdminPanel: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-2 text-right">
                             {u.id !== 'H150-ADMIN01' ? (
-                              <div className="flex items-center justify-end gap-1.5">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
                                 <button
                                   onClick={() => handleDirectLoginAsUser(u)}
-                                  className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black transition shadow-xs cursor-pointer inline-flex items-center gap-1 shadow-blue-500/20"
+                                  className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black transition shadow-xs cursor-pointer inline-flex items-center gap-1 shadow-blue-500/20"
                                   title={`Direct login into ${u.fullName} (${u.id})`}
                                 >
                                   <LogIn className="h-3 w-3" />
-                                  <span>लॉगिन करें</span>
+                                  <span>लॉगिन</span>
                                 </button>
                                 <button
                                   onClick={() => handleToggleBlockUser(u)}
@@ -1523,6 +1622,14 @@ export const AdminPanel: React.FC = () => {
                                       <span>Block</span>
                                     </>
                                   )}
+                                </button>
+                                <button
+                                  onClick={() => setUserToDelete(u)}
+                                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                  title={`यूजर ID ${u.id} को हमेशा के लिए हटाएं`}
+                                >
+                                  <Trash2 className="h-3 w-3 text-rose-600" />
+                                  <span>Delete ID</span>
                                 </button>
                               </div>
                             ) : (
@@ -1930,13 +2037,22 @@ export const AdminPanel: React.FC = () => {
 
               <div className="flex items-center gap-2 flex-wrap w-full md:w-auto shrink-0">
                 {selectedUserIdsForBulk.length > 0 && (
-                  <button
-                    onClick={() => setIsBulkTransferModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition active:scale-95"
-                  >
-                    <ArrowRightLeft className="h-3.5 w-3.5" />
-                    <span>चयनित {selectedUserIdsForBulk.length} आईडी यूजर में डालें</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setIsBulkTransferModalOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition active:scale-95"
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5" />
+                      <span>चयनित {selectedUserIdsForBulk.length} आईडी यूजर में डालें</span>
+                    </button>
+                    <button
+                      onClick={() => setIsBulkDeleteModalOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition active:scale-95"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>चयनित {selectedUserIdsForBulk.length} एक्स्ट्रा ID हटाएं</span>
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => setUserStatusFilter('direct_admin')}
@@ -2313,26 +2429,36 @@ export const AdminPanel: React.FC = () => {
                               )}
 
                               {u.id !== 'H150-ADMIN01' ? (
-                                <button
-                                  onClick={() => handleToggleBlockUser(u)}
-                                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
-                                    u.status === 'blocked'
-                                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                                      : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
-                                  }`}
-                                >
-                                  {u.status === 'blocked' ? (
-                                    <>
-                                      <Unlock className="h-3.5 w-3.5" />
-                                      <span>Unblock</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Ban className="h-3.5 w-3.5" />
-                                      <span>Block</span>
-                                    </>
-                                  )}
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleToggleBlockUser(u)}
+                                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 ${
+                                      u.status === 'blocked'
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                                        : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                                    }`}
+                                  >
+                                    {u.status === 'blocked' ? (
+                                      <>
+                                        <Unlock className="h-3.5 w-3.5" />
+                                        <span>Unblock</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Ban className="h-3.5 w-3.5" />
+                                        <span>Block</span>
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setUserToDelete(u)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 active:scale-95"
+                                    title={`यूजर ID ${u.id} (${u.fullName}) को डिलीट करें`}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                    <span>Delete ID</span>
+                                  </button>
+                                </>
                               ) : (
                                 <span className="text-[10px] font-bold text-slate-400 px-2 py-1">
                                   Superadmin
@@ -3209,6 +3335,220 @@ export const AdminPanel: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* CONFIRM SINGLE USER DELETE MODAL (यूजर ID डिलीट करने का कन्फर्मेशन) */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-rose-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-heading">यूजर ID डिलीट करें</h3>
+                  <p className="text-xs text-rose-600 font-semibold">Delete User Account & Clean Data</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200 space-y-1.5">
+                <div className="font-bold text-slate-800">क्या आप वाकई इस यूजर ID को डिलीट करना चाहते हैं?</div>
+                <div className="font-mono text-rose-700 font-black text-sm">{userToDelete.id} ({userToDelete.fullName})</div>
+                <div className="text-[11px] text-slate-600">मोबाइल: {userToDelete.mobile} | ईमेल: {userToDelete.email}</div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] space-y-1">
+                <div className="font-bold">⚠️ डिलीट होने के बाद:</div>
+                <ul className="list-disc pl-4 space-y-0.5 text-amber-800">
+                  <li>यूजर का वॉलेट, हेल्प रिक्वेस्ट और संबंधित डेटा सुरक्षित हटा दिया जाएगा।</li>
+                  <li>यदि इस यूजर के नीचे कोई डाउनलाइन है, तो वह स्वतः एडमिन को री-असाइन हो जाएगी।</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                disabled={isDeletingUser}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteUser(userToDelete)}
+                disabled={isDeletingUser}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs cursor-pointer shadow-md shadow-rose-600/30 transition active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{isDeletingUser ? 'डिलीट हो रहा है...' : 'हाँ, यूजर ID डिलीट करें'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM BULK DELETE USERS MODAL (एक्स्ट्रा आईडी बल्क डिलीट कन्फर्मेशन) */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-rose-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-heading">चयनित एक्स्ट्रा ID डिलीट करें</h3>
+                  <p className="text-xs text-rose-600 font-semibold">Bulk Delete Selected User Accounts</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200 space-y-1.5">
+                <div className="font-bold text-slate-800">
+                  चयनित कुल <span className="font-black text-rose-600 text-sm">{selectedUserIdsForBulk.length}</span> एक्स्ट्रा आईडी डिलीट की जाएंगी:
+                </div>
+                <div className="font-mono text-xs text-slate-600 max-h-24 overflow-y-auto p-2 bg-white rounded-xl border border-rose-100 divide-y divide-slate-100">
+                  {selectedUserIdsForBulk.map((id) => (
+                    <div key={id} className="py-0.5">{id}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
+                ⚠️ इन सभी आईडी का अकाउंट व संबंधित डेटा हमेशा के लिए हटा दिया जाएगा।
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                disabled={isDeletingUser}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDeleteUsers}
+                disabled={isDeletingUser}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs cursor-pointer shadow-md shadow-rose-600/30 transition active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{isDeletingUser ? 'डिलीट हो रही हैं...' : `हाँ, सभी ${selectedUserIdsForBulk.length} ID डिलीट करें`}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: TRANSACTIONS DESK (ट्रांजेक्शन हिस्ट्री और 3-डॉट रिमूव ऑप्शन) */}
+      {activeModal === 'transactions' && (
+        <TransactionsDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => {
+            setActiveModal(null);
+            setOpenClearTransactionsDirectly(false);
+          }}
+          initialOpenClearModal={openClearTransactionsDirectly}
+          onRefresh={refreshUserData}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: WALLET MANAGEMENT DESK */}
+      {activeModal === 'wallet_management' && (
+        <WalletManagementDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          onRefresh={refreshUserData}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: REFERRAL MANAGEMENT & SETTINGS DESK */}
+      {(activeModal === 'referral_management' || activeModal === 'referral_settings') && (
+        <ReferralDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          mode={activeModal === 'referral_settings' ? 'settings' : 'management'}
+          onClose={() => setActiveModal(null)}
+          onRefresh={refreshUserData}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: NOTIFICATIONS BROADCAST DESK */}
+      {activeModal === 'notifications' && (
+        <NotificationsDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: SUPPORT TICKETS DESK */}
+      {activeModal === 'support_tickets' && (
+        <SupportTicketsDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: REPORTS & ANALYTICS DESK */}
+      {activeModal === 'reports' && (
+        <ReportsDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: FRAUD DETECTION DESK */}
+      {activeModal === 'fraud_detection' && (
+        <FraudDetectionDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          onRefresh={refreshUserData}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: AUDIT LOGS DESK */}
+      {activeModal === 'audit_logs' && (
+        <AuditLogsDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          onClose={() => setActiveModal(null)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* MODAL: PLATFORM CONTENT & LEGAL POLICIES */}
+      {(activeModal === 'terms_conditions' || activeModal === 'privacy_policy' || activeModal === 'admin_roles' || activeModal === 'security') && (
+        <PlatformContentDesk
+          currentUser={currentUser || ({ id: 'H150-ADMIN01', fullName: 'Super Admin', role: 'admin' } as any)}
+          modalType={activeModal as any}
+          onClose={() => setActiveModal(null)}
+          showToast={showToast}
+        />
       )}
 
       {/* FIREBASE DATABASE CONNECTION & DIAGNOSTICS MODAL */}

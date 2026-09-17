@@ -1133,6 +1133,185 @@ class DatabaseManager {
     }
   }
 
+  /**
+   * Delete a User ID completely from the system (for removing extra/redundant IDs)
+   */
+  public deleteUser(userId: string): { success: boolean; message: string } {
+    if (!userId) {
+      return { success: false, message: 'अमान्य यूजर ID (Invalid User ID)' };
+    }
+
+    if (userId === 'H150-ADMIN01') {
+      return { success: false, message: 'एडमिन मुख्य ID (H150-ADMIN01) को डिलीट नहीं किया जा सकता।' };
+    }
+
+    const targetUser = this.state.users.find((u) => u.id === userId);
+    if (!targetUser) {
+      return { success: false, message: `यूजर ID ${userId} नहीं मिली।` };
+    }
+
+    if (targetUser.role === 'admin') {
+      return { success: false, message: 'एडमिन रोल वाले यूजर को डिलीट नहीं किया जा सकता।' };
+    }
+
+    // 1. Remove from users array
+    this.state.users = this.state.users.filter((u) => u.id !== userId);
+
+    // 2. Remove wallet
+    if (this.state.wallets && this.state.wallets[userId]) {
+      delete this.state.wallets[userId];
+    }
+
+    // 3. Remove help cycles
+    if (this.state.helpCycles) {
+      this.state.helpCycles = this.state.helpCycles.filter((c) => c.userId !== userId);
+    }
+
+    // 4. Remove help requests (where user is either sender or matched receiver)
+    if (this.state.helpRequests) {
+      this.state.helpRequests = this.state.helpRequests.filter(
+        (r) => r.userId !== userId && r.matchedWithUserId !== userId
+      );
+    }
+
+    // 5. Remove KYC records
+    if (this.state.kycRecords) {
+      this.state.kycRecords = this.state.kycRecords.filter((k) => k.userId !== userId);
+    }
+
+    // 6. Remove withdrawals
+    if (this.state.withdrawals) {
+      this.state.withdrawals = this.state.withdrawals.filter((w) => w.userId !== userId);
+    }
+
+    // 7. Remove notifications
+    if (this.state.notifications) {
+      this.state.notifications = this.state.notifications.filter((n) => n.userId !== userId);
+    }
+
+    // 8. Reassign any downlines sponsored by this user to central Admin
+    this.state.users.forEach((u) => {
+      if (u.sponsorId === userId) {
+        u.sponsorId = 'H150-ADMIN01';
+      }
+    });
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return {
+      success: true,
+      message: `यूजर ID ${userId} (${targetUser.fullName}) को सफलतापूर्वक सिस्टम से डिलीट कर दिया गया है।`,
+    };
+  }
+
+  /**
+   * Bulk Delete multiple User IDs at once (एक्स्ट्रा आईडी थोक में हटाने हेतु)
+   */
+  public deleteUsers(userIds: string[]): { success: boolean; deletedCount: number; deletedIds: string[] } {
+    if (!userIds || userIds.length === 0) {
+      return { success: false, deletedCount: 0, deletedIds: [] };
+    }
+
+    const safeIdsToDelete = userIds.filter((id) => {
+      if (id === 'H150-ADMIN01') return false;
+      const u = this.state.users.find((user) => user.id === id);
+      return u && u.role !== 'admin';
+    });
+
+    if (safeIdsToDelete.length === 0) {
+      return { success: false, deletedCount: 0, deletedIds: [] };
+    }
+
+    const idSet = new Set(safeIdsToDelete);
+
+    this.state.users = this.state.users.filter((u) => !idSet.has(u.id));
+
+    safeIdsToDelete.forEach((delId) => {
+      if (this.state.wallets && this.state.wallets[delId]) {
+        delete this.state.wallets[delId];
+      }
+    });
+
+    if (this.state.helpCycles) {
+      this.state.helpCycles = this.state.helpCycles.filter((c) => !idSet.has(c.userId));
+    }
+
+    if (this.state.helpRequests) {
+      this.state.helpRequests = this.state.helpRequests.filter(
+        (r) => !idSet.has(r.userId) && (!r.matchedWithUserId || !idSet.has(r.matchedWithUserId))
+      );
+    }
+
+    if (this.state.kycRecords) {
+      this.state.kycRecords = this.state.kycRecords.filter((k) => !idSet.has(k.userId));
+    }
+
+    if (this.state.withdrawals) {
+      this.state.withdrawals = this.state.withdrawals.filter((w) => !idSet.has(w.userId));
+    }
+
+    if (this.state.notifications) {
+      this.state.notifications = this.state.notifications.filter((n) => !idSet.has(n.userId));
+    }
+
+    this.state.users.forEach((u) => {
+      if (u.sponsorId && idSet.has(u.sponsorId)) {
+        u.sponsorId = 'H150-ADMIN01';
+      }
+    });
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return {
+      success: true,
+      deletedCount: safeIdsToDelete.length,
+      deletedIds: safeIdsToDelete,
+    };
+  }
+
+  /**
+   * Delete an individual transaction from history
+   */
+  public deleteTransaction(transactionId: string | number): boolean {
+    if (!this.state.transactions) return false;
+    const initialLen = this.state.transactions.length;
+    this.state.transactions = this.state.transactions.filter(
+      (t) => String(t.id) !== String(transactionId)
+    );
+    if (this.state.transactions.length !== initialLen) {
+      this.saveToStorage(this.state);
+      this.notifySubscribers();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Remove / Clear Transaction History (सभी या किसी विशिष्ट यूजर की ट्रांजेक्शन हिस्ट्री रिमूव करें)
+   */
+  public clearTransactions(userId?: string): { clearedCount: number } {
+    if (!this.state.transactions) {
+      this.state.transactions = [];
+      return { clearedCount: 0 };
+    }
+
+    const countBefore = this.state.transactions.length;
+    if (userId) {
+      this.state.transactions = this.state.transactions.filter((t) => t.userId !== userId);
+    } else {
+      this.state.transactions = [];
+    }
+    const countAfter = this.state.transactions.length;
+    const cleared = countBefore - countAfter;
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return { clearedCount: cleared };
+  }
+
   public getUserHelpCycle(userId: string): UserHelpCycle {
     if (!this.state.helpCycles) {
       this.state.helpCycles = [];
@@ -1199,6 +1378,11 @@ class DatabaseManager {
     // Auto-advance if in timer mode and 12 hours elapsed
     if (activeCycle.status === 'maturation_timer' && activeCycle.timerExpiryTime && Date.now() >= activeCycle.timerExpiryTime) {
       this.advanceTimerToReceiveHelp(activeCycle);
+    } else if (activeCycle.status === 'receive_help' && (!activeCycle.receiveLinks || activeCycle.receiveLinks.length === 0)) {
+      const balanced = this.createBalancedReceiveLinks(userId);
+      activeCycle.receiveLinks = balanced.links;
+      activeCycle.receiveCombination = balanced.combination;
+      this.saveToStorage(this.state);
     }
 
     return activeCycle;
@@ -1581,27 +1765,116 @@ class DatabaseManager {
     return cycle;
   }
 
+  public createBalancedReceiveLinks(
+    receiverUserId: string,
+    forcedCombination?: '100+50+50' | '100+100' | '50+50+50+50'
+  ): {
+    links: CycleLinkDetails[];
+    combination: '100+50+50' | '100+100' | '50+50+50+50';
+    totalAmount: number;
+  } {
+    const now = new Date().toISOString();
+
+    // User directive:
+    // Providers provide either ₹50 (Step 1) or ₹100 (Step 2).
+    // Receiver must receive strictly ₹200.
+    // Combinations allowed:
+    // 1. One ₹100 + Two ₹50 = 100 + 50 + 50 = ₹200
+    // 2. Two ₹100 = 100 + 100 = ₹200
+    // 3. Four ₹50 = 50 + 50 + 50 + 50 = ₹200
+    const combos: Array<'100+50+50' | '100+100' | '50+50+50+50'> = [
+      '100+50+50',
+      '100+100',
+      '50+50+50+50',
+    ];
+
+    const chosenCombo = forcedCombination || combos[Math.floor(Math.random() * combos.length)];
+
+    let amounts: number[] = [];
+    if (chosenCombo === '100+50+50') {
+      amounts = [100, 50, 50];
+    } else if (chosenCombo === '100+100') {
+      amounts = [100, 100];
+    } else {
+      amounts = [50, 50, 50, 50];
+    }
+
+    // Mathematical safety verification: sum must be strictly 200
+    const calculatedSum = amounts.reduce((acc, v) => acc + v, 0);
+    if (calculatedSum !== 200) {
+      throw new Error(`Mathematical integrity error: sum is ${calculatedSum}, must be strictly 200`);
+    }
+
+    // Candidate providers among active users who are not the receiver
+    const candidateUsers = this.state.users.filter(
+      (u) => u.id !== receiverUserId && u.role === 'user' && u.status === 'active'
+    );
+
+    const communityPeersPool = [
+      { id: 'H150-312940', name: 'Ramesh Patel', mobile: '9820145890', upi: 'ramesh.patel@okaxis' },
+      { id: 'H150-324810', name: 'Sunita Sharma', mobile: '9845012399', upi: 'sunita.sharma@paytm' },
+      { id: 'H150-338291', name: 'Manoj Tiwari', mobile: '9871092844', upi: 'manoj.tiwari@okhdfcbank' },
+      { id: 'H150-349102', name: 'Vikram Singh', mobile: '9819203941', upi: 'vikram.singh@oksbi' },
+      { id: 'H150-362719', name: 'Pooja Verma', mobile: '9822019283', upi: 'pooja.verma@icici' },
+    ];
+
+    const links: CycleLinkDetails[] = amounts.map((amt, idx) => {
+      const userMatch = candidateUsers[idx % Math.max(1, candidateUsers.length)];
+      const peerMatch = communityPeersPool[idx % communityPeersPool.length];
+
+      const providerId = userMatch ? userMatch.id : peerMatch.id;
+      const providerName = userMatch ? userMatch.fullName : peerMatch.name;
+      const providerMobile = userMatch ? userMatch.mobile : peerMatch.mobile;
+      const providerUpi = (userMatch as any)?.upiId || peerMatch.upi;
+
+      const utr = `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+
+      return {
+        requestId: `REC-L${idx + 1}-${amt}-${providerId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now().toString().slice(-4)}`,
+        amount: amt,
+        title: amt === 100 ? 'Step 2 Provide Help (₹100)' : 'Step 1 Verification Help (₹50)',
+        status: 'submitted',
+        matchedWithUserId: providerId,
+        matchedWithUserName: providerName,
+        matchedWithMobile: providerMobile,
+        matchedWithUpi: providerUpi,
+        matchedWithEmail: `${providerName.toLowerCase().replace(/\s+/g, '')}@help150.org`,
+        proofReference: utr,
+        slipUrl: sampleSlipUrl(amt, utr, providerName),
+        submittedAt: now,
+        deadlineTime: Date.now() + 24 * 3600000,
+      };
+    });
+
+    return {
+      links,
+      combination: chosenCombo,
+      totalAmount: calculatedSum,
+    };
+  }
+
   private advanceTimerToReceiveHelp(cycle: UserHelpCycle): void {
     const now = new Date().toISOString();
-    // User Directive: "अब कोई ऑटोमेटिक यूजर id जनरेट नहीं होना चाहिए"
-    // No automatic mock user IDs (e.g. H150-610492) are generated or added to database.
-    // User Directive: "एडमिन id सिर्फ रिसीव हेल्प लेने के लिए जाएगी"
-    // Admin ID only receives help, so the ₹200 incoming assistance is provided by the Community Peer Pool.
-    const utrSample = `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+    const balanced = this.createBalancedReceiveLinks(cycle.userId);
 
     cycle.status = 'receive_help';
+    cycle.receiveLinks = balanced.links;
+    cycle.receiveCombination = balanced.combination;
+
+    const primaryUtr = balanced.links[0]?.proofReference || `UTR-${Date.now().toString().slice(-8)}`;
+
     cycle.receiveLink = {
       requestId: `REC-200-${Math.floor(100000 + Math.random() * 900000)}`,
       amount: 200,
-      title: 'Receive Help Link (₹200)',
-      status: 'submitted', // Incoming peer already attached slip for user to review and confirm
-      matchedWithUserId: 'COMMUNITY-PEER',
-      matchedWithUserName: 'Community Peer Member',
-      matchedWithMobile: '9876500000',
+      title: `₹200 Receive Help (${balanced.combination.replace(/\+/g, ' + ₹')})`,
+      status: 'submitted',
+      matchedWithUserId: balanced.links[0]?.matchedWithUserId || 'COMMUNITY-PEER',
+      matchedWithUserName: balanced.links.map((l) => `${l.matchedWithUserName} (₹${l.amount})`).join(', '),
+      matchedWithMobile: balanced.links[0]?.matchedWithMobile || '9876500000',
       matchedWithEmail: 'peer.help@help150.org',
-      matchedWithUpi: 'communitypeer@okaxis',
-      proofReference: utrSample,
-      slipUrl: sampleSlipUrl(200, utrSample, 'Community Peer Member'),
+      matchedWithUpi: balanced.links[0]?.matchedWithUpi || 'communitypeer@okaxis',
+      proofReference: primaryUtr,
+      slipUrl: balanced.links[0]?.slipUrl,
       submittedAt: now,
       deadlineTime: Date.now() + 24 * 3600000,
     };
@@ -1609,8 +1882,8 @@ class DatabaseManager {
     this.state.notifications.unshift({
       id: `NOTIF-REC-${Date.now().toString().slice(-6)}`,
       userId: cycle.userId,
-      title: `₹200 Receive Help Link Assigned! (Cycle #${cycle.cycleNumber})`,
-      message: `A Community Peer Member has sent ₹200 peer assistance. Please review payment proof and confirm receipt.`,
+      title: `₹200 Receive Help Links Dispatched! (Cycle #${cycle.cycleNumber})`,
+      message: `Your ₹200 assistance is matched with ${balanced.links.length} provider(s): [${balanced.combination.replace(/\+/g, ' + ₹')}]. Exactly ₹200 balanced and tracked without discrepancy.`,
       type: 'success',
       isRead: false,
       createdAt: now,
@@ -1621,6 +1894,20 @@ class DatabaseManager {
     const cycle = this.getUserHelpCycle(userId);
     const now = new Date().toISOString();
 
+    // Mark all sub-links as completed if not already completed
+    let newlyAcceptedAmount = 0;
+    if (cycle.receiveLinks && cycle.receiveLinks.length > 0) {
+      cycle.receiveLinks.forEach((link) => {
+        if (link.status !== 'completed') {
+          link.status = 'completed';
+          link.completedAt = now;
+          newlyAcceptedAmount += link.amount;
+        }
+      });
+    } else {
+      newlyAcceptedAmount = 200;
+    }
+
     if (cycle.receiveLink) {
       cycle.receiveLink.status = 'completed';
       cycle.receiveLink.completedAt = now;
@@ -1629,10 +1916,10 @@ class DatabaseManager {
     cycle.status = 'completed';
     cycle.completedAt = now;
 
-    // Credit ₹200 to User Wallet & Total Received
+    // Credit ₹200 (or the remaining portion) to User Wallet & Total Received
     const wallet = this.getOrCreateWallet(userId);
-    wallet.availableBalance += 200;
-    wallet.totalHelpedReceived += 200;
+    wallet.availableBalance += newlyAcceptedAmount;
+    wallet.totalHelpedReceived += newlyAcceptedAmount;
     wallet.lastUpdated = now;
 
     // Log Transaction
@@ -1640,14 +1927,14 @@ class DatabaseManager {
       id: `TXN-CYC-${Date.now().toString().slice(-6)}`,
       userId,
       type: 'help_received',
-      amount: 200,
+      amount: newlyAcceptedAmount,
       balanceAfter: wallet.availableBalance,
       status: 'completed',
       referenceId: cycle.receiveLink?.requestId || cycle.id,
-      remarks: `₹200 Help Received for Cycle #${cycle.cycleNumber} (Net Profit ₹50)`,
+      remarks: `₹${newlyAcceptedAmount} Help Received for Cycle #${cycle.cycleNumber} (${cycle.receiveCombination || '₹200 Exact'} - Net Profit ₹50)`,
       senderUserId: cycle.receiveLink?.matchedWithUserId || 'H150-COMMUNITY',
       receiverUserId: userId,
-      senderName: cycle.receiveLink?.matchedWithUserName || 'Peer Member',
+      senderName: cycle.receiveLink?.matchedWithUserName || 'Matched Providers',
       receiverName: this.state.users.find((u) => u.id === userId)?.fullName || 'User',
       createdAt: now,
     });
@@ -1661,7 +1948,7 @@ class DatabaseManager {
       id: `NOTIF-LOOP-${Date.now().toString().slice(-6)}`,
       userId,
       title: `Congratulations! Cycle #${cycle.cycleNumber} Completed ➔ Cycle #${nextCycleNum} Started!`,
-      message: `₹200 has been credited to your wallet (Net gain: +₹50). New Cycle #${nextCycleNum} is now active.`,
+      message: `Full ₹200 assistance received and credited to your wallet (Net gain: +₹50). New Cycle #${nextCycleNum} is now active.`,
       type: 'success',
       isRead: false,
       createdAt: now,
@@ -1673,6 +1960,114 @@ class DatabaseManager {
     return { completedCycle: cycle, newCycle: nextCycle };
   }
 
+  public confirmCycleReceiveSubLink(
+    userId: string,
+    subRequestId: string
+  ): { cycle: UserHelpCycle; allCompleted: boolean; completedCycle?: UserHelpCycle; newCycle?: UserHelpCycle } {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (!cycle.receiveLinks || cycle.receiveLinks.length === 0) {
+      const res = this.confirmCycleReceiveLink(userId);
+      return { cycle: res.completedCycle, allCompleted: true, completedCycle: res.completedCycle, newCycle: res.newCycle };
+    }
+
+    const sub = cycle.receiveLinks.find((l) => l.requestId === subRequestId);
+    if (!sub || sub.status === 'completed') {
+      const allCompleted = cycle.receiveLinks.every((l) => l.status === 'completed');
+      return { cycle, allCompleted };
+    }
+
+    sub.status = 'completed';
+    sub.completedAt = now;
+
+    // Credit this specific sub-link amount (₹50 or ₹100) to user wallet
+    const wallet = this.getOrCreateWallet(userId);
+    wallet.availableBalance += sub.amount;
+    wallet.totalHelpedReceived += sub.amount;
+    wallet.lastUpdated = now;
+
+    // Log Transaction for this sub-link
+    this.state.transactions.unshift({
+      id: `TXN-SUB-${Date.now().toString().slice(-6)}`,
+      userId,
+      type: 'help_received',
+      amount: sub.amount,
+      balanceAfter: wallet.availableBalance,
+      status: 'completed',
+      referenceId: sub.requestId,
+      remarks: `₹${sub.amount} Help Received from ${sub.matchedWithUserName} (Part of ₹200 Package)`,
+      senderUserId: sub.matchedWithUserId,
+      receiverUserId: userId,
+      senderName: sub.matchedWithUserName,
+      receiverName: this.state.users.find((u) => u.id === userId)?.fullName || 'User',
+      createdAt: now,
+    });
+
+    // Check if all sub-links have been completed
+    const allCompleted = cycle.receiveLinks.every((l) => l.status === 'completed');
+    let completedCycle: UserHelpCycle | undefined;
+    let newCycle: UserHelpCycle | undefined;
+
+    if (allCompleted) {
+      if (cycle.receiveLink) {
+        cycle.receiveLink.status = 'completed';
+        cycle.receiveLink.completedAt = now;
+      }
+      cycle.status = 'completed';
+      cycle.completedAt = now;
+
+      // Start next cycle
+      const nextCycleNum = cycle.cycleNumber + 1;
+      newCycle = this.createNewCycle(userId, nextCycleNum);
+      this.state.helpCycles.unshift(newCycle);
+      completedCycle = cycle;
+
+      this.state.notifications.unshift({
+        id: `NOTIF-LOOP-${Date.now().toString().slice(-6)}`,
+        userId,
+        title: `Congratulations! Full ₹200 Received (Cycle #${cycle.cycleNumber})!`,
+        message: `All provider links for ₹200 have been accepted. Cycle #${nextCycleNum} is now started.`,
+        type: 'success',
+        isRead: false,
+        createdAt: now,
+      });
+    }
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+
+    return { cycle, allCompleted, completedCycle, newCycle };
+  }
+
+  public rejectCycleReceiveSubLink(userId: string, subRequestId: string, reason: string): { cycle: UserHelpCycle } {
+    const cycle = this.getUserHelpCycle(userId);
+    const now = new Date().toISOString();
+
+    if (cycle.receiveLinks) {
+      const sub = cycle.receiveLinks.find((l) => l.requestId === subRequestId);
+      if (sub) {
+        sub.status = 'rejected';
+        sub.rejectionReason = reason;
+        sub.rejectedAt = now;
+      }
+    }
+
+    this.state.notifications.unshift({
+      id: `NOTIF-REJ-SUB-${Date.now().toString().slice(-6)}`,
+      userId,
+      title: `Sub-Link Payment Rejected (#${subRequestId})`,
+      message: `You marked provider payment as rejected: "${reason}". Support desk has been notified.`,
+      type: 'warning',
+      isRead: false,
+      createdAt: now,
+    });
+
+    this.saveToStorage(this.state);
+    this.notifySubscribers();
+    return { cycle };
+  }
+
   public rejectCycleReceiveLink(userId: string, reason: string): { cycle: UserHelpCycle } {
     const cycle = this.getUserHelpCycle(userId);
     const now = new Date().toISOString();
@@ -1681,6 +2076,16 @@ class DatabaseManager {
       cycle.receiveLink.status = 'rejected';
       cycle.receiveLink.rejectionReason = reason;
       cycle.receiveLink.rejectedAt = now;
+    }
+
+    if (cycle.receiveLinks) {
+      cycle.receiveLinks.forEach((l) => {
+        if (l.status !== 'completed') {
+          l.status = 'rejected';
+          l.rejectionReason = reason;
+          l.rejectedAt = now;
+        }
+      });
     }
 
     this.state.notifications.unshift({

@@ -463,6 +463,56 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     }
   };
 
+  // Confirm Individual Sub-Link (e.g. ₹50 or ₹100 from matched provider)
+  const handleConfirmReceiveSubLink = async (subRequestId: string) => {
+    setIsConfirmingReceive(true);
+    setFeedback(null);
+    try {
+      const result = db.confirmCycleReceiveSubLink(currentUser.id, subRequestId);
+      syncCycle();
+      refreshUserData();
+      const updatedStats = db.getUserIncomeStats(currentUser.id);
+
+      if (result.allCompleted && result.completedCycle && result.newCycle) {
+        setPendingCelebrationData({
+          cycleNum: result.completedCycle.cycleNumber,
+          profit: 50,
+        });
+        setShowCoinAnimation(true);
+        setFeedback({
+          type: 'success',
+          message: `बधाई हो! पूरे ₹200 (सभी प्रोवाइडर्स से) प्राप्त व स्वीकृत हो चुके हैं! यह राशि आपके "टोटल रिसिव" (अब ₹${updatedStats.totalHelpedReceived}) में जुड़ गई है। नई साइकिल #${result.newCycle.cycleNumber} शुरू हो गई है!`,
+        });
+      } else {
+        const sub = result.cycle.receiveLinks?.find((l) => l.requestId === subRequestId);
+        setFeedback({
+          type: 'success',
+          message: `प्रदाता (${sub?.matchedWithUserName || 'सदस्य'}) से ₹${sub?.amount || 0} सहायता स्वीकृत! यह आपके वॉलेट में क्रेडिट हो गया है। शेष राशि कन्फर्म होते ही साइकिल पूरी होगी।`,
+        });
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error confirming sub-link' });
+    } finally {
+      setIsConfirmingReceive(false);
+    }
+  };
+
+  // Reject Individual Sub-Link
+  const handleRejectReceiveSubLink = (subRequestId: string, reason: string) => {
+    const finalReason = reason.trim() || 'भुगतान राशि बैंक खाते में प्राप्त नहीं हुई';
+    try {
+      db.rejectCycleReceiveSubLink(currentUser.id, subRequestId, finalReason);
+      syncCycle();
+      refreshUserData();
+      setFeedback({
+        type: 'error',
+        message: `प्रदाता का भुगतान अस्वीकृत (Rejected)। कारण: "${finalReason}"`,
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error rejecting sub-link' });
+    }
+  };
+
   // Step 1 details
   const step1 = cycle.verificationLink;
   // Step 2 details
@@ -768,26 +818,26 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       {/* THE TWO MAIN BOXES GRID (ALWAYS DISPLAYED ON DASHBOARD) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
-        {/* 🟣 PROVIDE HELP BOX (LIGHT & VIBRANT FUCHSIA / PURPLE - MATCHES MINUTE BOX) */}
+        {/* 🟣 PROVIDE HELP BOX (LIGHT & SOFT FUCHSIA / PURPLE) */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-2xl bg-gradient-to-b from-fuchsia-600 via-purple-700 to-purple-800 border-2 border-fuchsia-300 shadow-xl shadow-fuchsia-950/30 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-fuchsia-200 transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-purple-100/90 via-fuchsia-50/70 to-white border-2 border-purple-300 shadow-lg shadow-purple-500/10 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-purple-400 transition-all text-slate-800"
         >
           {/* Decorative glowing ambient */}
-          <div className="absolute top-0 right-0 h-28 w-28 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 h-28 w-28 bg-purple-200/40 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔥 PROVIDE HELP (Light & Vibrant Fuchsia/Purple) */}
-            <div className="flex flex-wrap items-center justify-between border-b border-fuchsia-300/40 pb-2 gap-2">
+            {/* Header: 🔥 PROVIDE HELP (Lightened Style) */}
+            <div className="flex flex-wrap items-center justify-between border-b border-purple-200 pb-2 gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 border-2 border-white shadow-md shadow-purple-900/50">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-700 border-2 border-white shadow-md">
                   <span className="text-sm">🔥</span>
                   <h3 className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     PROVIDE HELP
                   </h3>
                 </div>
-                <span className="text-[11px] font-black text-fuchsia-100">
+                <span className="text-[11px] font-black text-purple-800">
                   {isStep1Active ? 'Step 1' : isStep2Active ? 'Step 2' : ''}
                 </span>
 
@@ -799,15 +849,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               <div className="flex items-center gap-2">
                 {/* Live Countdown Timer Badge */}
                 {(isStep1Active || isStep2Active) && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/70 border border-fuchsia-300/60 text-amber-300 font-mono font-bold text-[10px] shadow-sm">
-                    <Clock className="h-3 w-3 animate-pulse" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 border border-purple-300 text-purple-900 font-mono font-bold text-[10px] shadow-xs">
+                    <Clock className="h-3 w-3 animate-pulse text-purple-700" />
                     <span>{isStep1Active ? timerStep1String : '11:59:59'}</span>
                   </span>
                 )}
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-xs border ${
                   isReceiveActive
-                    ? 'bg-amber-400 text-slate-950 border-amber-300'
-                    : 'bg-emerald-400 text-slate-950 border-emerald-300 font-black'
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 font-black'
+                    : 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black'
                 }`}>
                   {isStep1Active
                     ? '₹50'
@@ -822,20 +872,20 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (TIGHT TO SLIP UPLOAD BUTTON) */}
             {(isStep1Active || isStep2Active) && (
-              <div className="bg-purple-950/40 border border-fuchsia-300/50 rounded-xl p-2.5 space-y-2 shadow-inner backdrop-blur-xs">
+              <div className="bg-white border border-purple-200 rounded-xl p-2.5 space-y-2 shadow-xs">
                 {/* Row 1: Beneficiary Name & ID + Amount */}
-                <div className="flex items-center justify-between text-xs pb-1 border-b border-purple-400/30">
+                <div className="flex items-center justify-between text-xs pb-1 border-b border-purple-100">
                   <div className="flex items-center gap-1.5 truncate">
-                    <span className="font-bold text-white text-xs sm:text-sm truncate">
+                    <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
                       {activeProvideBeneficiary.name}
                     </span>
-                    <span className="font-mono text-[9px] text-fuchsia-100 bg-purple-950/60 px-1 py-0.5 rounded font-bold shrink-0 border border-fuchsia-400/40">
+                    <span className="font-mono text-[9px] text-purple-700 bg-purple-100 px-1 py-0.5 rounded font-bold shrink-0 border border-purple-300">
                       {activeProvideBeneficiary.id}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-emerald-200 font-bold uppercase">Amount:</span>
-                    <span className="font-mono font-black text-xs sm:text-sm text-emerald-300 bg-black/40 px-2 py-0.5 rounded border border-emerald-400/50">
+                    <span className="text-[10px] text-emerald-700 font-bold uppercase">Amount:</span>
+                    <span className="font-mono font-black text-xs sm:text-sm text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
                       ₹{activeProvideBeneficiary.amount}
                     </span>
                   </div>
@@ -844,14 +894,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 {/* Row 2: Mobile & UPI with 1-click Copy and QR */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
                   {/* Mobile with Copy */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-950/40 border border-purple-400/40">
-                    <div className="flex items-center gap-1 text-purple-100 truncate">
-                      <Phone className="h-3 w-3 text-purple-200 shrink-0" />
-                      <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.mobile}</span>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-50/80 border border-purple-200">
+                    <div className="flex items-center gap-1 text-purple-900 truncate">
+                      <Phone className="h-3 w-3 text-purple-600 shrink-0" />
+                      <span className="font-mono font-bold text-slate-900 truncate text-[11px]">{activeProvideBeneficiary.mobile}</span>
                     </div>
                     <button
                       onClick={() => handleCopyText(activeProvideBeneficiary.mobile, 'mobile', 'Mobile')}
-                      className="p-1 rounded bg-purple-700 hover:bg-purple-600 text-white transition cursor-pointer text-[10px]"
+                      className="p-1 rounded bg-purple-600 hover:bg-purple-700 text-white transition cursor-pointer text-[10px]"
                       title="Copy Mobile"
                     >
                       {copiedKey === 'mobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
@@ -859,15 +909,15 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
 
                   {/* UPI ID with Copy & QR */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-950/40 border border-purple-400/40">
-                    <div className="flex items-center gap-1 text-purple-100 truncate">
-                      <CreditCard className="h-3 w-3 text-amber-300 shrink-0" />
-                      <span className="font-mono font-semibold text-white truncate text-[11px]">{activeProvideBeneficiary.upi}</span>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-50/80 border border-purple-200">
+                    <div className="flex items-center gap-1 text-purple-900 truncate">
+                      <CreditCard className="h-3 w-3 text-purple-600 shrink-0" />
+                      <span className="font-mono font-bold text-slate-900 truncate text-[11px]">{activeProvideBeneficiary.upi}</span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleCopyText(activeProvideBeneficiary.upi, 'upi', 'UPI ID')}
-                        className="px-1.5 py-0.5 rounded bg-white text-purple-900 font-black text-[9px] cursor-pointer"
+                        className="px-1.5 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white font-bold text-[9px] cursor-pointer"
                         title="Copy UPI"
                       >
                         {copiedKey === 'upi' ? '✓' : 'Copy'}
@@ -879,7 +929,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                           amount: activeProvideBeneficiary.amount,
                           title: activeProvideBeneficiary.title,
                         })}
-                        className="p-1 rounded bg-purple-950 text-white border border-fuchsia-400/50 cursor-pointer"
+                        className="p-1 rounded bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 cursor-pointer"
                         title="Scan QR Code"
                       >
                         <QrCode className="h-3 w-3" />
@@ -1214,26 +1264,26 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
         </div>
 
         {/* ========================================================================= */}
-        {/* 🔵 RECEIVE HELP BOX (LIGHT & RADIANT CYAN / TEAL - MATCHES SECONDS BOX)   */}
+        {/* 🔵 RECEIVE HELP BOX (LIGHT & SOFT SKY / CYAN / TEAL)                      */}
         {/* ========================================================================= */}
         <div
           id="box-receive-help"
-          className="rounded-2xl bg-gradient-to-b from-cyan-500 via-teal-600 to-teal-800 border-2 border-cyan-200 shadow-xl shadow-teal-950/30 p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white transition-all text-white"
+          className="rounded-2xl bg-gradient-to-b from-sky-100/90 via-cyan-50/70 to-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/10 p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden group hover:border-cyan-400 transition-all text-slate-800"
         >
           {/* Decorative glowing ambient */}
-          <div className="absolute top-0 right-0 h-28 w-28 bg-white/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 h-28 w-28 bg-cyan-200/40 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: RECEIVE HELP (Light & Radiant Cyan / Teal) */}
-            <div className="flex items-center justify-between border-b border-cyan-200/40 pb-2">
+            {/* Header: RECEIVE HELP (Lightened Style) */}
+            <div className="flex items-center justify-between border-b border-cyan-200 pb-2">
               <div className="flex items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 via-teal-500 to-teal-700 border-2 border-white shadow-md shadow-teal-900/50">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-600 border-2 border-white shadow-md">
                   <RotateCw className="w-3.5 h-3.5 text-white font-black stroke-[2.5]" />
                   <h3 className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
                     RECEIVE HELP
                   </h3>
                 </div>
-                <span className="text-[11px] font-black text-cyan-100">
+                <span className="text-[11px] font-black text-cyan-800">
                   {isReceiveActive ? 'Slip Submitted' : ''}
                 </span>
               </div>
@@ -1242,10 +1292,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 {/* Live Action Timer Badge */}
                 {isReceiveActive && (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-950/70 border border-cyan-200/60 text-amber-300 font-mono font-bold text-[10px] shadow-sm"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-100 border border-cyan-300 text-cyan-950 font-mono font-bold text-[10px] shadow-xs"
                     title={receive24hTimer.is24HoursCompleted ? '24 घंटे पूर्ण (Reject Unlocked)' : '24-Hour Receiver Action Deadline'}
                   >
-                    <Clock className="h-3 w-3 animate-pulse" />
+                    <Clock className="h-3 w-3 animate-pulse text-cyan-700" />
                     <span>
                       {receive24hTimer.is24HoursCompleted
                         ? '00:00:00 (EXPIRED)'
@@ -1255,10 +1305,10 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     </span>
                   </span>
                 )}
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-xs border ${
                   isReceiveActive
-                    ? 'bg-amber-400 text-blue-950 border-amber-300 font-black'
-                    : 'bg-slate-900/80 text-slate-200 border-slate-600'
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 font-black'
+                    : 'bg-slate-100 text-slate-700 border-slate-300'
                 }`}>
                   {isReceiveActive ? '₹200' : '🔒 ₹200'}
                 </span>
@@ -1267,36 +1317,36 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* Incoming Provide Payments from other members awaiting receiver verification */}
             {incomingProvidePayments.length > 0 && (
-              <div className="bg-emerald-950/90 border-2 border-emerald-400/80 rounded-xl p-2.5 space-y-2 shadow-lg animate-in fade-in">
-                <div className="flex items-center justify-between border-b border-emerald-500/40 pb-1.5">
+              <div className="bg-white border-2 border-emerald-300 rounded-xl p-2.5 space-y-2 shadow-sm animate-in fade-in">
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-1.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs">📥</span>
-                    <span className="font-bold text-white text-xs">
+                    <span className="font-bold text-slate-900 text-xs">
                       आवक सहायता स्लिप सत्यापन ({incomingProvidePayments.length})
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
+                  <span className="text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
                     Action Required
                   </span>
                 </div>
 
                 {incomingProvidePayments.map((pmt) => (
-                  <div key={pmt.cycleId + pmt.type} className="p-2 rounded-lg bg-black/40 border border-emerald-500/30 space-y-2">
+                  <div key={pmt.cycleId + pmt.type} className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-200 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-bold text-white">{pmt.providerName}</div>
-                        <div className="text-[9px] text-slate-400 font-mono">ID: {pmt.providerUserId}</div>
+                        <div className="font-bold text-slate-900">{pmt.providerName}</div>
+                        <div className="text-[9px] text-slate-500 font-mono">ID: {pmt.providerUserId}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono font-black text-amber-300 text-sm">₹{pmt.amount}</div>
-                        <div className="text-[9px] text-emerald-300">
+                        <div className="font-mono font-black text-emerald-800 text-sm">₹{pmt.amount}</div>
+                        <div className="text-[9px] text-emerald-700 font-semibold">
                           {pmt.type === 'verification' ? 'Step 1 (सत्यापन)' : 'Step 2'}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono">
-                      <span>UTR: <strong className="text-amber-300">{pmt.proofReference || 'Submitted'}</strong></span>
+                    <div className="flex items-center justify-between text-[10px] text-slate-600 font-mono">
+                      <span>UTR: <strong className="text-slate-900">{pmt.proofReference || 'Submitted'}</strong></span>
                       {pmt.slipUrl && (
                         <button
                           onClick={() => setShowProofModal({
@@ -1305,7 +1355,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                             amount: pmt.amount,
                             name: pmt.providerName,
                           })}
-                          className="text-emerald-300 hover:text-white underline font-bold cursor-pointer"
+                          className="text-emerald-700 hover:text-emerald-900 underline font-bold cursor-pointer"
                         >
                           स्लिप देखें ➔
                         </button>
@@ -1325,7 +1375,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                           setProvideRejectReason('');
                           setShowProvideRejectModal(pmt.type);
                         }}
-                        className="py-1.5 px-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
+                        className="py-1.5 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <X className="h-3.5 w-3.5 stroke-[3]" />
                         <span>रिजेक्ट</span>
@@ -1338,194 +1388,347 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* A. SCENARIO 1: RECEIVE HELP IS ACTIVE (₹200 LINK READY TO CONFIRM) */}
             {isReceiveActive && receiveLink && (
-              <div className="bg-teal-950/40 border border-cyan-200/50 rounded-xl p-2.5 space-y-2 shadow-inner backdrop-blur-xs">
-                {/* Row 1: Sender Member Name & ID + Amount Option */}
-                <div className="flex items-center justify-between text-xs pb-1 border-b border-teal-500/30">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="font-bold text-white text-xs sm:text-sm truncate">
-                      {receiveLink.matchedWithUserName}
-                    </span>
-                    <span className="font-mono text-[9px] text-cyan-100 bg-teal-950/60 px-1 py-0.5 rounded font-bold shrink-0 border border-cyan-400/40">
-                      {receiveLink.matchedWithUserId}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-amber-300 font-bold uppercase">Amount:</span>
-                    <span className="font-mono font-black text-xs sm:text-sm text-amber-300 bg-black/40 px-2 py-0.5 rounded border border-cyan-300/40">
-                      ₹{receiveLink.amount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Row 2: Mobile with Copy & UTR Number with View Proof Slip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-                  {/* Sender Mobile */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-950/40 border border-teal-400/40">
-                    <div className="flex items-center gap-1 text-cyan-100 truncate">
-                      <Phone className="h-3 w-3 text-cyan-200 shrink-0" />
-                      <span className="font-mono font-semibold text-white truncate text-[11px]">{receiveLink.matchedWithMobile}</span>
-                    </div>
-                    <button
-                      onClick={() => handleCopyText(receiveLink.matchedWithMobile, 'recMobile', 'Sender Mobile')}
-                      className="p-1 rounded bg-teal-700 hover:bg-teal-600 text-white transition cursor-pointer text-[10px]"
-                      title="Copy Mobile"
-                    >
-                      {copiedKey === 'recMobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
-                    </button>
-                  </div>
-
-                  {/* UTR & View Proof */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-950/40 border border-teal-400/40">
-                    <div className="flex items-center gap-1 text-cyan-100 truncate">
-                      <span className="text-[10px]">🧾</span>
-                      <span className="font-mono font-bold text-amber-300 truncate text-[11px]">
-                        {receiveLink.proofReference || 'UTR-VERIFIED'}
+              <div className="bg-white border border-cyan-200 rounded-xl p-2.5 space-y-2.5 shadow-xs">
+                {/* 1. Header: Balanced Matching Overview & Exact ₹200 Tracked */}
+                <div className="p-2 rounded-xl bg-cyan-50/80 border border-cyan-200 space-y-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs">🎯</span>
+                      <span className="font-black text-slate-900 text-xs tracking-wide">
+                        ₹200 सहायता मैचिंग विवरण
                       </span>
                     </div>
-                    {receiveLink.slipUrl && (
-                      <button
-                        onClick={() => setShowProofModal({
-                          url: receiveLink.slipUrl!,
-                          ref: receiveLink.proofReference || '',
-                          amount: 200,
-                          name: receiveLink.matchedWithUserName,
-                        })}
-                        className="px-1.5 py-0.5 rounded bg-teal-700 hover:bg-teal-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye className="h-2.5 w-2.5" />
-                        <span>View</span>
-                      </button>
-                    )}
+                    <span className="font-mono text-[9px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                      {cycle.receiveCombination === '100+50+50'
+                        ? '1 प्रदाता ₹100 + 2 प्रदाता ₹50'
+                        : cycle.receiveCombination === '100+100'
+                        ? '2 प्रदाता ₹100 + ₹100'
+                        : cycle.receiveCombination === '50+50+50+50'
+                        ? '4 प्रदाता ₹50 प्रत्येक'
+                        : 'सटीक ₹200 बैलेंस्ड'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-cyan-900 font-semibold pt-0.5">
+                    <span className="text-emerald-700 font-bold">
+                      सटीक ₹200 • न कम न ज्यादा (100% Balanced)
+                    </span>
+                    <span className="font-mono font-bold text-slate-900">
+                      स्वीकृत: ₹{cycle.receiveLinks ? cycle.receiveLinks.filter((l) => l.status === 'completed').reduce((s, l) => s + l.amount, 0) : (receiveLink.status === 'completed' ? 200 : 0)} / ₹200
+                    </span>
+                  </div>
+
+                  {/* Visual Progress Bar */}
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-cyan-200">
+                    <div
+                      className="bg-gradient-to-r from-teal-500 via-emerald-500 to-amber-400 h-full transition-all duration-500"
+                      style={{
+                        width: `${
+                          cycle.receiveLinks
+                            ? Math.min(100, ((cycle.receiveLinks.filter((l) => l.status === 'completed').reduce((s, l) => s + l.amount, 0)) / 200) * 100)
+                            : (receiveLink.status === 'completed' ? 100 : 0)
+                        }%`,
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Row 3: Receiver Decision Buttons right up to amount level ([ ACCEPT ] & [ REJECT ]) */}
-                {receiveLink.status === 'rejected' ? (
-                  <div className="p-2 rounded-lg bg-rose-950/90 border border-rose-500/70 text-center space-y-1">
-                    <div className="text-[10px] font-bold text-rose-300 flex items-center justify-center gap-1">
-                      <AlertTriangle className="h-3 w-3 text-rose-400 shrink-0" />
-                      <span>आपने यह भुगतान अस्वीकृत (REJECT) किया है</span>
-                    </div>
-                    <p className="text-[9px] text-rose-200">
-                      कारण: <strong>"{receiveLink.rejectionReason || rejectReason}"</strong>
-                    </p>
-                    <button
-                      onClick={handleConfirmReceiveHelp}
-                      disabled={isConfirmingReceive}
-                      className="w-full py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition cursor-pointer shadow flex items-center justify-center gap-1"
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>पुनः जांच कर ₹200 स्वीकार करें</span>
-                    </button>
-                  </div>
-                ) : !isReceiveSlipUploaded ? (
-                  /* Waiting for provider to upload slip before receiver can accept */
-                  <div className="p-3 rounded-xl bg-amber-950/70 border border-amber-400/50 text-center space-y-1.5 shadow-inner">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300">
-                      <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
-                      <span>प्रदाता द्वारा स्लिप अपलोड की प्रतीक्षा है</span>
-                    </div>
-                    <p className="text-[10px] text-amber-100 leading-relaxed">
-                      प्रदाता सदस्य (<strong>{receiveLink.matchedWithUserName}</strong>) द्वारा सहायता राशि ट्रांसफर कर पेमेंट स्लिप अपलोड करने के बाद ही यहाँ <strong>"एक्सेप्ट"</strong> बटन दिखाई देगा।
-                    </p>
+                {/* 2. Provider Sub-Links List (Tracked 100+50+50, 100+100, or 50+50+50+50) */}
+                {cycle.receiveLinks && cycle.receiveLinks.length > 0 ? (
+                  <div className="space-y-2">
+                    {cycle.receiveLinks.map((sub, idx) => (
+                      <div
+                        key={sub.requestId || idx}
+                        className={`p-2.5 rounded-xl border transition-all ${
+                          sub.status === 'completed'
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : sub.status === 'rejected'
+                            ? 'bg-rose-50 border-rose-300'
+                            : 'bg-cyan-50/50 border-cyan-200 shadow-xs'
+                        } space-y-2`}
+                      >
+                        {/* Sub-Link Header: Provider Name, ID & Sub Amount */}
+                        <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-200">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-[10px] font-bold text-cyan-700">#{idx + 1}</span>
+                            <span className="font-bold text-slate-900 text-xs truncate">
+                              {sub.matchedWithUserName}
+                            </span>
+                            <span className="font-mono text-[9px] text-cyan-800 bg-cyan-100 px-1 py-0.5 rounded font-bold shrink-0 border border-cyan-300">
+                              {sub.matchedWithUserId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[9px] text-slate-700 font-bold uppercase">Amount:</span>
+                            <span className={`font-mono font-black text-xs px-2 py-0.5 rounded border ${
+                              sub.amount === 100
+                                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                : 'bg-cyan-100 text-cyan-900 border-cyan-300'
+                            }`}>
+                              ₹{sub.amount}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Sub-Link Info: Mobile & Proof Slip */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                          {/* Mobile */}
+                          <div className="flex items-center justify-between p-1.5 rounded-lg bg-white border border-cyan-200">
+                            <div className="flex items-center gap-1 text-cyan-900 truncate">
+                              <Phone className="h-3 w-3 text-cyan-600 shrink-0" />
+                              <span className="font-mono font-bold text-slate-900 truncate text-[11px]">
+                                {sub.matchedWithMobile}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleCopyText(sub.matchedWithMobile, `recMobile_${idx}`, 'Sender Mobile')}
+                              className="p-1 rounded bg-cyan-700 hover:bg-cyan-600 text-white transition cursor-pointer text-[10px]"
+                              title="Copy Mobile"
+                            >
+                              {copiedKey === `recMobile_${idx}` ? (
+                                <Check className="h-2.5 w-2.5 text-emerald-300" />
+                              ) : (
+                                <Copy className="h-2.5 w-2.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          {/* UTR & Slip View */}
+                          <div className="flex items-center justify-between p-1.5 rounded-lg bg-white border border-cyan-200">
+                            <div className="flex items-center gap-1 text-slate-800 truncate">
+                              <span className="text-[10px]">🧾</span>
+                              <span className="font-mono font-bold text-slate-900 truncate text-[11px]">
+                                {sub.proofReference || 'UTR-VERIFIED'}
+                              </span>
+                            </div>
+                            {sub.slipUrl && (
+                              <button
+                                onClick={() =>
+                                  setShowProofModal({
+                                    url: sub.slipUrl!,
+                                    ref: sub.proofReference || '',
+                                    amount: sub.amount,
+                                    name: sub.matchedWithUserName,
+                                  })
+                                }
+                                className="px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="h-2.5 w-2.5" />
+                                <span>View</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Sub-Link Actions */}
+                        {sub.status === 'completed' ? (
+                          <div className="flex items-center justify-between p-1.5 rounded-lg bg-emerald-100 border border-emerald-300 text-[11px] text-emerald-900">
+                            <div className="flex items-center gap-1 font-bold">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              <span>₹{sub.amount} सहायता स्वीकृत एवं जमा</span>
+                            </div>
+                            <span className="text-[10px] text-emerald-800 font-mono font-bold">DONE</span>
+                          </div>
+                        ) : sub.status === 'rejected' ? (
+                          <div className="p-1.5 rounded-lg bg-rose-100 border border-rose-300 space-y-1">
+                            <div className="text-[10px] font-bold text-rose-900 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3 text-rose-600 shrink-0" />
+                              <span>अस्वीकृत: "{sub.rejectionReason || 'बैंक खाते में प्राप्त नहीं हुई'}"</span>
+                            </div>
+                            <button
+                              onClick={() => handleConfirmReceiveSubLink(sub.requestId)}
+                              disabled={isConfirmingReceive}
+                              className="w-full py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] cursor-pointer"
+                            >
+                              पुनः जांच कर ₹{sub.amount} स्वीकार करें
+                            </button>
+                          </div>
+                        ) : (
+                          <div className={`grid ${receive24hTimer.is24HoursCompleted ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
+                            <button
+                              onClick={() => handleConfirmReceiveSubLink(sub.requestId)}
+                              disabled={isConfirmingReceive}
+                              className="py-2 px-3 rounded-lg bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase shadow-sm transition flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                            >
+                              <Check className="h-3.5 w-3.5 stroke-[3]" />
+                              <span>[ एक्सेप्ट ₹{sub.amount} ]</span>
+                            </button>
+
+                            {receive24hTimer.is24HoursCompleted && (
+                              <button
+                                onClick={() => setShowRejectModal(sub.requestId as any)}
+                                disabled={isConfirmingReceive}
+                                className="py-2 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white border border-rose-400/60 font-black text-xs uppercase shadow-sm transition flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <X className="h-3 w-3 stroke-[3]" />
+                                <span>[ रिजेक्ट ]</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
+                  /* Single Card Fallback if cycle.receiveLinks is not initialized */
                   <div className="space-y-2">
-                    {/* Live Income & Received Indicator */}
-                    <div className="p-2 rounded-xl bg-emerald-950/90 border border-emerald-500/50 text-[11px] text-emerald-200 flex items-center justify-between shadow-inner">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <TrendingUp className="h-4 w-4 text-emerald-400 shrink-0" />
-                        <span>एक्सेप्ट करते ही ₹200 आपके "टोटल रिसिव" में जुड़ेगा</span>
+                    {/* Row 1: Sender Member Name & ID + Amount Option */}
+                    <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-200">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          {receiveLink.matchedWithUserName}
+                        </span>
+                        <span className="font-mono text-[9px] text-cyan-800 bg-cyan-100 px-1 py-0.5 rounded font-bold shrink-0 border border-cyan-300">
+                          {receiveLink.matchedWithUserId}
+                        </span>
                       </div>
-                      <span className="font-mono font-black text-amber-300">
-                        वर्तमान कुल: ₹{incomeStats?.totalHelpedReceived ?? 0}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] text-slate-700 font-bold uppercase">Amount:</span>
+                        <span className="font-mono font-black text-xs sm:text-sm text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                          ₹{receiveLink.amount}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className={`grid ${receive24hTimer.is24HoursCompleted ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
-                      <button
-                        onClick={handleConfirmReceiveHelp}
-                        disabled={isConfirmingReceive}
-                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
-                        title="राशि प्राप्त हो गई है, स्वीकार करें"
-                      >
-                        <Check className="h-4 w-4 stroke-[3]" />
-                        <span>[ ACCEPT ₹200 ]</span>
-                      </button>
-
-                      {/* रिजेक्ट बटन लिंक के टाइमर के साथ कनेक्ट: 24 घंटे पूरे होने के बाद ही दिखाई देगा */}
-                      {receive24hTimer.is24HoursCompleted ? (
+                    {/* Row 2: Mobile with Copy & UTR Number with View Proof Slip */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                      {/* Sender Mobile */}
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-white border border-cyan-200">
+                        <div className="flex items-center gap-1 text-cyan-900 truncate">
+                          <Phone className="h-3 w-3 text-cyan-600 shrink-0" />
+                          <span className="font-mono font-bold text-slate-900 truncate text-[11px]">{receiveLink.matchedWithMobile}</span>
+                        </div>
                         <button
-                          onClick={() => setShowRejectModal(true)}
-                          disabled={isConfirmingReceive}
-                          className="py-2.5 px-2.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 animate-in fade-in"
-                          title="24 घंटे पूरे हो चुके हैं, अस्वीकार करें"
+                          onClick={() => handleCopyText(receiveLink.matchedWithMobile, 'recMobile', 'Sender Mobile')}
+                          className="p-1 rounded bg-cyan-700 hover:bg-cyan-600 text-white transition cursor-pointer text-[10px]"
+                          title="Copy Mobile"
                         >
-                          <X className="h-3.5 w-3.5 stroke-[3]" />
-                          <span>[ REJECT ]</span>
+                          {copiedKey === 'recMobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
                         </button>
-                      ) : null}
-                    </div>
+                      </div>
 
-                    {/* 24 घंटे पूरे होने से पहले रिजेक्ट लॉक संदेश */}
-                    {!receive24hTimer.is24HoursCompleted && (
-                      <div className="p-2 rounded-xl bg-sky-950/90 border border-sky-400/30 flex items-center justify-between text-[10px] text-sky-200">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
-                          <span className="truncate">
-                            रिजेक्ट बटन 24 घंटे पूरे होने पर खुलेगा (शेष:{' '}
-                            <strong className="font-mono text-amber-300 font-bold">
-                              {String(receive24hTimer.hours).padStart(2, '0')}:
-                              {String(receive24hTimer.minutes).padStart(2, '0')}:
-                              {String(receive24hTimer.seconds).padStart(2, '0')}
-                            </strong>
-                            )
+                      {/* UTR & View Proof */}
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-white border border-cyan-200">
+                        <div className="flex items-center gap-1 text-slate-800 truncate">
+                          <span className="text-[10px]">🧾</span>
+                          <span className="font-mono font-bold text-slate-900 truncate text-[11px]">
+                            {receiveLink.proofReference || 'UTR-VERIFIED'}
                           </span>
                         </div>
-                        {/* Quick simulator for admin/testing verification */}
-                        <button
-                          type="button"
-                          onClick={handleFastForwardReceiveTimer}
-                          className="text-[9px] font-bold text-amber-300 hover:text-amber-100 underline cursor-pointer shrink-0 ml-2"
-                          title="परीक्षण हेतु 24 घंटे का टाइमर तुरंत समाप्त करें"
-                        >
-                          ⚡ Test 24h
-                        </button>
+                        {receiveLink.slipUrl && (
+                          <button
+                            onClick={() => setShowProofModal({
+                              url: receiveLink.slipUrl!,
+                              ref: receiveLink.proofReference || '',
+                              amount: 200,
+                              name: receiveLink.matchedWithUserName,
+                            })}
+                            className="px-1.5 py-0.5 rounded bg-teal-700 hover:bg-teal-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="h-2.5 w-2.5" />
+                            <span>View</span>
+                          </button>
+                        )}
                       </div>
-                    )}
-
-                    <div className="text-[9px] text-sky-200 text-center font-medium">
-                      बैंक खाता जांचकर निर्णय लें (स्वीकार करने पर +₹50 शुद्ध लाभ वॉलेट में कॉइन के रूप में जमा होगा)
                     </div>
                   </div>
                 )}
+
+                {/* 3. Overall Master Action: Live Income & Total Accept */}
+                <div className="space-y-2 pt-1">
+                  <div className="p-2 rounded-xl bg-emerald-950/90 border border-emerald-500/50 text-[11px] text-emerald-200 flex items-center justify-between shadow-inner">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <TrendingUp className="h-4 w-4 text-emerald-400 shrink-0" />
+                      <span>कुल ₹200 सहायता आपके "टोटल रिसिव" में जुड़ती है</span>
+                    </div>
+                    <span className="font-mono font-black text-amber-300">
+                      वर्तमान कुल: ₹{incomeStats?.totalHelpedReceived ?? 0}
+                    </span>
+                  </div>
+
+                  <div className={`grid ${receive24hTimer.is24HoursCompleted ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5`}>
+                    <button
+                      onClick={handleConfirmReceiveHelp}
+                      disabled={isConfirmingReceive}
+                      className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                      title="पूरी ₹200 सहायता एक साथ स्वीकार करें"
+                    >
+                      <Check className="h-4 w-4 stroke-[3]" />
+                      <span>[ सभी ₹200 स्वीकार करें ]</span>
+                    </button>
+
+                    {/* रिजेक्ट बटन लिंक के टाइमर के साथ कनेक्ट: 24 घंटे पूरे होने के बाद ही दिखाई देगा */}
+                    {receive24hTimer.is24HoursCompleted ? (
+                      <button
+                        onClick={() => setShowRejectModal(true)}
+                        disabled={isConfirmingReceive}
+                        className="py-2.5 px-2.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white border border-rose-400/60 font-black text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 animate-in fade-in"
+                        title="24 घंटे पूरे हो चुके हैं, अस्वीकार करें"
+                      >
+                        <X className="h-3.5 w-3.5 stroke-[3]" />
+                        <span>[ REJECT ]</span>
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {/* 24 घंटे पूरे होने से पहले रिजेक्ट लॉक संदेश */}
+                  {!receive24hTimer.is24HoursCompleted && (
+                    <div className="p-2 rounded-xl bg-cyan-50 border border-cyan-200 flex items-center justify-between text-[10px] text-cyan-900">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Clock className="h-3.5 w-3.5 text-cyan-700 shrink-0 animate-pulse" />
+                        <span className="truncate">
+                          रिजेक्ट बटन 24 घंटे पूरे होने पर खुलेगा (शेष:{' '}
+                          <strong className="font-mono text-cyan-950 font-bold">
+                            {String(receive24hTimer.hours).padStart(2, '0')}:
+                            {String(receive24hTimer.minutes).padStart(2, '0')}:
+                            {String(receive24hTimer.seconds).padStart(2, '0')}
+                          </strong>
+                          )
+                        </span>
+                      </div>
+                      {/* Quick simulator for admin/testing verification */}
+                      <button
+                        type="button"
+                        onClick={handleFastForwardReceiveTimer}
+                        className="text-[9px] font-bold text-cyan-800 hover:text-cyan-950 underline cursor-pointer shrink-0 ml-2"
+                        title="परीक्षण हेतु 24 घंटे का टाइमर तुरंत समाप्त करें"
+                      >
+                        ⚡ Test 24h
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="text-[9px] text-slate-600 text-center font-medium">
+                    बैंक खाता जांचकर निर्णय लें (स्वीकार करने पर +₹50 शुद्ध लाभ वॉलेट में कॉइन के रूप में जमा होगा)
+                  </div>
+                </div>
               </div>
             )}
 
             {/* B. SCENARIO 2: AWAITING PROVIDE HELP (LOCKED COMPACT) */}
             {(isStep1Active || isStep2Active) && (
-              <div className="bg-teal-950/40 border border-cyan-200/50 rounded-xl p-3 text-center space-y-2 shadow-inner backdrop-blur-xs">
+              <div className="bg-white border border-cyan-200 rounded-xl p-3 text-center space-y-2 shadow-xs">
                 <div className="flex items-center justify-center gap-1.5">
-                  <span className="p-0.5 rounded bg-amber-400/20 text-amber-300">
+                  <span className="p-0.5 rounded bg-amber-100 text-amber-800">
                     <Lock className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
                     Receive Help अभी लॉक है
                   </span>
                 </div>
-                <p className="text-[10px] text-cyan-100 font-medium">
+                <p className="text-[10px] text-slate-600 font-medium">
                   बाएँ पर्पल बॉक्स में Provide Help (₹50 + ₹100) पूरा होने और 12-घंटे टाइमर के बाद यहाँ <strong>₹200 लिंक</strong> आएगा।
                 </p>
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-950/40 border border-cyan-300/40 text-xs">
-                  <span className="text-cyan-200 text-[10px]">Expected Assistance:</span>
-                  <span className="font-mono font-bold text-amber-300 text-xs">₹200 (+₹50 Gain)</span>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-xs">
+                  <span className="text-cyan-900 text-[10px]">Expected Assistance:</span>
+                  <span className="font-mono font-bold text-amber-900 text-xs">₹200 (+₹50 Gain)</span>
                 </div>
                 <button
                   onClick={() => {
                     const el = document.getElementById('box-provide-help');
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
+                  className="w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase shadow cursor-pointer transition flex items-center justify-center gap-1"
                 >
                   <span>🟣 Complete Provide Help First ➔</span>
                 </button>
@@ -1534,19 +1737,19 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* C. SCENARIO 3: DURING 12-HOUR TIMER (COMPACT) */}
             {isTimerActive && (
-              <div className="bg-teal-950/40 border border-cyan-200/50 rounded-xl p-3 text-center space-y-1.5 shadow-inner backdrop-blur-xs">
-                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase tracking-wider">
-                  <Clock className="h-3 w-3 animate-spin" />
+              <div className="bg-white border border-cyan-200 rounded-xl p-3 text-center space-y-1.5 shadow-xs">
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                  <Clock className="h-3 w-3 animate-spin text-amber-700" />
                   <span>12-Hour Timer Running</span>
                 </div>
-                <div className="font-mono font-black text-2xl text-white tracking-widest">
+                <div className="font-mono font-black text-2xl text-slate-900 tracking-widest">
                   {timer12hString}
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-teal-950/40 border border-cyan-300/40 text-xs">
-                  <span className="text-cyan-200 text-[10px]">Expected Payout:</span>
-                  <span className="font-mono font-bold text-amber-300 text-xs">₹200 (+₹50 Net Gain)</span>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-xs">
+                  <span className="text-cyan-900 text-[10px]">Expected Payout:</span>
+                  <span className="font-mono font-bold text-amber-900 text-xs">₹200 (+₹50 Net Gain)</span>
                 </div>
-                <p className="text-[10px] text-cyan-100 font-medium">
+                <p className="text-[10px] text-slate-600 font-medium">
                   टाइमर 00:00:00 होते ही प्रेषक सदस्य का विवरण और पेमेंट स्लिप यहाँ सक्रिय हो जाएगी।
                 </p>
               </div>
@@ -1554,21 +1757,21 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
             {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED) */}
             {isPaused && (
-              <div className="bg-teal-950/40 border border-cyan-200/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner backdrop-blur-xs">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-900/60 border border-cyan-200/50 text-cyan-100 text-xs font-bold uppercase tracking-wider">
+              <div className="bg-white border border-cyan-200 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-xs">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-100 border border-cyan-300 text-cyan-900 text-xs font-bold uppercase tracking-wider">
                   <span>🎁 ₹200 सहायता प्राप्ति चक्र</span>
                 </div>
 
-                <h4 className="text-sm sm:text-base font-black text-white">
+                <h4 className="text-sm sm:text-base font-black text-slate-900">
                   रिसीव हेल्प लिंक्स विराम (Paused) पर हैं
                 </h4>
 
-                <p className="text-[11px] sm:text-xs text-cyan-100 leading-relaxed max-w-sm mx-auto font-medium">
+                <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed max-w-sm mx-auto font-medium">
                   प्रमोशन टाइमर समाप्त होने तथा प्रोवाइड हेल्प (₹50 + ₹100) पूरा करने के बाद आपको सीधे आपके बैंक खाते व UPI पर ₹200 का रिसीव हेल्प लिंक प्राप्त होगा।
                 </p>
 
-                <div className="pt-1 flex items-center justify-center gap-2 text-xs text-amber-300 font-bold">
-                  <Clock className="h-4 w-4 animate-spin text-amber-400" />
+                <div className="pt-1 flex items-center justify-center gap-2 text-xs text-amber-800 font-bold">
+                  <Clock className="h-4 w-4 animate-spin text-amber-600" />
                   <span>प्री-लॉन्च लाइव काउंटडाउन जारी है</span>
                 </div>
               </div>
@@ -1576,9 +1779,9 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           </div>
 
           {/* Compact Box Footer Stats */}
-          <div className="mt-2 pt-1.5 border-t border-cyan-400/30 flex items-center justify-between text-[10px] text-cyan-200 relative z-10 font-medium">
+          <div className="mt-2 pt-1.5 border-t border-cyan-200 flex items-center justify-between text-[10px] text-cyan-900 relative z-10 font-medium">
             <span>Cycle Receive Benefit:</span>
-            <strong className="text-emerald-300 font-mono font-bold">
+            <strong className="text-emerald-700 font-mono font-bold">
               ₹200 (Net Profit: +₹50)
             </strong>
           </div>
@@ -1967,7 +2170,7 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              रिसीवर के रूप में, यदि आपको प्रेषक सदस्य से ₹200 का भुगतान बैंक खाते या UPI में प्राप्त नहीं हुआ है, तो अस्वीकार करने का कारण चुनें या लिखें:
+              रिसीवर के रूप में, यदि आपको प्रेषक सदस्य से सहायता राशि का भुगतान बैंक खाते या UPI में प्राप्त नहीं हुआ है, तो अस्वीकार करने का कारण चुनें या लिखें:
             </p>
 
             {/* Quick Reason Chips */}
@@ -2015,7 +2218,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 रद्द करें (Cancel)
               </button>
               <button
-                onClick={() => handleRejectReceiveHelp(rejectReason)}
+                onClick={() => {
+                  if (typeof showRejectModal === 'string') {
+                    handleRejectReceiveSubLink(showRejectModal, rejectReason);
+                    setShowRejectModal(false);
+                  } else {
+                    handleRejectReceiveHelp(rejectReason);
+                  }
+                }}
                 className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase shadow cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <X className="h-4 w-4" />

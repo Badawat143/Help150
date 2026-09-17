@@ -229,7 +229,9 @@ export interface UserHelpCycle {
   timerStartTime?: number;
   timerExpiryTime?: number; // 12 hours from completion
   timerDurationHours: number; // 12
-  receiveLink?: CycleLinkDetails; // 200 Rs
+  receiveLink?: CycleLinkDetails; // 200 Rs (Summary/Primary Link)
+  receiveLinks?: CycleLinkDetails[]; // Tracked provider breakdown totaling exactly ₹200 (e.g. 100+50+50, 100+100, 50+50+50+50)
+  receiveCombination?: '100+50+50' | '100+100' | '50+50+50+50' | 'custom_200';
   createdAt: string;
   completedAt?: string;
 }

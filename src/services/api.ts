@@ -3056,4 +3056,125 @@ export const api = {
 
     return { success: true, data: db.getState().settings };
   },
+
+  /**
+   * Admin Delete User ID (Remove unwanted/extra User ID)
+   */
+  async adminDeleteUser(
+    adminActor: { id: string; name: string; role: string },
+    userId: string
+  ): Promise<ApiResponse<{ deletedUserId: string }>> {
+    if (adminActor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized. Admin access required.' };
+    }
+
+    const res = db.deleteUser(userId);
+    if (!res.success) {
+      return { success: false, error: res.message };
+    }
+
+    logAudit(
+      adminActor,
+      'DELETE_USER_ID',
+      'User',
+      userId,
+      `Admin deleted User ID ${userId} permanently from the system.`
+    );
+
+    return {
+      success: true,
+      data: { deletedUserId: userId },
+      message: res.message,
+    };
+  },
+
+  /**
+   * Admin Bulk Delete User IDs (Remove extra/test User IDs in batch)
+   */
+  async adminBulkDeleteUsers(
+    adminActor: { id: string; name: string; role: string },
+    userIds: string[]
+  ): Promise<ApiResponse<{ deletedCount: number; deletedIds: string[] }>> {
+    if (adminActor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized. Admin access required.' };
+    }
+
+    const res = db.deleteUsers(userIds);
+    if (!res.success || res.deletedCount === 0) {
+      return { success: false, error: 'कोई भी यूजर ID डिलीट नहीं की जा सकी।' };
+    }
+
+    logAudit(
+      adminActor,
+      'BULK_DELETE_USERS',
+      'User',
+      'Multiple',
+      `Admin permanently deleted ${res.deletedCount} User IDs: ${res.deletedIds.join(', ')}.`
+    );
+
+    return {
+      success: true,
+      data: { deletedCount: res.deletedCount, deletedIds: res.deletedIds },
+      message: `कुल ${res.deletedCount} एक्स्ट्रा यूजर ID को सफलतापूर्वक डिलीट कर दिया गया है।`,
+    };
+  },
+
+  /**
+   * Admin Delete Single Transaction
+   */
+  async adminDeleteTransaction(
+    adminActor: { id: string; name: string; role: string },
+    transactionId: string | number
+  ): Promise<ApiResponse<{ transactionId: string | number }>> {
+    if (adminActor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized. Admin access required.' };
+    }
+
+    const ok = db.deleteTransaction(transactionId);
+    if (!ok) {
+      return { success: false, error: 'ट्रांजेक्शन नहीं मिला या पहले ही हटाया जा चुका है।' };
+    }
+
+    logAudit(
+      adminActor,
+      'DELETE_TRANSACTION',
+      'Transaction',
+      String(transactionId),
+      `Admin removed transaction record #${transactionId}.`
+    );
+
+    return {
+      success: true,
+      data: { transactionId },
+      message: `ट्रांजेक्शन #${transactionId} को सफलतापूर्वक हटा दिया गया है।`,
+    };
+  },
+
+  /**
+   * Admin Clear / Remove All Transactions (ट्रांजेक्शन हिस्ट्री साफ़ करें)
+   */
+  async adminClearTransactions(
+    adminActor: { id: string; name: string; role: string },
+    userId?: string
+  ): Promise<ApiResponse<{ clearedCount: number }>> {
+    if (adminActor.role !== 'admin') {
+      return { success: false, error: 'Unauthorized. Admin access required.' };
+    }
+
+    const res = db.clearTransactions(userId);
+
+    logAudit(
+      adminActor,
+      'CLEAR_TRANSACTIONS',
+      'Transaction',
+      userId || 'All',
+      `Admin cleared ${res.clearedCount} transaction records${userId ? ` for user ${userId}` : ' for the entire platform'}.`
+    );
+
+    return {
+      success: true,
+      data: { clearedCount: res.clearedCount },
+      message: `कुल ${res.clearedCount} ट्रांजेक्शन रिकॉर्ड सफलतापूर्वक साफ़ (Clear) कर दिए गए हैं।`,
+    };
+  },
 };
