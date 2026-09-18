@@ -33,7 +33,7 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
 
   // Live countdown
   const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number; isExpired: boolean }>({
-    days: 4,
+    days: 7,
     hours: 0,
     minutes: 0,
     seconds: 0,
@@ -50,7 +50,7 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
   useEffect(() => {
     const calculateCountdown = () => {
       const now = Date.now();
-      const end = new Date(settings.promotionEndDate || Date.now() + 4 * 24 * 3600000).getTime();
+      const end = new Date(settings.promotionEndDate || Date.now() + 7 * 24 * 3600000).getTime();
       const diff = Math.max(0, end - now);
 
       if (diff <= 0) {
@@ -83,9 +83,10 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
   };
 
   const handleShareWhatsApp = () => {
+    const promoDays = settings.promotionDaysTotal || 7;
     const text = encodeURIComponent(
-      `🙏 नमस्कार! HELP150 कम्युनिटी का विशेष 4-दिवसीय प्री-लॉन्च प्रमोशन चल रहा है!\n\n` +
-      `📌 अभी रजिस्टर करें और अपनी टीम बनाएं। 4 दिन बाद ऑटोमैटिक हेल्पिंग लिंक्स शुरू होंगे!\n` +
+      `🙏 नमस्कार! HELP150 कम्युनिटी का विशेष ${promoDays}-दिवसीय प्री-लॉन्च प्रमोशन चल रहा है (समय 3 दिन और बढ़ाया गया है)!\n\n` +
+      `📌 अभी रजिस्टर करें और अपनी टीम बनाएं। प्रमोशन के बाद ऑटोमैटिक हेल्पिंग लिंक्स शुरू होंगे!\n` +
       `🔗 मेरा जॉइनिंग लिंक: ${referralUrl}\n` +
       `🔑 स्पांसर कोड: ${referralCode}`
     );
@@ -131,12 +132,12 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
         <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
             <Megaphone className="h-3.5 w-3.5 fill-current" />
-            <span>4-दिन प्री-लॉन्च प्रमोशन (LIVE COUNTDOWN)</span>
+            <span>{settings.promotionDaysTotal || 7}-दिन प्री-लॉन्च प्रमोशन (LIVE COUNTDOWN)</span>
           </span>
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/20 border border-red-500/50 text-red-300 text-xs font-bold animate-pulse">
             <span className="h-2 w-2 rounded-full bg-red-500" />
-            <span>लिंक्स अभी बंद हैं • लाइव टाइमर जारी</span>
+            <span>लिंक्स अभी बंद हैं • समय 3 दिन बढ़ाया गया</span>
           </span>
         </div>
 
@@ -148,11 +149,11 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-provide-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-fuchsia-400 via-purple-400 to-indigo-400 hover:from-fuchsia-300 hover:to-indigo-300 border-2 border-white shadow-md shadow-purple-500/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-slate-950"
-            title="Provide Help Card (लाइट पर्पल रंग)"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 hover:from-fuchsia-400 hover:to-purple-600 border-2 border-white shadow-lg shadow-purple-900/40 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Provide Help Card (मिनट टाइमर बॉक्स रंग)"
           >
             <span className="text-base sm:text-lg">🔥</span>
-            <span className="text-xs sm:text-sm font-black tracking-wider text-slate-950 font-heading uppercase">
+            <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
               PROVIDE HELP
             </span>
           </button>
@@ -163,11 +164,11 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               const el = document.getElementById('box-receive-help');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-sky-300 via-cyan-300 to-teal-300 hover:from-sky-200 hover:to-teal-200 border-2 border-white shadow-md shadow-teal-500/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-slate-950"
-            title="Receive Help Card (लाइट स्यान रंग)"
+            className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-cyan-400 via-teal-500 to-teal-700 hover:from-cyan-300 hover:to-teal-600 border-2 border-white shadow-lg shadow-teal-900/40 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer text-white"
+            title="Receive Help Card (सेकंड टाइमर बॉक्स रंग)"
           >
-            <RotateCw className="w-3.5 h-3.5 text-slate-950 font-black stroke-[2.5]" />
-            <span className="text-xs sm:text-sm font-black tracking-wider text-slate-950 font-heading uppercase">
+            <RotateCw className="w-3.5 h-3.5 text-white font-black stroke-[2.5]" />
+            <span className="text-xs sm:text-sm font-black tracking-wider text-white font-heading uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
               RECEIVE HELP
             </span>
           </button>
@@ -178,12 +179,12 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
         {/* Left Column: Promotion Title & Message */}
         <div className="space-y-3 max-w-xl">
           <h3 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-white font-heading tracking-tight leading-snug">
-            {settings.promotionNoticeTitle || '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय है!'}
+            {settings.promotionNoticeTitle || '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय है (3 दिन विस्तारित)!'}
           </h3>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
             {settings.promotionNoticeText ||
-              'वर्तमान में 4 दिन का विशेष प्रमोशन चल रहा है। अभी लिंक्स बंद हैं ताकि सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। 4 दिन पूरे होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू कर दिए जाएंगे!'}
+              'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! अभी लिंक्स बंद हैं ताकि सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर पूरे होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू कर दिए जाएंगे!'}
           </p>
 
           {/* Referral Link Quick Copy Bar */}
@@ -240,22 +241,22 @@ export const PromotionNoticeBanner: React.FC<PromotionNoticeBannerProps> = ({ co
               </div>
             </div>
 
-            {/* 3. MINUTES (Lightened Fuchsia / Purple Box) */}
-            <div className="flex flex-col items-center bg-gradient-to-b from-fuchsia-400 via-purple-500 to-purple-700 border-2 border-fuchsia-300 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-md shadow-purple-500/30 transform hover:scale-105 transition-transform">
-              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-sm">
+            {/* 3. MINUTES (Vibrant Neon Fuchsia / Purple Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-fuchsia-600 via-purple-600 to-purple-950 border-2 border-fuchsia-400/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-purple-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 {countdown.minutes.toString().padStart(2, '0')}
               </div>
-              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-purple-900/60 border border-fuchsia-300/60 text-[9px] sm:text-[10px] font-black text-fuchsia-100 uppercase tracking-wider">
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-purple-950/80 border border-fuchsia-400/50 text-[9px] sm:text-[10px] font-black text-fuchsia-200 uppercase tracking-wider">
                 मिनट (Min)
               </div>
             </div>
 
-            {/* 4. SECONDS (Lightened Sky / Cyan / Teal Box) */}
-            <div className="flex flex-col items-center bg-gradient-to-b from-cyan-400 via-teal-400 to-teal-600 border-2 border-cyan-200 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-md shadow-cyan-500/30 transform hover:scale-105 transition-transform">
-              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-sm animate-pulse">
+            {/* 4. SECONDS (Vibrant Radiant Cyan / Emerald Box) */}
+            <div className="flex flex-col items-center bg-gradient-to-b from-cyan-500 via-teal-600 to-teal-950 border-2 border-cyan-300/90 rounded-2xl p-2 sm:p-3 min-w-[68px] sm:min-w-[85px] shadow-lg shadow-cyan-900/40 transform hover:scale-105 transition-transform">
+              <div className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] animate-pulse">
                 {countdown.seconds.toString().padStart(2, '0')}
               </div>
-              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-teal-900/60 border border-cyan-200/60 text-[9px] sm:text-[10px] font-black text-cyan-100 uppercase tracking-wider">
+              <div className="mt-1.5 px-2 py-0.5 rounded-full bg-teal-950/80 border border-cyan-300/50 text-[9px] sm:text-[10px] font-black text-cyan-200 uppercase tracking-wider">
                 सेकंड (Sec)
               </div>
             </div>

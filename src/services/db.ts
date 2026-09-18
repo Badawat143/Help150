@@ -68,13 +68,14 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   autoDispatchOnRegistration: false,
   defaultLinkReceiverType: 'admin_treasury',
   maxLinksPerReceiver: 1,
-  linkSystemEnabled: false, // Default to OFF for initial 4-day promotion
+  linkSystemEnabled: false, // Default to OFF for initial pre-launch promotion
   promotionMode: true,
-  promotionDaysTotal: 4,
+  promotionDaysTotal: 7,
   promotionStartDate: new Date().toISOString(),
-  promotionEndDate: new Date(Date.now() + 4 * 24 * 3600000).toISOString(),
-  promotionNoticeTitle: '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (Pre-Launch Promotion Active)',
-  promotionNoticeText: 'वर्तमान में 4 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी टीम बनाएं और KYC पूरा करें। 4 दिन के बाद ऑटोमैटिक हेल्पिंग लिंक शुरू हो जाएंगे!',
+  promotionEndDate: new Date(Date.now() + 7 * 24 * 3600000).toISOString(),
+  promotionExtended3DaysV2: true,
+  promotionNoticeTitle: '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (3 दिन का समय बढ़ाया गया)',
+  promotionNoticeText: 'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! वर्तमान में 7 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!',
   maintenanceMode: false,
   officialTelegramLink: 'https://t.me/help150_official',
   officialWhatsappNumber: '+91 98765 43210',
@@ -984,6 +985,23 @@ class DatabaseManager {
             ...DEFAULT_SETTINGS,
             ...(loadedState.settings || {}),
           };
+
+          // 3-Day Extension for Link Launch: Ensure existing users get 3 additional days added
+          if (!loadedState.settings.promotionExtended3DaysV2) {
+            const currentEnd = loadedState.settings.promotionEndDate
+              ? new Date(loadedState.settings.promotionEndDate).getTime()
+              : Date.now();
+            // Add 3 full days (72 hours) to whatever end date was configured, or from now if already past
+            const baseTime = Math.max(Date.now(), currentEnd);
+            loadedState.settings.promotionEndDate = new Date(baseTime + 3 * 24 * 3600000).toISOString();
+            loadedState.settings.promotionDaysTotal = (loadedState.settings.promotionDaysTotal || 4) + 3;
+            loadedState.settings.promotionExtended3DaysV2 = true;
+            loadedState.settings.linkSystemEnabled = false;
+            loadedState.settings.promotionMode = true;
+            loadedState.settings.promotionNoticeTitle = '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (3 दिन का समय बढ़ाया गया)';
+            loadedState.settings.promotionNoticeText = 'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! वर्तमान में 7 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!';
+            this.saveToStorage(loadedState);
+          }
           return loadedState;
         }
       }
@@ -2131,7 +2149,7 @@ class DatabaseManager {
       draft.notifications.unshift({
         id: `NOTIF-LINK-${Date.now()}`,
         userId: 'all',
-        title: enabled ? '🚀 ऑटोमैटिक हेल्पिंग लिंक्स शुरू!' : '⏸️ 4-दिन का प्री-लॉन्च प्रमोशन मोड सक्रिय',
+        title: enabled ? '🚀 ऑटोमैटिक हेल्पिंग लिंक्स शुरू!' : '⏸️ प्री-लॉन्च प्रमोशन मोड सक्रिय',
         message: enabled
           ? 'एडमिन द्वारा हेल्पिंग लिंक सिस्टम को लाइव कर दिया गया है। अपने डैशबोर्ड में Provide Help और Receive Help लिंक्स चेक करें।'
           : `प्लेटफार्म पर ${promotionDays} दिन का विशेष प्रमोशन मोड चालू किया गया है। लिंक्स अस्थायी रूप से विराम पर हैं। सभी सदस्य अपनी टीम बनाएं!`,
@@ -2152,6 +2170,47 @@ class DatabaseManager {
         autoDispatchMode: enabled,
         autoDispatchOnRegistration: enabled,
         promotionDaysTotal: promotionDays,
+      }),
+    }).catch((e) => console.warn('Server settings sync notice:', e));
+
+    return this.getState().settings;
+  }
+
+  public extendPromotionDays(additionalDays: number = 3): WebsiteSettings {
+    this.updateState((draft) => {
+      const currentEnd = draft.settings?.promotionEndDate
+        ? new Date(draft.settings.promotionEndDate).getTime()
+        : Date.now();
+      const baseTime = Math.max(Date.now(), currentEnd);
+      draft.settings.promotionEndDate = new Date(baseTime + additionalDays * 24 * 3600000).toISOString();
+      draft.settings.promotionDaysTotal = (draft.settings.promotionDaysTotal || 4) + additionalDays;
+      draft.settings.linkSystemEnabled = false;
+      draft.settings.promotionMode = true;
+      draft.settings.promotionExtended3DaysV2 = true;
+      draft.settings.promotionNoticeTitle = `🎉 ${draft.settings.promotionDaysTotal}-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (${additionalDays} दिन का समय बढ़ाया गया)`;
+      draft.settings.promotionNoticeText = `विशेष सूचना: लिंक स्टार्ट होने का समय ${additionalDays} दिन और बढ़ा दिया गया है! वर्तमान में ${draft.settings.promotionDaysTotal} दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!`;
+      
+      draft.notifications.unshift({
+        id: `NOTIF-EXTEND-${Date.now()}`,
+        userId: 'all',
+        title: `⏳ लिंक स्टार्ट होने का समय ${additionalDays} दिन और बढ़ाया गया`,
+        message: `एडमिन द्वारा प्री-लॉन्च प्रमोशन में ${additionalDays} दिन का अतिरिक्त समय जोड़ा गया है। अब कुल ${draft.settings.promotionDaysTotal} दिन का समय है। ज्यादा से ज्यादा डायरेक्ट रेफरल्स जोड़ें!`,
+        type: 'info',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        linkTab: 'referral',
+      });
+    });
+
+    // Sync to backend server
+    fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        promotionDaysTotal: this.getState().settings.promotionDaysTotal,
+        promotionEndDate: this.getState().settings.promotionEndDate,
+        linkSystemEnabled: false,
+        promotionMode: true,
       }),
     }).catch((e) => console.warn('Server settings sync notice:', e));
 

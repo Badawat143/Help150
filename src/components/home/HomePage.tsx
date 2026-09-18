@@ -73,9 +73,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
 
-  // Live countdown timer for the 4-day promotion
+  // Live countdown timer for the promotion
   const [countdown, setCountdown] = useState({
-    days: 4,
+    days: 7,
     hours: 0,
     minutes: 0,
     seconds: 0,
@@ -103,7 +103,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   useEffect(() => {
     const calculateCountdown = () => {
       const now = Date.now();
-      const end = new Date(state.settings.promotionEndDate || Date.now() + 4 * 24 * 3600000).getTime();
+      const end = new Date(state.settings.promotionEndDate || Date.now() + 7 * 24 * 3600000).getTime();
       const diff = Math.max(0, end - now);
 
       if (diff <= 0) {
@@ -156,8 +156,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
       a: 'होमपेज पर दिए गए "डाउनलोड बिजनेस प्लान (PDF)" बटन पर क्लिक करके आप 12-स्लाइड्स का पूरा आधिकारिक प्रेजेंटेशन PDF अपने फोन या कंप्यूटर में तुरंत डाउनलोड कर सकते हैं। आप "स्लाइड्स ऑनलाइन देखें" पर क्लिक करके इसे सीधे स्क्रीन पर भी पढ़ सकते हैं।',
     },
     {
-      q: 'क्या 4-दिवसीय प्री-लॉन्च प्रमोशन अवधि में रजिस्ट्रेशन खुला है?',
-      a: 'हाँ! वर्तमान में 4-दिन का विशेष प्री-लॉन्च प्रमोशन चल रहा है। अभी कोई भी व्यक्ति निशुल्क रजिस्ट्रेशन कर सकता है, अपना रेफरल लिंक शेयर करके 6-लेवल की बड़ी टीम बना सकता है। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे।',
+      q: 'क्या प्री-लॉन्च प्रमोशन अवधि में रजिस्ट्रेशन खुला है?',
+      a: 'हाँ! लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है (कुल 7-दिवसीय प्रमोशन)। अभी कोई भी व्यक्ति निशुल्क रजिस्ट्रेशन कर सकता है, अपना रेफरल लिंक शेयर करके 6-लेवल की बड़ी टीम बना सकता है। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे।',
     },
     {
       q: 'क्या यहाँ कोई फिक्स्ड रिटर्न या इन्वेस्टमेंट स्कीम है? (Guaranteed Returns?)',
@@ -224,8 +224,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
                 ⏳
               </span>
               <span className="text-slate-950 tracking-tight">
-                <strong className="underline uppercase">4-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय:</strong>{' '}
-                अभी टीम बनाएं, टाइमर खत्म होते ही लिंक्स चालू होंगे!
+                <strong className="underline uppercase">{state.settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय:</strong>{' '}
+                समय 3 दिन और बढ़ाया गया है! अभी टीम बनाएं, टाइमर खत्म होते ही लिंक्स चालू होंगे!
               </span>
             </div>
 
@@ -399,10 +399,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
                   <span>PRE-LAUNCH COUNTDOWN ACTIVE</span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-white font-heading">
-                  4-दिवसीय प्री-लॉन्च प्रमोशन अवधि
+                  {state.settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  सभी नए व पुराने मेंबर्स के लिए हेल्पिंग लिंक्स अभी विराम पर हैं। नीचे चल रहा लाइव टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!
+                  लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है। नीचे चल रहा लाइव टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!
                 </p>
               </div>
 

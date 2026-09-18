@@ -387,9 +387,10 @@ export interface WebsiteSettings {
   // Link System Master Control & 4-Day Promotion Mode
   linkSystemEnabled: boolean; // true = links ON & automatic, false = links OFF (promotion mode)
   promotionMode: boolean; // true = 4-day promotion running
-  promotionDaysTotal: number; // default 4
+  promotionDaysTotal: number; // default 7 (extended by 3 days)
   promotionStartDate: string; // ISO string
   promotionEndDate: string; // ISO string
+  promotionExtended3DaysV2?: boolean;
   promotionNoticeTitle?: string;
   promotionNoticeText?: string;
   maintenanceMode: boolean;

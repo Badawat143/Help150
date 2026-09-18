@@ -33,14 +33,14 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
   const toast = useToast();
   const [settings, setSettings] = useState(() => db.getState().settings);
   const [isEditingNotice, setIsEditingNotice] = useState(false);
-  const [promotionDays, setPromotionDays] = useState(settings.promotionDaysTotal || 4);
-  const [noticeTitle, setNoticeTitle] = useState(settings.promotionNoticeTitle || '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन सक्रिय (Pre-Launch Promotion Active)');
-  const [noticeText, setNoticeText] = useState(settings.promotionNoticeText || 'वर्तमान में 4 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी टीम बनाएं और KYC पूरा करें। 4 दिन के बाद ऑटोमैटिक हेल्पिंग लिंक शुरू हो जाएंगे!');
+  const [promotionDays, setPromotionDays] = useState(settings.promotionDaysTotal || 7);
+  const [noticeTitle, setNoticeTitle] = useState(settings.promotionNoticeTitle || '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन सक्रिय (3 दिन का समय बढ़ाया गया)');
+  const [noticeText, setNoticeText] = useState(settings.promotionNoticeText || 'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! वर्तमान में 7 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Live countdown timer for the 4-day promotion
+  // Live countdown timer for the promotion
   const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number; isExpired: boolean }>({
-    days: 4,
+    days: 7,
     hours: 0,
     minutes: 0,
     seconds: 0,
@@ -52,8 +52,8 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
     const unsub = db.subscribe(() => {
       const current = db.getState().settings;
       setSettings(current);
-      setPromotionDays(current.promotionDaysTotal || 4);
-      setNoticeTitle(current.promotionNoticeTitle || '🎉 4-दिवसीय प्री-लॉन्च प्रमोशन सक्रिय (Pre-Launch Promotion Active)');
+      setPromotionDays(current.promotionDaysTotal || 7);
+      setNoticeTitle(current.promotionNoticeTitle || '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन सक्रिय (3 दिन का समय बढ़ाया गया)');
       setNoticeText(current.promotionNoticeText || '');
     });
     return () => unsub();
@@ -63,7 +63,7 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
   useEffect(() => {
     const calculateCountdown = () => {
       const now = Date.now();
-      const end = new Date(settings.promotionEndDate || Date.now() + 4 * 24 * 3600000).getTime();
+      const end = new Date(settings.promotionEndDate || Date.now() + 7 * 24 * 3600000).getTime();
       const diff = Math.max(0, end - now);
 
       if (diff <= 0) {
@@ -94,13 +94,29 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
         );
       } else {
         toast.warning(
-          `4-दिवसीय प्रमोशन मोड चालू कर दिया गया है। लिंक्स विराम पर हैं। (Links Paused for ${promotionDays}-Day Promotion)`,
+          `प्रमोशन मोड चालू कर दिया गया है। लिंक्स विराम पर हैं। (Links Paused for ${promotionDays}-Day Promotion)`,
           'Promotion Mode Active'
         );
       }
       onRefresh?.();
     } catch (err: any) {
       toast.error('Failed to update link system status', 'Error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleQuickExtend = (days: number = 3) => {
+    setIsProcessing(true);
+    try {
+      db.extendPromotionDays(days);
+      toast.success(
+        `प्रमोशन में ${days} दिन का समय सफलतापूर्वक बढ़ा दिया गया है! नया काउंटडाउन लाइव हो गया है।`,
+        'Time Extended'
+      );
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error('समय बढ़ाने में त्रुटि आई', 'Error');
     } finally {
       setIsProcessing(false);
     }
@@ -152,18 +168,30 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
           <h2 className="text-base sm:text-lg font-black text-white font-heading tracking-wide">
             {isEnabled
               ? '⚡ स्वचालित लिंक डिस्पेच सक्रिय है (Automatic Peer Links Active)'
-              : '📢 4-दिवसीय प्री-लॉन्च प्रमोशन मोड (Links Paused for Promotion)'}
+              : `📢 ${settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन मोड (Links Paused for Promotion)`}
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
             {isEnabled
               ? 'सिस्टम स्वचालित रूप से नए सदस्यों को Provide Help (₹50 / ₹100) और Receive Help (₹200) लिंक्स भेज रहा है।'
-              : 'वर्तमान में 4 दिन का प्रमोशन चल रहा है। अभी लिंक्स रोके गए हैं ताकि सदस्य ज्यादा से ज्यादा टीम बना सकें। 4 दिन पूरे होते ही या आपके चालू करने पर ऑटोमैटिक लिंक जाने लगेंगे।'}
+              : `वर्तमान में ${settings.promotionDaysTotal || 7} दिन का प्रमोशन चल रहा है (लिंक स्टार्ट होने का समय 3 दिन बढ़ाया गया है)। अभी लिंक्स रोके गए हैं ताकि सदस्य ज्यादा से ज्यादा टीम बना सकें। टाइमर पूरा होते ही ऑटोमैटिक लिंक जाने लगेंगे।`}
           </p>
         </div>
 
         {/* Right Toggle Actions */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {!isEnabled && (
+            <button
+              onClick={() => handleQuickExtend(3)}
+              disabled={isProcessing}
+              className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-amber-600/30 transition cursor-pointer disabled:opacity-50"
+              title="काउंटडाउन टाइमर में 3 दिन का अतिरिक्त समय जोड़ें"
+            >
+              <Clock className="h-4 w-4 text-slate-950" />
+              <span>+3 दिन समय बढ़ाएं (+3 Days)</span>
+            </button>
+          )}
+
           {isEnabled ? (
             <button
               onClick={() => handleToggleLinkSystem(false)}
@@ -171,7 +199,7 @@ export const MasterLinkSwitchCard: React.FC<MasterLinkSwitchCardProps> = ({ onRe
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-red-600/30 transition cursor-pointer disabled:opacity-50"
             >
               <Power className="h-4 w-4" />
-              <span>🔴 लिंक्स बंद करें (Start 4-Day Promotion)</span>
+              <span>🔴 लिंक्स बंद करें (Start Promotion Mode)</span>
             </button>
           ) : (
             <button
