@@ -204,6 +204,9 @@ export interface CycleLinkDetails {
   matchedWithUpi: string;
   matchedWithMobile: string;
   matchedWithEmail?: string;
+  providerUserId?: string;
+  providerName?: string;
+  providerMobile?: string;
   matchedWithBankDetails?: {
     bankName: string;
     accountHolderName?: string;

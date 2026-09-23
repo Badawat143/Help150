@@ -111,13 +111,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 hasAnyUpdate = true;
               }
 
-              // 3. Merge helpRequests
+              // 3. Merge helpRequests (Including updates to matched receiver and status)
               if (Array.isArray(data.helpRequests)) {
                 data.helpRequests.forEach((hr: any) => {
                   const hrIdx = draft.helpRequests.findIndex((x) => x.id === hr.id);
                   if (hrIdx < 0) {
                     draft.helpRequests.unshift(hr);
                     hasAnyUpdate = true;
+                  } else {
+                    const localHr = draft.helpRequests[hrIdx];
+                    if (
+                      localHr.status !== hr.status ||
+                      localHr.matchedWithUserId !== hr.matchedWithUserId ||
+                      localHr.amount !== hr.amount ||
+                      localHr.paymentSlipUrl !== hr.paymentSlipUrl ||
+                      localHr.proofReference !== hr.proofReference ||
+                      localHr.adminApproved !== hr.adminApproved
+                    ) {
+                      draft.helpRequests[hrIdx] = { ...localHr, ...hr };
+                      hasAnyUpdate = true;
+                    }
                   }
                 });
               }
@@ -126,7 +139,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (Array.isArray(data.helpCycles)) {
                 if (!draft.helpCycles) draft.helpCycles = [];
                 data.helpCycles.forEach((hc: any) => {
-                  const hcIdx = draft.helpCycles.findIndex((x) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.status !== 'completed'));
+                  const hcIdx = draft.helpCycles.findIndex(
+                    (x) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.cycleNumber === hc.cycleNumber)
+                  );
                   if (hcIdx < 0) {
                     draft.helpCycles.unshift(hc);
                     hasAnyUpdate = true;
@@ -137,8 +152,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const serverSecDone = hc.secondLink?.status === 'completed';
                     const localSecDone = local.secondLink?.status === 'completed';
 
+                    const verReceiverChanged =
+                      hc.verificationLink?.matchedWithUserId &&
+                      local.verificationLink?.matchedWithUserId !== hc.verificationLink?.matchedWithUserId;
+                    const secReceiverChanged =
+                      hc.secondLink?.matchedWithUserId &&
+                      local.secondLink?.matchedWithUserId !== hc.secondLink?.matchedWithUserId;
+                    const receiveLinkChanged =
+                      JSON.stringify(local.receiveLink) !== JSON.stringify(hc.receiveLink) ||
+                      JSON.stringify(local.receiveLinks) !== JSON.stringify(hc.receiveLinks);
+
                     const needsUpdate =
                       local.status !== hc.status ||
+                      verReceiverChanged ||
+                      secReceiverChanged ||
+                      receiveLinkChanged ||
                       (serverVerDone && !localVerDone) ||
                       (serverSecDone && !localSecDone) ||
                       local.verificationLink?.status !== hc.verificationLink?.status ||
@@ -171,6 +199,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                           ...(hc.secondLink || {}),
                           status: secFinalStatus,
                         },
+                        receiveLink: hc.receiveLink ? {
+                          ...(local.receiveLink || {}),
+                          ...hc.receiveLink,
+                        } : local.receiveLink,
+                        receiveLinks: Array.isArray(hc.receiveLinks) && hc.receiveLinks.length > 0
+                          ? hc.receiveLinks
+                          : (local.receiveLinks || []),
                       };
                       hasAnyUpdate = true;
                     }

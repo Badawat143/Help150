@@ -204,7 +204,7 @@ class FirestoreSyncService {
             db.updateState((draft) => {
               if (!draft.helpCycles) draft.helpCycles = [];
               cloudCycles.forEach((cloudCycle) => {
-                const idx = draft.helpCycles.findIndex((c) => c.id === cloudCycle.id);
+                const idx = draft.helpCycles.findIndex((c) => c.id === cloudCycle.id || (cloudCycle.userId && c.userId === cloudCycle.userId && c.cycleNumber === cloudCycle.cycleNumber));
                 if (idx >= 0) {
                   const local = draft.helpCycles[idx];
                   const serverVerDone = cloudCycle.verificationLink?.status === 'completed';
@@ -229,6 +229,13 @@ class FirestoreSyncService {
                       ...(cloudCycle.secondLink || {}),
                       status: secStatus,
                     },
+                    receiveLink: cloudCycle.receiveLink ? {
+                      ...(local.receiveLink || {}),
+                      ...cloudCycle.receiveLink,
+                    } : local.receiveLink,
+                    receiveLinks: Array.isArray(cloudCycle.receiveLinks) && cloudCycle.receiveLinks.length > 0
+                      ? cloudCycle.receiveLinks
+                      : (local.receiveLinks || []),
                   };
                 } else {
                   draft.helpCycles.unshift(cloudCycle);
@@ -296,6 +303,57 @@ class FirestoreSyncService {
               draft.helpRequests[idx] = { ...draft.helpRequests[idx], ...cloudReq };
             } else {
               draft.helpRequests.unshift(cloudReq);
+            }
+          });
+        });
+      }
+
+      const cycleSnap = await getDocs(collection(firestoreDb, 'helpCycles'));
+      if (!cycleSnap.empty) {
+        const cloudCycles: any[] = [];
+        cycleSnap.forEach((docSnap) => {
+          const c = docSnap.data();
+          if (c && c.id) cloudCycles.push(c);
+        });
+
+        db.updateState((draft) => {
+          if (!draft.helpCycles) draft.helpCycles = [];
+          cloudCycles.forEach((cloudCycle) => {
+            const idx = draft.helpCycles.findIndex((c) => c.id === cloudCycle.id || (cloudCycle.userId && c.userId === cloudCycle.userId && c.cycleNumber === cloudCycle.cycleNumber));
+            if (idx >= 0) {
+              const local = draft.helpCycles[idx];
+              const serverVerDone = cloudCycle.verificationLink?.status === 'completed';
+              const localVerDone = local.verificationLink?.status === 'completed';
+              const serverSecDone = cloudCycle.secondLink?.status === 'completed';
+              const localSecDone = local.secondLink?.status === 'completed';
+
+              const verStatus = (serverVerDone || localVerDone) ? 'completed' : (cloudCycle.verificationLink?.status || local.verificationLink?.status || 'pending');
+              const secStatus = (serverSecDone || localSecDone) ? 'completed' : (cloudCycle.secondLink?.status || local.secondLink?.status || 'pending');
+
+              draft.helpCycles[idx] = {
+                ...local,
+                ...cloudCycle,
+                status: (verStatus === 'completed' && secStatus !== 'completed') ? 'provide_second' : (cloudCycle.status || local.status),
+                verificationLink: {
+                  ...(local.verificationLink || {}),
+                  ...(cloudCycle.verificationLink || {}),
+                  status: verStatus,
+                },
+                secondLink: {
+                  ...(local.secondLink || {}),
+                  ...(cloudCycle.secondLink || {}),
+                  status: secStatus,
+                },
+                receiveLink: cloudCycle.receiveLink ? {
+                  ...(local.receiveLink || {}),
+                  ...cloudCycle.receiveLink,
+                } : local.receiveLink,
+                receiveLinks: Array.isArray(cloudCycle.receiveLinks) && cloudCycle.receiveLinks.length > 0
+                  ? cloudCycle.receiveLinks
+                  : (local.receiveLinks || []),
+              };
+            } else {
+              draft.helpCycles.unshift(cloudCycle);
             }
           });
         });

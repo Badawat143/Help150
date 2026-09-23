@@ -980,7 +980,7 @@ app.post('/api/sync/push', async (req, res) => {
     if (Array.isArray(helpCycles)) {
       if (!dbData.helpCycles) dbData.helpCycles = [];
       helpCycles.forEach((hc: any) => {
-        const idx = dbData.helpCycles.findIndex((x: any) => x.id === hc.id);
+        const idx = dbData.helpCycles.findIndex((x: any) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.cycleNumber === hc.cycleNumber));
         if (idx >= 0) {
           const old = dbData.helpCycles[idx];
           const verStatus = (old.verificationLink?.status === 'completed' && hc.verificationLink?.status !== 'completed')
@@ -1004,6 +1004,13 @@ app.post('/api/sync/push', async (req, res) => {
               ...(hc.secondLink || {}),
               status: secStatus,
             },
+            receiveLink: hc.receiveLink ? {
+              ...(old.receiveLink || {}),
+              ...hc.receiveLink,
+            } : old.receiveLink,
+            receiveLinks: Array.isArray(hc.receiveLinks) && hc.receiveLinks.length > 0
+              ? hc.receiveLinks
+              : (old.receiveLinks || []),
           };
         } else {
           dbData.helpCycles.unshift(hc);
@@ -1039,6 +1046,14 @@ app.post('/api/sync/push', async (req, res) => {
         if (wallets && typeof wallets === 'object') {
           for (const uid of Object.keys(wallets)) {
             await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
+          }
+        }
+        if (Array.isArray(helpRequests)) {
+          for (const hr of helpRequests) {
+            if (hr && hr.id) {
+              const cleanHr = sanitizeFirestorePayload(hr);
+              await setDoc(doc(serverFirestore, 'helpRequests', hr.id), cleanHr, { merge: true });
+            }
           }
         }
         if (Array.isArray(helpCycles)) {

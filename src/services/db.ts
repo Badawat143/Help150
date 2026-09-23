@@ -1943,7 +1943,32 @@ class DatabaseManager {
       });
     }
 
+    // Sync corresponding helpRequest status
+    const reqAmount = linkType === 'verification' ? 50 : 100;
+    const matchingReq = this.state.helpRequests.find(
+      (r) => r.userId === userId && r.amount === reqAmount && r.status !== 'COMPLETED'
+    );
+    if (matchingReq) {
+      matchingReq.status = 'COMPLETED';
+      matchingReq.completedAt = now;
+      matchingReq.adminApproved = true;
+    }
+
+    // Sync receiver's receiveLinks sub-links if present
+    const matchedRecId = linkType === 'verification' ? cycle.verificationLink?.matchedWithUserId : cycle.secondLink?.matchedWithUserId;
+    if (matchedRecId && matchedRecId !== 'H150-ADMIN01') {
+      const recCycle = this.state.helpCycles.find((c) => c.userId === matchedRecId && c.status !== 'completed');
+      if (recCycle && recCycle.receiveLinks) {
+        const sub = recCycle.receiveLinks.find((l) => (l.providerUserId || l.matchedWithUserId) === userId);
+        if (sub) {
+          sub.status = 'completed';
+          sub.completedAt = now;
+        }
+      }
+    }
+
     this.saveToStorage(this.state);
+    this.schedulePushToServer(true);
     this.notifySubscribers();
     return cycle;
   }

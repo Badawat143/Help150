@@ -50,8 +50,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const { currentUser, wallet, refreshUserData } = useAuth();
   const incomeStats = currentUser ? db.getUserIncomeStats(currentUser.id) : null;
 
-  // Cycle state
-  const [cycle, setCycle] = useState<UserHelpCycle | null>(null);
+  // Cycle state - initialized synchronously so link boxes are immediately visible across all devices
+  const [cycle, setCycle] = useState<UserHelpCycle | null>(() => {
+    if (currentUser?.id) {
+      return db.getUserHelpCycle(currentUser.id);
+    }
+    return null;
+  });
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [settings, setSettings] = useState(() => db.getState().settings);
 
@@ -255,11 +260,13 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     if (!currentUser?.id) return [];
     const list: Array<{
       cycleId: string;
+      requestId?: string;
       providerUserId: string;
       providerName: string;
       providerMobile?: string;
       type: 'verification' | 'second';
       amount: number;
+      status: 'pending' | 'submitted' | 'completed';
       proofReference?: string;
       slipUrl?: string;
       submittedAt?: string;
@@ -270,16 +277,18 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (
         c.verificationLink &&
         c.verificationLink.matchedWithUserId === currentUser.id &&
-        c.verificationLink.status === 'submitted'
+        ['submitted', 'pending'].includes(c.verificationLink.status)
       ) {
         const u = db.getState().users.find((user) => user.id === c.userId);
         list.push({
           cycleId: c.id,
+          requestId: c.verificationLink.requestId || c.id,
           providerUserId: c.userId,
           providerName: u?.fullName || c.userId,
           providerMobile: u?.mobile,
           type: 'verification',
           amount: 50,
+          status: c.verificationLink.status as any,
           proofReference: c.verificationLink.proofReference,
           slipUrl: c.verificationLink.slipUrl,
           submittedAt: c.verificationLink.submittedAt,
@@ -289,24 +298,56 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (
         c.secondLink &&
         c.secondLink.matchedWithUserId === currentUser.id &&
-        c.secondLink.status === 'submitted'
+        ['submitted', 'pending'].includes(c.secondLink.status)
       ) {
         const u = db.getState().users.find((user) => user.id === c.userId);
         list.push({
           cycleId: c.id,
+          requestId: c.secondLink.requestId || c.id,
           providerUserId: c.userId,
           providerName: u?.fullName || c.userId,
           providerMobile: u?.mobile,
           type: 'second',
           amount: 100,
+          status: c.secondLink.status as any,
           proofReference: c.secondLink.proofReference,
           slipUrl: c.secondLink.slipUrl,
           submittedAt: c.secondLink.submittedAt,
         });
       }
     }
+
+    // Also check direct helpRequests matched to currentUser
+    const helpRequests = db.getState().helpRequests || [];
+    helpRequests.forEach((hr) => {
+      if (
+        hr.matchedWithUserId === currentUser.id &&
+        hr.userId !== currentUser.id &&
+        ['PAYMENT_PENDING', 'SLIP_UPLOADED', 'VERIFICATION_PENDING', 'matched'].includes(hr.status)
+      ) {
+        const alreadyExists = list.some((item) => item.providerUserId === hr.userId && item.amount === hr.amount);
+        if (!alreadyExists) {
+          const u = db.getState().users.find((user) => user.id === hr.userId);
+          const isSubmitted = hr.status === 'SLIP_UPLOADED' || hr.status === 'VERIFICATION_PENDING' || Boolean(hr.paymentSlipUrl);
+          list.push({
+            cycleId: hr.id,
+            requestId: hr.id,
+            providerUserId: hr.userId,
+            providerName: hr.userName || u?.fullName || hr.userId,
+            providerMobile: hr.userMobile || u?.mobile,
+            type: hr.amount <= 50 ? 'verification' : 'second',
+            amount: hr.amount,
+            status: isSubmitted ? 'submitted' : 'pending',
+            proofReference: hr.proofReference,
+            slipUrl: hr.paymentSlipUrl,
+            submittedAt: hr.paymentSlipUploadedAt || hr.matchedAt,
+          });
+        }
+      }
+    });
+
     return list;
-  }, [currentUser?.id, cycle]);
+  }, [currentUser?.id, cycle, db.getState().helpRequests, db.getState().helpCycles]);
 
   if (!currentUser || !cycle) return null;
 
@@ -886,6 +927,35 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
             </div>
 
+            {/* 💡 Provide Help Rule Summary: Kitna Provide Help Karna Hai */}
+            <div className="flex items-center justify-between p-2 rounded-xl bg-purple-950/90 border border-fuchsia-400/50 text-[11px] font-semibold text-fuchsia-100 shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-amber-300 font-bold text-xs">📢 प्रोवाइड हेल्प:</span>
+                <span>कुल <strong>₹150</strong> देना है</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                <span className={`px-1.5 py-0.5 rounded border ${
+                  isStep1Done
+                    ? 'text-emerald-300 border-emerald-400/40 bg-emerald-950/60 font-bold'
+                    : isStep1Active
+                    ? 'text-amber-300 border-amber-400/50 bg-purple-900/80 font-bold animate-pulse'
+                    : 'text-slate-400 border-slate-700 bg-black/40'
+                }`}>
+                  1. ₹50 {isStep1Done ? '✅' : '⏳'}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className={`px-1.5 py-0.5 rounded border ${
+                  isStep2Done
+                    ? 'text-emerald-300 border-emerald-400/40 bg-emerald-950/60 font-bold'
+                    : isStep2Active
+                    ? 'text-amber-300 border-amber-400/50 bg-purple-900/80 font-bold animate-pulse'
+                    : 'text-slate-400 border-slate-700 bg-black/40'
+                }`}>
+                  2. ₹100 {isStep2Done ? '✅' : isStep2Active ? '⏳' : '🔒'}
+                </span>
+              </div>
+            </div>
+
             {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (TIGHT TO SLIP UPLOAD BUTTON) */}
             {(isStep1Active || isStep2Active) && (
               <div className="bg-purple-950/60 border border-fuchsia-400/40 rounded-xl p-2.5 space-y-2 shadow-inner backdrop-blur-xs">
@@ -1301,6 +1371,17 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               </div>
             </div>
 
+            {/* 💡 Receive Help Rule Summary: Kitna Receive Help Lena Hai */}
+            <div className="flex items-center justify-between p-2 rounded-xl bg-teal-950/90 border border-cyan-400/50 text-[11px] font-semibold text-cyan-100 shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-amber-300 font-bold text-xs">🎯 रिसिव हेल्प:</span>
+                <span>कुल <strong>₹200</strong> लेना है</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-mono text-[10px] text-amber-300 bg-teal-900/80 px-2 py-0.5 rounded border border-amber-400/40 font-bold">
+                <span>₹150 देके ➔ ₹200 पाएं (+₹50 लाभ)</span>
+              </div>
+            </div>
+
             {/* Incoming Provide Payments from other members awaiting receiver verification */}
             {incomingProvidePayments.length > 0 && (
               <div className="bg-emerald-950/90 border-2 border-emerald-400/80 rounded-xl p-2.5 space-y-2 shadow-lg animate-in fade-in">
@@ -1308,20 +1389,31 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs">📥</span>
                     <span className="font-bold text-white text-xs">
-                      आवक सहायता स्लिप सत्यापन ({incomingProvidePayments.length})
+                      आवक सहायता लिंक विवरण ({incomingProvidePayments.length})
                     </span>
                   </div>
                   <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
-                    Action Required
+                    {incomingProvidePayments.some((p) => p.status === 'submitted') ? 'Action Required' : 'Dispatched'}
                   </span>
                 </div>
 
                 {incomingProvidePayments.map((pmt) => (
-                  <div key={pmt.cycleId + pmt.type} className="p-2 rounded-lg bg-black/40 border border-emerald-500/30 space-y-2">
+                  <div key={pmt.cycleId + pmt.type} className="p-2.5 rounded-lg bg-black/40 border border-emerald-500/30 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-bold text-white">{pmt.providerName}</div>
-                        <div className="text-[9px] text-slate-400 font-mono">ID: {pmt.providerUserId}</div>
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          <span>{pmt.providerName}</span>
+                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border uppercase font-bold ${
+                            pmt.status === 'submitted'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                              : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                          }`}>
+                            {pmt.status === 'submitted' ? 'स्लिप अपलोड ✅' : 'प्रतीक्षारत ⏳'}
+                          </span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 font-mono">
+                          ID: {pmt.providerUserId} {pmt.providerMobile ? `• 📞 ${pmt.providerMobile}` : ''}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="font-mono font-black text-amber-300 text-sm">₹{pmt.amount}</div>
@@ -1331,42 +1423,56 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono">
-                      <span>UTR: <strong className="text-amber-300">{pmt.proofReference || 'Submitted'}</strong></span>
-                      {pmt.slipUrl && (
-                        <button
-                          onClick={() => setShowProofModal({
-                            url: pmt.slipUrl!,
-                            ref: pmt.proofReference || '',
-                            amount: pmt.amount,
-                            name: pmt.providerName,
-                          })}
-                          className="text-emerald-300 hover:text-white underline font-bold cursor-pointer"
-                        >
-                          स्लिप देखें ➔
-                        </button>
-                      )}
-                    </div>
+                    {pmt.status === 'submitted' ? (
+                      <>
+                        <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono bg-black/50 p-1.5 rounded border border-emerald-500/30">
+                          <span>UTR / Ref: <strong className="text-amber-300">{pmt.proofReference || 'Submitted'}</strong></span>
+                          {pmt.slipUrl && (
+                            <button
+                              onClick={() => setShowProofModal({
+                                url: pmt.slipUrl!,
+                                ref: pmt.proofReference || '',
+                                amount: pmt.amount,
+                                name: pmt.providerName,
+                              })}
+                              className="text-emerald-300 hover:text-white underline font-bold cursor-pointer text-[10px]"
+                            >
+                              स्लिप देखें ➔
+                            </button>
+                          )}
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        onClick={() => handleAcceptIncomingProvide(pmt.providerUserId, pmt.type)}
-                        className="py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
-                        <span>एक्सेप्ट (₹{pmt.amount})</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setProvideRejectReason('');
-                          setShowProvideRejectModal(pmt.type);
-                        }}
-                        className="py-1.5 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <X className="h-3.5 w-3.5 stroke-[3]" />
-                        <span>रिजेक्ट</span>
-                      </button>
-                    </div>
+                        <div className="grid grid-cols-2 gap-2 pt-0.5">
+                          <button
+                            onClick={() => handleAcceptIncomingProvide(pmt.providerUserId, pmt.type)}
+                            className="py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer transition active:scale-95"
+                          >
+                            <Check className="h-3.5 w-3.5 stroke-[3]" />
+                            <span>एक्सेप्ट (₹{pmt.amount})</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setProvideRejectReason('');
+                              setShowProvideRejectModal(pmt.type);
+                            }}
+                            className="py-1.5 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 cursor-pointer transition active:scale-95"
+                          >
+                            <X className="h-3.5 w-3.5 stroke-[3]" />
+                            <span>रिजेक्ट</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-1.5 rounded bg-cyan-950/40 border border-cyan-500/30 text-[10px] text-cyan-200 space-y-0.5">
+                        <div className="font-semibold text-cyan-300 flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-cyan-400" />
+                          <span>प्रदाता द्वारा भुगतान ट्रांसफर प्रतीक्षारत (Awaiting Payment)</span>
+                        </div>
+                        <p className="text-[9px] text-slate-300">
+                          प्रदाता ({pmt.providerName}) को सहायता भेजने का लिंक भेजा गया है। भुगतान कर स्लिप अपलोड करते ही आप यहाँ से ₹{pmt.amount} एक्सेप्ट कर सकेंगे।
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

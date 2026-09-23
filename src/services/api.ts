@@ -18,6 +18,7 @@ import {
   AuditLog,
   WebsiteSettings,
   UserHelpCycle,
+  CycleLinkDetails,
 } from '../types';
 
 export interface ApiResponse<T> {
@@ -1360,7 +1361,110 @@ export const api = {
           linkTab: 'help',
         });
       }
+
+      // CRITICAL: Synchronize sender's and receiver's UserHelpCycle so both users see the Link Boxes on all devices!
+      if (!draft.helpCycles) draft.helpCycles = [];
+      let senderCycle = draft.helpCycles.find((c) => c.userId === sender.id && c.status !== 'completed');
+      if (!senderCycle) {
+        senderCycle = db.createNewCycle(sender.id, 1);
+        draft.helpCycles.unshift(senderCycle);
+      }
+
+      const assignedReqId = (matchedRequest as any)?.id || `LNK-${amount}-${Date.now().toString().slice(-6)}`;
+
+      if (amount <= 50) {
+        // Step 1: ₹50 Verification Link
+        senderCycle.status = 'provide_verification';
+        senderCycle.verificationLink = {
+          requestId: assignedReqId,
+          amount: 50,
+          title: 'Provide Verification Link (₹50)',
+          status: 'pending',
+          matchedWithUserId: params.receiverUserId,
+          matchedWithUserName: receiverName,
+          matchedWithUpi: receiverUpi,
+          matchedWithMobile: receiverMobile,
+          matchedWithEmail: receiver?.email || '',
+          deadlineTime: expiryTime,
+        };
+      } else {
+        // Step 2: ₹100 or Second Help Link
+        senderCycle.secondLink = {
+          requestId: assignedReqId,
+          amount: 100,
+          title: 'Second Link (₹100)',
+          status: 'pending',
+          matchedWithUserId: params.receiverUserId,
+          matchedWithUserName: receiverName,
+          matchedWithUpi: receiverUpi,
+          matchedWithMobile: receiverMobile,
+          matchedWithEmail: receiver?.email || '',
+          deadlineTime: expiryTime,
+        };
+        if (senderCycle.verificationLink?.status === 'completed') {
+          senderCycle.status = 'provide_second';
+        }
+      }
+
+      // Also configure receiver's active cycle so Receiver's Receive Help box displays incoming help
+      if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
+        let receiverCycle = draft.helpCycles.find((c) => c.userId === receiver.id && c.status !== 'completed');
+        if (!receiverCycle) {
+          receiverCycle = db.createNewCycle(receiver.id, 1);
+          draft.helpCycles.unshift(receiverCycle);
+        }
+        if (!receiverCycle.receiveLinks) receiverCycle.receiveLinks = [];
+        const existingSubIdx = receiverCycle.receiveLinks.findIndex((sub) => (sub.providerUserId || sub.matchedWithUserId) === sender.id);
+        const subData: CycleLinkDetails = {
+          requestId: assignedReqId,
+          title: `Receive Link (₹${amount})`,
+          amount: amount,
+          status: 'pending',
+          matchedWithUserId: sender.id,
+          matchedWithUserName: sender.fullName,
+          matchedWithMobile: sender.mobile,
+          matchedWithUpi: sender.id.toLowerCase() + '@upi',
+          providerUserId: sender.id,
+          providerName: sender.fullName,
+          providerMobile: sender.mobile,
+          deadlineTime: expiryTime,
+        };
+        if (existingSubIdx >= 0) {
+          receiverCycle.receiveLinks[existingSubIdx] = { ...receiverCycle.receiveLinks[existingSubIdx], ...subData };
+        } else {
+          receiverCycle.receiveLinks.push(subData);
+        }
+        if (!receiverCycle.receiveLink || !receiverCycle.receiveLink.matchedWithUserId) {
+          receiverCycle.receiveLink = {
+            requestId: assignedReqId,
+            amount: 200,
+            title: 'Receive Help Link (₹200)',
+            status: 'pending',
+            matchedWithUserId: sender.id,
+            matchedWithUserName: sender.fullName,
+            matchedWithMobile: sender.mobile,
+            matchedWithUpi: sender.id.toLowerCase() + '@upi',
+            deadlineTime: expiryTime,
+          };
+        }
+      }
     });
+
+    // Cross-Device Instant Push to Server and Firestore
+    db.schedulePushToServer(true);
+    if (matchedRequest) {
+      firestoreSync.syncHelpRequest(matchedRequest);
+    }
+    const syncedSenderCycle = db.getState().helpCycles?.find((c) => c.userId === sender.id && c.status !== 'completed');
+    if (syncedSenderCycle) {
+      firestoreSync.syncHelpCycle(syncedSenderCycle);
+    }
+    if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
+      const syncedReceiverCycle = db.getState().helpCycles?.find((c) => c.userId === receiver.id && c.status !== 'completed');
+      if (syncedReceiverCycle) {
+        firestoreSync.syncHelpCycle(syncedReceiverCycle);
+      }
+    }
 
     const activeReq: HelpRequest = matchedRequest || {
       id: `HP-${Date.now().toString().slice(-6)}`,
@@ -1495,7 +1599,27 @@ export const api = {
         createdAt: nowISO,
         linkTab: 'help',
       });
+
+      // Synchronize in helpCycles for sender
+      if (draft.helpCycles) {
+        const sCycle = draft.helpCycles.find((c) => c.userId === req.userId && c.status !== 'completed');
+        if (sCycle) {
+          if (sCycle.verificationLink && (sCycle.verificationLink.requestId === params.requestId || req.amount <= 50)) {
+            sCycle.verificationLink.matchedWithUserId = params.newReceiverUserId;
+            sCycle.verificationLink.matchedWithUserName = receiverName;
+            sCycle.verificationLink.matchedWithUpi = receiverUpi;
+            sCycle.verificationLink.matchedWithMobile = receiverMobile;
+          } else if (sCycle.secondLink) {
+            sCycle.secondLink.matchedWithUserId = params.newReceiverUserId;
+            sCycle.secondLink.matchedWithUserName = receiverName;
+            sCycle.secondLink.matchedWithUpi = receiverUpi;
+            sCycle.secondLink.matchedWithMobile = receiverMobile;
+          }
+        }
+      }
     });
+
+    db.schedulePushToServer(true);
 
     logAudit(
       params.adminActor,
@@ -2017,6 +2141,47 @@ export const api = {
           linkTab: 'help',
         });
       }
+
+      // Synchronize helpCycles for all matched senders and receivers
+      existingMatches.forEach((m) => {
+        const sCycle = draft.helpCycles?.find((c) => c.userId === m.userId && c.status !== 'completed');
+        if (sCycle) {
+          if (m.amount <= 50) {
+            sCycle.status = 'provide_verification';
+            sCycle.verificationLink = {
+              requestId: m.id,
+              amount: 50,
+              title: 'Provide Verification Link (₹50)',
+              status: 'pending',
+              matchedWithUserId: m.matchedWithUserId,
+              matchedWithUserName: m.matchedWithUserName,
+              matchedWithUpi: m.matchedWithUpi,
+              matchedWithMobile: m.matchedWithMobile,
+              deadlineTime: m.timerExpiryTime || (Date.now() + 24 * 3600000),
+            };
+          } else {
+            sCycle.secondLink = {
+              requestId: m.id,
+              amount: 100,
+              title: 'Second Link (₹100)',
+              status: 'pending',
+              matchedWithUserId: m.matchedWithUserId,
+              matchedWithUserName: m.matchedWithUserName,
+              matchedWithUpi: m.matchedWithUpi,
+              matchedWithMobile: m.matchedWithMobile,
+              deadlineTime: m.timerExpiryTime || (Date.now() + 24 * 3600000),
+            };
+            if (sCycle.verificationLink?.status === 'completed') {
+              sCycle.status = 'provide_second';
+            }
+          }
+        }
+      });
+    });
+
+    db.schedulePushToServer(true);
+    existingMatches.forEach((req) => {
+      firestoreSync.syncHelpRequest(req);
     });
 
     logAudit(
