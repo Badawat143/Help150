@@ -124,6 +124,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 if (!draft.wallets[uid]) draft.wallets[uid] = data.wallets[uid];
               });
             }
+            if (Array.isArray(data.helpCycles)) {
+              if (!draft.helpCycles) draft.helpCycles = [];
+              data.helpCycles.forEach((hc: any) => {
+                const idx = draft.helpCycles.findIndex((x) => x.id === hc.id);
+                if (idx < 0) draft.helpCycles.unshift(hc);
+                else draft.helpCycles[idx] = { ...draft.helpCycles[idx], ...hc };
+              });
+            }
           });
           refreshUserData();
           setDbTick((t) => t + 1);

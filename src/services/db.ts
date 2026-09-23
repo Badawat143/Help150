@@ -1107,12 +1107,50 @@ class DatabaseManager {
     return initial;
   }
 
+  private syncPushTimeout: any = null;
+
+  public schedulePushToServer(immediate = false): void {
+    if (this.syncPushTimeout) {
+      clearTimeout(this.syncPushTimeout);
+      this.syncPushTimeout = null;
+    }
+    const pushNow = async () => {
+      try {
+        if (typeof window === 'undefined') return;
+        const payload = {
+          users: this.state.users,
+          wallets: this.state.wallets,
+          helpRequests: this.state.helpRequests,
+          helpCycles: this.state.helpCycles,
+          transactions: this.state.transactions,
+          kycRecords: this.state.kycRecords,
+          settings: this.state.settings,
+        };
+        await fetch('/api/sync/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        // network sync silent
+      }
+    };
+
+    if (immediate) {
+      pushNow();
+    } else {
+      this.syncPushTimeout = setTimeout(pushNow, 400);
+    }
+  }
+
   private saveToStorage(state: DatabaseState) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.error('Failed to write to localStorage', e);
     }
+    // Auto-push state changes to backend server for seamless cross-device synchronization
+    this.schedulePushToServer();
   }
 
   private listeners: Set<() => void> = new Set();
@@ -1432,48 +1470,19 @@ class DatabaseManager {
     // Check penalty states
     this.checkAndEnforcePenalties();
 
-    // Directive: "नई id लग रही है उन id पर लिंक बॉक्स जा रहे है और जो लिंक गए है वो भी हटा दो"
-    // If links are currently disabled (4-Day Promotion Mode / Paused), wipe any pending cycles/requests and return paused state
-    if (this.state.settings.linkSystemEnabled === false) {
-      if (this.state.helpCycles.length > 0) {
-        this.state.helpCycles = [];
-        this.saveToStorage(this.state);
-      }
-      if (this.state.helpRequests.length > 0) {
-        this.state.helpRequests = [];
-        this.saveToStorage(this.state);
-      }
-      return {
-        id: `PAUSED-${userId}`,
-        userId,
-        cycleNumber: 0,
-        status: 'paused',
-        verificationLink: {
-          requestId: '',
-          amount: 50,
-          title: 'Provide Help (Paused)',
-          status: 'pending',
-          matchedWithUserId: '',
-          matchedWithUserName: '',
-          matchedWithUpi: '',
-          matchedWithMobile: '',
-          matchedWithEmail: '',
-        },
-        secondLink: {
-          requestId: '',
-          amount: 100,
-          title: 'Second Link (Paused)',
-          status: 'pending',
-          matchedWithUserId: '',
-          matchedWithUserName: '',
-          matchedWithUpi: '',
-          matchedWithMobile: '',
-          matchedWithEmail: '',
-        },
-        timerDurationHours: 12,
-        createdAt: new Date().toISOString(),
-      };
-    }
+    const adminReceiver = {
+      id: 'H150-ADMIN01',
+      fullName: 'Yenkanna Badawat (Admin Treasury)',
+      mobile: '7066463676',
+      email: 'admin@help150.org',
+      upi: '7066463676@naviaxis',
+      bankDetails: {
+        bankName: 'State Bank of India',
+        accountHolderName: 'Yenkanna Badawat',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
+      },
+    };
 
     // Find latest active cycle or most recent cycle
     let userCycles = this.state.helpCycles.filter((c) => c.userId === userId);
@@ -1485,6 +1494,58 @@ class DatabaseManager {
       this.state.helpCycles.unshift(activeCycle);
       this.saveToStorage(this.state);
       this.notifySubscribers();
+    }
+
+    // Auto-Healing & Transition: If Step 1 (₹50 verification) is completed, ALWAYS ensure Step 2 (₹100) is ready and active
+    if (activeCycle) {
+      if (activeCycle.verificationLink?.status === 'completed' && activeCycle.secondLink?.status !== 'completed') {
+        let changed = false;
+        if (activeCycle.status !== 'provide_second') {
+          activeCycle.status = 'provide_second';
+          changed = true;
+        }
+        if (!activeCycle.secondLink) {
+          activeCycle.secondLink = {
+            requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+            amount: 100,
+            title: 'Second Link (₹100)',
+            status: 'pending',
+            matchedWithUserId: adminReceiver.id,
+            matchedWithUserName: adminReceiver.fullName,
+            matchedWithUpi: adminReceiver.upi,
+            matchedWithMobile: adminReceiver.mobile,
+            matchedWithEmail: adminReceiver.email,
+            matchedWithBankDetails: adminReceiver.bankDetails,
+            deadlineTime: Date.now() + 24 * 3600000,
+          };
+          changed = true;
+        } else {
+          if (!activeCycle.secondLink.matchedWithUserId) {
+            activeCycle.secondLink.matchedWithUserId = adminReceiver.id;
+            activeCycle.secondLink.matchedWithUserName = adminReceiver.fullName;
+            activeCycle.secondLink.matchedWithUpi = adminReceiver.upi;
+            activeCycle.secondLink.matchedWithMobile = adminReceiver.mobile;
+            activeCycle.secondLink.matchedWithEmail = adminReceiver.email;
+            activeCycle.secondLink.matchedWithBankDetails = adminReceiver.bankDetails;
+            changed = true;
+          }
+          if (!activeCycle.secondLink.requestId) {
+            activeCycle.secondLink.requestId = `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`;
+            changed = true;
+          }
+          if (!activeCycle.secondLink.deadlineTime) {
+            activeCycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+            changed = true;
+          }
+          if (!activeCycle.secondLink.status || (activeCycle.secondLink.status as string) === 'paused' || activeCycle.secondLink.status === 'locked') {
+            activeCycle.secondLink.status = 'pending';
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.saveToStorage(this.state);
+        }
+      }
     }
 
     // Auto-advance if in timer mode and 12 hours elapsed
@@ -1718,6 +1779,53 @@ class DatabaseManager {
       cycle.verificationLink.status = 'completed';
       cycle.verificationLink.completedAt = now;
       cycle.status = 'provide_second';
+
+      // Ensure second link is ready, pending, and populated with receiver details
+      const adminReceiver = {
+        id: 'H150-ADMIN01',
+        fullName: 'Yenkanna Badawat (Admin Treasury)',
+        mobile: '7066463676',
+        email: 'admin@help150.org',
+        upi: '7066463676@naviaxis',
+        bankDetails: {
+          bankName: 'State Bank of India',
+          accountHolderName: 'Yenkanna Badawat',
+          accountNumber: '32103707641',
+          ifscCode: 'SBIN0003078',
+        },
+      };
+
+      if (!cycle.secondLink) {
+        cycle.secondLink = {
+          requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+          amount: 100,
+          title: 'Second Link (₹100)',
+          status: 'pending',
+          matchedWithUserId: adminReceiver.id,
+          matchedWithUserName: adminReceiver.fullName,
+          matchedWithUpi: adminReceiver.upi,
+          matchedWithMobile: adminReceiver.mobile,
+          matchedWithEmail: adminReceiver.email,
+          matchedWithBankDetails: adminReceiver.bankDetails,
+          deadlineTime: Date.now() + 24 * 3600000,
+        };
+      } else {
+        if (!cycle.secondLink.matchedWithUserId) {
+          cycle.secondLink.matchedWithUserId = adminReceiver.id;
+          cycle.secondLink.matchedWithUserName = adminReceiver.fullName;
+          cycle.secondLink.matchedWithUpi = adminReceiver.upi;
+          cycle.secondLink.matchedWithMobile = adminReceiver.mobile;
+          cycle.secondLink.matchedWithEmail = adminReceiver.email;
+          cycle.secondLink.matchedWithBankDetails = adminReceiver.bankDetails;
+        }
+        if (!cycle.secondLink.requestId) {
+          cycle.secondLink.requestId = `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`;
+        }
+        cycle.secondLink.deadlineTime = cycle.secondLink.deadlineTime || Date.now() + 24 * 3600000;
+        if (cycle.secondLink.status !== 'completed') {
+          cycle.secondLink.status = 'pending';
+        }
+      }
 
       // Update provider wallet total help given
       wallet.totalHelpedGiven += 50;
@@ -2092,6 +2200,33 @@ class DatabaseManager {
 
     sub.status = 'completed';
     sub.completedAt = now;
+
+    // CRITICAL CROSS-USER SYNC: Also update the PROVIDER's cycle so their next link (Step 2 or timer) unlocks immediately across all devices!
+    const providerUserId = sub.matchedWithUserId;
+    if (providerUserId) {
+      const providerCycles = this.state.helpCycles.filter((c) => c.userId === providerUserId && c.status !== 'completed');
+      for (const pCycle of providerCycles) {
+        if (pCycle.verificationLink && (pCycle.verificationLink.requestId === subRequestId || (sub.amount === 50 && pCycle.verificationLink.status !== 'completed'))) {
+          pCycle.verificationLink.status = 'completed';
+          pCycle.verificationLink.completedAt = now;
+          pCycle.status = 'provide_second';
+          if (pCycle.secondLink) {
+            pCycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+            if (pCycle.secondLink.status !== 'completed') {
+              pCycle.secondLink.status = 'pending';
+            }
+          }
+          break;
+        } else if (pCycle.secondLink && (pCycle.secondLink.requestId === subRequestId || (sub.amount === 100 && pCycle.secondLink.status !== 'completed'))) {
+          pCycle.secondLink.status = 'completed';
+          pCycle.secondLink.completedAt = now;
+          pCycle.status = 'maturation_timer';
+          pCycle.timerStartTime = Date.now();
+          pCycle.timerExpiryTime = Date.now() + (pCycle.timerDurationHours || 12) * 3600000;
+          break;
+        }
+      }
+    }
 
     // Credit this specific sub-link amount (₹50 or ₹100) to user wallet
     const wallet = this.getOrCreateWallet(userId);
@@ -2475,33 +2610,66 @@ class DatabaseManager {
     let details = '';
     const now = new Date().toISOString();
 
+    const adminReceiver = {
+      id: 'H150-ADMIN01',
+      fullName: 'Yenkanna Badawat (Admin Treasury)',
+      mobile: '7066463676',
+      email: 'admin@help150.org',
+      upi: '7066463676@naviaxis',
+      bankDetails: {
+        bankName: 'State Bank of India',
+        accountHolderName: 'Yenkanna Badawat',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
+      },
+    };
+
     this.updateState((draft) => {
       // 1. Check in helpCycles (step 1 or step 2)
       if (draft.helpCycles) {
         for (const cycle of draft.helpCycles) {
-          if (cycle.verificationLink && (cycle.verificationLink.requestId === linkId || `${cycle.id}-ver` === linkId)) {
+          const isVerMatch =
+            cycle.verificationLink &&
+            (cycle.verificationLink.requestId === linkId ||
+              `${cycle.id}-ver` === linkId ||
+              cycle.id === linkId);
+
+          if (isVerMatch && cycle.verificationLink.status !== 'completed') {
             cycle.verificationLink.status = 'completed';
             cycle.verificationLink.completedAt = now;
             cycle.verificationLink.proofReference = cycle.verificationLink.proofReference || `UTR-${Date.now().toString().slice(-8)}`;
-            if (cycle.status === 'provide_verification') {
-              cycle.status = 'provide_second';
-              if (cycle.secondLink) {
-                cycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+            cycle.status = 'provide_second';
+            if (!cycle.secondLink || !cycle.secondLink.matchedWithUserId) {
+              cycle.secondLink = {
+                requestId: cycle.secondLink?.requestId || `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+                amount: 100,
+                title: 'Second Link (₹100)',
+                status: 'pending',
+                matchedWithUserId: adminReceiver.id,
+                matchedWithUserName: adminReceiver.fullName,
+                matchedWithUpi: adminReceiver.upi,
+                matchedWithMobile: adminReceiver.mobile,
+                matchedWithEmail: adminReceiver.email,
+                matchedWithBankDetails: adminReceiver.bankDetails,
+                deadlineTime: Date.now() + 24 * 3600000,
+              };
+            } else {
+              cycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+              if (cycle.secondLink.status !== 'completed') {
+                cycle.secondLink.status = 'pending';
               }
             }
             matched = true;
-            details = `₹50 Verification link approved for member ${cycle.userId}`;
+            details = `₹50 Verification link approved for member ${cycle.userId}. Step 2 (₹100) is now ready!`;
             break;
           }
           if (cycle.secondLink && (cycle.secondLink.requestId === linkId || `${cycle.id}-sec` === linkId)) {
             cycle.secondLink.status = 'completed';
             cycle.secondLink.completedAt = now;
             cycle.secondLink.proofReference = cycle.secondLink.proofReference || `UTR-${Date.now().toString().slice(-8)}`;
-            if (cycle.status === 'provide_second') {
-              cycle.status = 'maturation_timer';
-              cycle.timerStartTime = Date.now();
-              cycle.timerExpiryTime = Date.now() + (cycle.timerDurationHours || 12) * 3600000;
-            }
+            cycle.status = 'maturation_timer';
+            cycle.timerStartTime = Date.now();
+            cycle.timerExpiryTime = Date.now() + (cycle.timerDurationHours || 12) * 3600000;
             matched = true;
             details = `₹100 Second link approved for member ${cycle.userId}. 12h Timer started!`;
             break;
@@ -2521,6 +2689,20 @@ class DatabaseManager {
           req.adminNotes = adminNotes || 'Approved by Admin';
           matched = true;
           details = `Help Request #${linkId} approved by Admin!`;
+
+          // If this request is for a user who has an active cycle, also advance their cycle to Step 2
+          const userCycle = draft.helpCycles?.find((c) => c.userId === req.userId && c.status !== 'completed');
+          if (userCycle && userCycle.verificationLink && userCycle.verificationLink.status !== 'completed') {
+            userCycle.verificationLink.status = 'completed';
+            userCycle.verificationLink.completedAt = now;
+            userCycle.status = 'provide_second';
+            if (userCycle.secondLink) {
+              userCycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+              if (userCycle.secondLink.status !== 'completed') {
+                userCycle.secondLink.status = 'pending';
+              }
+            }
+          }
         }
       }
 
@@ -2541,6 +2723,7 @@ class DatabaseManager {
     });
 
     if (matched) {
+      this.schedulePushToServer(true);
       return { success: true, message: details };
     }
     return { success: false, message: 'Link not found' };

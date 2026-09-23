@@ -110,21 +110,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
               }
 
-              // 4. Merge helpCycles (50/100/200 Plan Loop)
+              // 4. Merge helpCycles (50/100/200 Plan Loop) - Seamless Multi-Device Synchronization
               if (Array.isArray(data.helpCycles)) {
                 if (!draft.helpCycles) draft.helpCycles = [];
                 data.helpCycles.forEach((hc: any) => {
-                  const hcIdx = draft.helpCycles.findIndex((x) => x.id === hc.id);
+                  const hcIdx = draft.helpCycles.findIndex((x) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.status !== 'completed'));
                   if (hcIdx < 0) {
                     draft.helpCycles.unshift(hc);
                     hasAnyUpdate = true;
                   } else {
-                    if (
-                      draft.helpCycles[hcIdx].status !== hc.status ||
-                      draft.helpCycles[hcIdx].timerExpiryTime !== hc.timerExpiryTime ||
-                      draft.helpCycles[hcIdx].completedAt !== hc.completedAt
-                    ) {
-                      draft.helpCycles[hcIdx] = { ...draft.helpCycles[hcIdx], ...hc };
+                    const local = draft.helpCycles[hcIdx];
+                    const serverVerDone = hc.verificationLink?.status === 'completed';
+                    const localVerDone = local.verificationLink?.status === 'completed';
+                    const serverSecDone = hc.secondLink?.status === 'completed';
+                    const localSecDone = local.secondLink?.status === 'completed';
+
+                    const needsUpdate =
+                      local.status !== hc.status ||
+                      (serverVerDone && !localVerDone) ||
+                      (serverSecDone && !localSecDone) ||
+                      local.verificationLink?.status !== hc.verificationLink?.status ||
+                      local.secondLink?.status !== hc.secondLink?.status ||
+                      local.verificationLink?.proofReference !== hc.verificationLink?.proofReference ||
+                      local.secondLink?.proofReference !== hc.secondLink?.proofReference ||
+                      local.verificationLink?.slipUrl !== hc.verificationLink?.slipUrl ||
+                      local.secondLink?.slipUrl !== hc.secondLink?.slipUrl ||
+                      local.timerExpiryTime !== hc.timerExpiryTime ||
+                      local.completedAt !== hc.completedAt;
+
+                    if (needsUpdate) {
+                      const verFinalStatus = (serverVerDone || localVerDone) ? 'completed' : (hc.verificationLink?.status || local.verificationLink?.status || 'pending');
+                      const secFinalStatus = (serverSecDone || localSecDone) ? 'completed' : (hc.secondLink?.status || local.secondLink?.status || 'pending');
+                      const finalStatus = (verFinalStatus === 'completed' && secFinalStatus !== 'completed')
+                        ? 'provide_second'
+                        : (hc.status || local.status);
+
+                      draft.helpCycles[hcIdx] = {
+                        ...local,
+                        ...hc,
+                        status: finalStatus,
+                        verificationLink: {
+                          ...(local.verificationLink || {}),
+                          ...(hc.verificationLink || {}),
+                          status: verFinalStatus,
+                        },
+                        secondLink: {
+                          ...(local.secondLink || {}),
+                          ...(hc.secondLink || {}),
+                          status: secFinalStatus,
+                        },
+                      };
                       hasAnyUpdate = true;
                     }
                   }

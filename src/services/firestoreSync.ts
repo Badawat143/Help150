@@ -189,10 +189,64 @@ class FirestoreSyncService {
       );
       this.unsubscribeListeners.push(unsubNotifs);
 
-      // 7. Initial Fetch to immediately hydrate state
+      // 7. Real-time listener for HELP CYCLES (cross-device sync for ₹50 / ₹100 / ₹200 cycles)
+      const helpCyclesCol = collection(firestoreDb, 'helpCycles');
+      const unsubCycles = onSnapshot(
+        helpCyclesCol,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const cloudCycles: any[] = [];
+            snapshot.forEach((docSnap) => {
+              const c = docSnap.data();
+              if (c && c.id) cloudCycles.push(c);
+            });
+
+            db.updateState((draft) => {
+              if (!draft.helpCycles) draft.helpCycles = [];
+              cloudCycles.forEach((cloudCycle) => {
+                const idx = draft.helpCycles.findIndex((c) => c.id === cloudCycle.id);
+                if (idx >= 0) {
+                  const local = draft.helpCycles[idx];
+                  const serverVerDone = cloudCycle.verificationLink?.status === 'completed';
+                  const localVerDone = local.verificationLink?.status === 'completed';
+                  const serverSecDone = cloudCycle.secondLink?.status === 'completed';
+                  const localSecDone = local.secondLink?.status === 'completed';
+
+                  const verStatus = (serverVerDone || localVerDone) ? 'completed' : (cloudCycle.verificationLink?.status || local.verificationLink?.status || 'pending');
+                  const secStatus = (serverSecDone || localSecDone) ? 'completed' : (cloudCycle.secondLink?.status || local.secondLink?.status || 'pending');
+
+                  draft.helpCycles[idx] = {
+                    ...local,
+                    ...cloudCycle,
+                    status: (verStatus === 'completed' && secStatus !== 'completed') ? 'provide_second' : (cloudCycle.status || local.status),
+                    verificationLink: {
+                      ...(local.verificationLink || {}),
+                      ...(cloudCycle.verificationLink || {}),
+                      status: verStatus,
+                    },
+                    secondLink: {
+                      ...(local.secondLink || {}),
+                      ...(cloudCycle.secondLink || {}),
+                      status: secStatus,
+                    },
+                  };
+                } else {
+                  draft.helpCycles.unshift(cloudCycle);
+                }
+              });
+            });
+          }
+        },
+        (error) => {
+          console.warn('Firestore helpCycles snapshot notice:', error);
+        }
+      );
+      this.unsubscribeListeners.push(unsubCycles);
+
+      // 8. Initial Fetch to immediately hydrate state
       await this.fetchAllFromCloud();
 
-      // 8. Background Polling Fallback (every 10 seconds to ensure consistency across any browser/network state)
+      // 9. Background Polling Fallback (every 10 seconds to ensure consistency across any browser/network state)
       this.pollInterval = setInterval(() => {
         this.fetchAllFromCloud();
       }, 10000);
@@ -384,6 +438,19 @@ class FirestoreSyncService {
       await setDoc(docRef, notification, { merge: true });
     } catch (error) {
       console.warn(`Firestore syncNotification notice (${notification.id}):`, error);
+    }
+  }
+
+  /**
+   * Save a User Help Cycle to Firestore
+   */
+  public async syncHelpCycle(cycle: any): Promise<void> {
+    if (!cycle || !cycle.id) return;
+    try {
+      const docRef = doc(firestoreDb, 'helpCycles', cycle.id);
+      await setDoc(docRef, cycle, { merge: true });
+    } catch (error) {
+      console.warn(`Firestore syncHelpCycle notice (${cycle.id}):`, error);
     }
   }
 

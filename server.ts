@@ -195,7 +195,9 @@ function readDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(content);
+      const data = JSON.parse(content);
+      if (!data.helpCycles) data.helpCycles = [];
+      return data;
     }
   } catch (err) {
     console.error('Error reading db.json:', err);
@@ -815,8 +817,33 @@ app.post('/api/sync/push', async (req, res) => {
       if (!dbData.helpCycles) dbData.helpCycles = [];
       helpCycles.forEach((hc: any) => {
         const idx = dbData.helpCycles.findIndex((x: any) => x.id === hc.id);
-        if (idx >= 0) dbData.helpCycles[idx] = { ...dbData.helpCycles[idx], ...hc };
-        else dbData.helpCycles.unshift(hc);
+        if (idx >= 0) {
+          const old = dbData.helpCycles[idx];
+          const verStatus = (old.verificationLink?.status === 'completed' && hc.verificationLink?.status !== 'completed')
+            ? 'completed'
+            : (hc.verificationLink?.status || old.verificationLink?.status || 'pending');
+          const secStatus = (old.secondLink?.status === 'completed' && hc.secondLink?.status !== 'completed')
+            ? 'completed'
+            : (hc.secondLink?.status || old.secondLink?.status || 'pending');
+
+          dbData.helpCycles[idx] = {
+            ...old,
+            ...hc,
+            status: (verStatus === 'completed' && secStatus !== 'completed') ? 'provide_second' : (hc.status || old.status),
+            verificationLink: {
+              ...(old.verificationLink || {}),
+              ...(hc.verificationLink || {}),
+              status: verStatus,
+            },
+            secondLink: {
+              ...(old.secondLink || {}),
+              ...(hc.secondLink || {}),
+              status: secStatus,
+            },
+          };
+        } else {
+          dbData.helpCycles.unshift(hc);
+        }
       });
     }
 
@@ -848,6 +875,13 @@ app.post('/api/sync/push', async (req, res) => {
         if (wallets && typeof wallets === 'object') {
           for (const uid of Object.keys(wallets)) {
             await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
+          }
+        }
+        if (Array.isArray(helpCycles)) {
+          for (const hc of helpCycles) {
+            if (hc && hc.id) {
+              await setDoc(doc(serverFirestore, 'helpCycles', hc.id), hc, { merge: true });
+            }
           }
         }
       } catch (fErr) {

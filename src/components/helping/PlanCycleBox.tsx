@@ -668,17 +668,17 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
                 <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>Recipient:</span>
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <UserIcon className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{cycle.secondLink.matchedWithUserName}</span>
-                  <span className={`font-mono text-[10px] ${isStep1Done && !isStep2Done ? 'text-red-300' : 'text-slate-400'}`}>({cycle.secondLink.matchedWithUserId})</span>
+                  <span>{cycle.secondLink.matchedWithUserName || 'Yenkanna Badawat (Admin Treasury)'}</span>
+                  <span className={`font-mono text-[10px] ${isStep1Done && !isStep2Done ? 'text-red-300' : 'text-slate-400'}`}>({cycle.secondLink.matchedWithUserId || 'H150-ADMIN01'})</span>
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
                 <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>UPI ID:</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-amber-300 text-[11px]">{cycle.secondLink.matchedWithUpi}</span>
+                  <span className="font-mono font-bold text-amber-300 text-[11px]">{cycle.secondLink.matchedWithUpi || '7066463676@naviaxis'}</span>
                   <button
-                    onClick={() => handleCopy(cycle.secondLink.matchedWithUpi, 'sec_upi', 'UPI ID')}
+                    onClick={() => handleCopy(cycle.secondLink.matchedWithUpi || '7066463676@naviaxis', 'sec_upi', 'UPI ID')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
                     title="Copy UPI ID"
                   >
@@ -690,9 +690,9 @@ export const PlanCycleBox: React.FC<PlanCycleBoxProps> = ({ onNavigateTab }) => 
               <div className="flex items-center justify-between text-xs">
                 <span className={isStep1Done && !isStep2Done ? 'text-red-200 font-semibold' : 'text-slate-400'}>Mobile Number:</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-white">{cycle.secondLink.matchedWithMobile}</span>
+                  <span className="font-mono text-white">{cycle.secondLink.matchedWithMobile || '7066463676'}</span>
                   <button
-                    onClick={() => handleCopy(cycle.secondLink.matchedWithMobile, 'sec_mob', 'Mobile Number')}
+                    onClick={() => handleCopy(cycle.secondLink.matchedWithMobile || '7066463676', 'sec_mob', 'Mobile Number')}
                     className="p-1 rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer transition"
                     title="Copy Mobile Number"
                   >

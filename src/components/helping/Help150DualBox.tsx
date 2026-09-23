@@ -146,10 +146,23 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     const interval = setInterval(() => {
       const now = Date.now();
 
-      // 1. Step 1 (₹50) 24h Deadline
-      if (cycle.status === 'provide_verification') {
+      // 1. Step 1 (₹50) or Step 2 (₹100) 24h Deadline
+      if (cycle.status === 'provide_second' || (cycle.verificationLink?.status === 'completed' && cycle.secondLink?.status !== 'completed')) {
         const deadline =
-          cycle.verificationLink.deadlineTime ||
+          cycle.secondLink?.deadlineTime ||
+          (cycle.verificationLink?.completedAt
+            ? new Date(cycle.verificationLink.completedAt).getTime() + 24 * 3600000
+            : new Date(cycle.createdAt).getTime() + 24 * 3600000);
+        const diff = Math.max(0, deadline - now);
+        setStep1Timer({
+          hours: Math.floor(diff / 3600000),
+          minutes: Math.floor((diff % 3600000) / 60000),
+          seconds: Math.floor((diff % 60000) / 1000),
+          isExpired: diff === 0,
+        });
+      } else if (cycle.status === 'provide_verification' || cycle.verificationLink?.status !== 'completed') {
+        const deadline =
+          cycle.verificationLink?.deadlineTime ||
           new Date(cycle.createdAt).getTime() + 24 * 3600000;
         const diff = Math.max(0, deadline - now);
         setStep1Timer({
@@ -520,31 +533,48 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   // Receive link details
   const receiveLink = cycle.receiveLink;
 
+  const isStep1Done = step1?.status === 'completed';
+  const isStep2Done = step2?.status === 'completed';
+
   const isLinkSystemLive = settings.linkSystemEnabled !== false;
-  const isStep1Active = isLinkSystemLive && cycle.status === 'provide_verification' && Boolean(step1?.matchedWithUserId);
-  const isStep2Active = isLinkSystemLive && cycle.status === 'provide_second' && Boolean(step2?.matchedWithUserId);
+
+  // Step 1 is active when not completed, and either link system is live or cycle was in progress
+  const isStep1Active = !isStep1Done && (isLinkSystemLive || cycle.status === 'provide_verification');
+
+  // Step 2 is active whenever Step 1 (₹50) is completed and Step 2 (₹100) is not yet completed!
+  // CRITICAL FIX: Once Step 1 is accepted, the user MUST ALWAYS see Step 2 (₹100), across ALL devices!
+  const isStep2Active = isStep1Done && !isStep2Done;
   const isTimerActive = isLinkSystemLive && cycle.status === 'maturation_timer';
   const isReceiveActive = isLinkSystemLive && cycle.status === 'receive_help';
-  const isPaused = !isLinkSystemLive || cycle.status === 'paused';
+  const isPaused = !isLinkSystemLive && !isStep2Active && cycle.status === 'paused';
+
+  // Default Admin Treasury fallback beneficiary if receiver info is pending
+  const adminDefaultBeneficiary = {
+    name: 'Yenkanna Badawat (Admin Treasury)',
+    id: 'H150-ADMIN01',
+    mobile: '7066463676',
+    email: 'admin@help150.org',
+    upi: '7066463676@naviaxis',
+  };
 
   // Active Provide Beneficiary based on current step
   const activeProvideBeneficiary = isStep1Active
     ? {
-        name: step1.matchedWithUserName || 'Community Member',
-        id: step1.matchedWithUserId || '',
-        mobile: step1.matchedWithMobile || '',
-        email: step1.matchedWithEmail || 'peer@help150.org',
-        upi: step1.matchedWithUpi || '',
+        name: step1?.matchedWithUserName || adminDefaultBeneficiary.name,
+        id: step1?.matchedWithUserId || adminDefaultBeneficiary.id,
+        mobile: step1?.matchedWithMobile || adminDefaultBeneficiary.mobile,
+        email: step1?.matchedWithEmail || adminDefaultBeneficiary.email,
+        upi: step1?.matchedWithUpi || adminDefaultBeneficiary.upi,
         amount: 50,
         title: 'Step 1: ₹50 First Help Link (Verification)',
         type: 'verification' as const,
       }
     : {
-        name: step2.matchedWithUserName || 'Community Member',
-        id: step2.matchedWithUserId || '',
-        mobile: step2.matchedWithMobile || '',
-        email: step2.matchedWithEmail || 'treasury@help150.org',
-        upi: step2.matchedWithUpi || '',
+        name: step2?.matchedWithUserName || adminDefaultBeneficiary.name,
+        id: step2?.matchedWithUserId || adminDefaultBeneficiary.id,
+        mobile: step2?.matchedWithMobile || adminDefaultBeneficiary.mobile,
+        email: step2?.matchedWithEmail || adminDefaultBeneficiary.email,
+        upi: step2?.matchedWithUpi || adminDefaultBeneficiary.upi,
         amount: 100,
         title: 'Step 2: ₹100 Second Help Link',
         type: 'second' as const,
