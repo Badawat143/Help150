@@ -99,6 +99,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
               }
 
+              // 2.5 Merge system settings (Ensure promotion is disabled and links are live across all devices)
+              if (data.settings) {
+                draft.settings = {
+                  ...draft.settings,
+                  ...data.settings,
+                  linkSystemEnabled: true,
+                  promotionMode: false,
+                  promotionEndedV1: true,
+                };
+                hasAnyUpdate = true;
+              }
+
               // 3. Merge helpRequests
               if (Array.isArray(data.helpRequests)) {
                 data.helpRequests.forEach((hr: any) => {
@@ -320,6 +332,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUserId(userId);
     const state = db.getState();
     const user = state.users.find((u) => u.id === userId);
+    if (user && user.role !== 'admin' && user.role !== 'compliance_officer') {
+      try {
+        db.getUserHelpCycle(userId);
+      } catch (e) {
+        // silent fallback
+      }
+    }
     if (user?.role === 'admin' || user?.role === 'compliance_officer') {
       setActiveTab('admin');
     } else {

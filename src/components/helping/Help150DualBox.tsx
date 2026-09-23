@@ -38,6 +38,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
 import { UserHelpCycle } from '../../types';
+import { compressImageFile } from '../../utils/imageCompress';
 import { PaymentSlipUploadModal } from './PaymentSlipUploadModal';
 import { CoinTransferAnimation } from './CoinTransferAnimation';
 
@@ -75,22 +76,31 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   }>({ file: null, previewUrl: null, fileName: null });
   const inlineFileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleInlineFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInlineFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+      try {
+        const compressedUrl = await compressImageFile(selectedFile, 800, 0.7);
         setInlineAttachedSlip({
           file: selectedFile,
-          previewUrl: ev.target?.result as string,
+          previewUrl: compressedUrl,
           fileName: selectedFile.name,
         });
         setFeedback({
           type: 'success',
           message: `स्लिप "${selectedFile.name}" अटैच हो गई! सिग्नल हरी लाइट (✅) में बदल गया है। अब सबमिट करें।`,
         });
-      };
-      reader.readAsDataURL(selectedFile);
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setInlineAttachedSlip({
+            file: selectedFile,
+            previewUrl: ev.target?.result as string,
+            fileName: selectedFile.name,
+          });
+        };
+        reader.readAsDataURL(selectedFile);
+      }
     }
   };
 
@@ -536,17 +546,17 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   const isStep1Done = step1?.status === 'completed';
   const isStep2Done = step2?.status === 'completed';
 
-  const isLinkSystemLive = settings.linkSystemEnabled !== false;
+  // Promotion is OVER. The helping links system is LIVE for all members across all devices.
+  const isLinkSystemLive = true;
 
-  // Step 1 is active when not completed, and either link system is live or cycle was in progress
-  const isStep1Active = !isStep1Done && (isLinkSystemLive || cycle.status === 'provide_verification');
+  // Step 1 (₹50 verification) is active when not yet completed
+  const isStep1Active = !isStep1Done;
 
-  // Step 2 is active whenever Step 1 (₹50) is completed and Step 2 (₹100) is not yet completed!
-  // CRITICAL FIX: Once Step 1 is accepted, the user MUST ALWAYS see Step 2 (₹100), across ALL devices!
+  // Step 2 (₹100 second link) is active whenever Step 1 (₹50) is completed and Step 2 is pending
   const isStep2Active = isStep1Done && !isStep2Done;
-  const isTimerActive = isLinkSystemLive && cycle.status === 'maturation_timer';
-  const isReceiveActive = isLinkSystemLive && cycle.status === 'receive_help';
-  const isPaused = !isLinkSystemLive && !isStep2Active && cycle.status === 'paused';
+  const isTimerActive = cycle.status === 'maturation_timer';
+  const isReceiveActive = cycle.status === 'receive_help';
+  const isPaused = false;
 
   // Default Admin Treasury fallback beneficiary if receiver info is pending
   const adminDefaultBeneficiary = {
@@ -818,30 +828,6 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
           <button onClick={() => setFeedback(null)} className="p-1 text-slate-400 hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
-        </div>
-      )}
-
-      {/* 4-Day Promotion Mode Sleek Notice (Shown when promotion mode is active) */}
-      {!settings.linkSystemEnabled && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-2 border-amber-500/60 shadow-lg text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 items-center justify-center shrink-0 text-lg border border-amber-500/40">
-              ⏳
-            </span>
-            <div>
-              <strong className="text-white text-sm">{settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि:</strong>{' '}
-              हेल्पिंग लिंक्स अभी विराम पर हैं। ऊपर चल रहा टाइमर पूर्ण होते ही दोनों बॉक्स में ऑटोमैटिक लिंक्स शुरू हो जाएंगे!
-            </div>
-          </div>
-          {onNavigateTab && (
-            <button
-              onClick={() => onNavigateTab('referral')}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shrink-0 transition shadow cursor-pointer flex items-center gap-1.5"
-            >
-              <span>रेफरल टीम बनाएं</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          )}
         </div>
       )}
 
@@ -1248,36 +1234,6 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 >
                   <span>👉 दाएँ बॉक्स में ₹200 कन्फर्म करें ➔</span>
                 </button>
-              </div>
-            )}
-
-            {/* D. SCENARIO 4: 4-DAY PRE-LAUNCH PROMOTION (LINKS PAUSED - NO LINK SENT) */}
-            {isPaused && (
-              <div className="bg-purple-950/40 border border-fuchsia-300/50 rounded-xl p-3 sm:p-4 text-center space-y-2.5 shadow-inner backdrop-blur-xs">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-900/60 border border-fuchsia-300/60 text-fuchsia-100 text-xs font-bold uppercase tracking-wider">
-                  <span>⏳ {settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि</span>
-                </div>
-
-                <h4 className="text-sm sm:text-base font-black text-white">
-                  हेल्पिंग लिंक्स अभी विराम (Paused) पर हैं
-                </h4>
-
-                <p className="text-[11px] sm:text-xs text-purple-100 leading-relaxed max-w-sm mx-auto font-medium">
-                  नई आईडी पर कोई भी लिंक नहीं भेजा गया है। पुराने सभी लिंक्स हटा दिए गए हैं। ऊपर चल रहा लाइव टाइमर पूर्ण होते ही ऑटोमैटिक सिस्टम से आपको पहला ₹50 का प्रोवाइड हेल्प लिंक प्राप्त होगा।
-                </p>
-
-                <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-2">
-                  {onNavigateTab && (
-                    <button
-                      type="button"
-                      onClick={() => onNavigateTab('referral')}
-                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                      <span>अपनी टीम बनाएं और शेयर करें</span>
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </div>

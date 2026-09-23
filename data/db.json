@@ -14,7 +14,9 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-12T02:27:13.838Z",
-      "lastLoginAt": "2026-09-12T02:27:13.838Z"
+      "lastLoginAt": "2026-09-12T02:27:13.838Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-779184",
@@ -30,7 +32,9 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-12T01:44:46.763Z",
-      "lastLoginAt": "2026-09-12T01:44:46.763Z"
+      "lastLoginAt": "2026-09-12T01:44:46.763Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-240211",
@@ -46,15 +50,17 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T18:52:05.820Z",
-      "lastLoginAt": "2026-09-11T18:52:05.820Z"
+      "lastLoginAt": "2026-09-11T18:52:05.820Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-ADMIN01",
-      "fullName": "System Superadmin",
-      "mobile": "9800000001",
+      "fullName": "Yenkanna Badawat",
+      "mobile": "7066463676",
       "email": "admin@help150.org",
-      "password": "Admin@150",
-      "passwordHash": "QWRtaW5AMTUw",
+      "password": "admin",
+      "passwordHash": "YWRtaW4=",
       "role": "admin",
       "sponsorId": null,
       "status": "active",
@@ -62,7 +68,19 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "Admin Workstation (Linux Chrome)",
+      "ipAddress": "103.21.144.10",
+      "internalNotes": [
+        "Root system administrator"
+      ],
+      "isAdminAccount": true,
+      "accountType": "admin_pool",
+      "bankName": "State Bank of India",
+      "accountHolderName": "Yenkanna Badawat",
+      "accountNumber": "32103707641",
+      "ifscCode": "SBIN0003078",
+      "upiId": "7066463676@naviaxis"
     },
     {
       "id": "H150-784920",
@@ -73,12 +91,23 @@
       "passwordHash": "cGFzc3dvcmQxMjM=",
       "role": "admin",
       "sponsorId": "H150-ADMIN01",
-      "status": "active",
+      "status": "blocked",
       "kycStatus": "verified",
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "Samsung Galaxy S23 (Mobile Web)",
+      "ipAddress": "157.34.120.44",
+      "internalNotes": [
+        "Active verified community leader",
+        "Verified KYC on 05 Sep"
+      ],
+      "isAdminAccount": true,
+      "accountType": "admin_pool",
+      "blockedAt": "2026-09-23T11:58:19.181Z",
+      "autoDeleteAt": "2026-09-24T11:58:19.180Z",
+      "blockedReason": "Failed to pay ₹50 Provide Help link within 24 hours. Account will be automatically deleted in 24 hours."
     },
     {
       "id": "H150-918234",
@@ -94,7 +123,14 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "iPhone 15 / Safari",
+      "ipAddress": "157.34.120.45",
+      "internalNotes": [
+        "Referred by Ashok Kumar"
+      ],
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-449102",
@@ -110,7 +146,14 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "OnePlus 11 / Chrome",
+      "ipAddress": "157.34.120.46",
+      "internalNotes": [
+        "KYC submitted, pending review"
+      ],
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-610293",
@@ -126,7 +169,14 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "Redmi Note 12 / Chrome",
+      "ipAddress": "157.34.120.47",
+      "internalNotes": [
+        "Level 2 referral under Ashok"
+      ],
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     },
     {
       "id": "H150-338291",
@@ -142,39 +192,641 @@
       "isMobileVerified": true,
       "isEmailVerified": true,
       "joinedAt": "2026-09-11T06:37:15.763Z",
-      "lastLoginAt": "2026-09-11T06:37:15.763Z"
+      "lastLoginAt": "2026-09-11T06:37:15.763Z",
+      "deviceInfo": "Vivo V27 / Chrome",
+      "ipAddress": "157.34.120.48",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "status": "active",
+      "passwordHash": "MjkzMjg4",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "email": "siansari78@gmail.com",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "password": "293288",
+      "fullName": "Mohammad Ayyub Ansari",
+      "id": "H150-989903",
+      "ipAddress": "157.34.120.49",
+      "mobile": "9123281353",
+      "sponsorId": "H150-387571",
+      "role": "user",
+      "lastLoginAt": "2026-09-23T02:05:09.027Z",
+      "joinedAt": "2026-09-23T02:03:46.251Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "joinedAt": "2026-09-22T18:13:46.937Z",
+      "isMobileVerified": true,
+      "mobile": "4019121830",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "role": "user",
+      "kycStatus": "not_submitted",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "sponsorId": "H150-387571",
+      "password": "nikhil",
+      "fullName": "Raval nikhil",
+      "email": "ravalnikhil42@gmail.com",
+      "isEmailVerified": true,
+      "ipAddress": "157.34.120.74",
+      "passwordHash": "bmlraGls",
+      "status": "active",
+      "lastLoginAt": "2026-09-22T18:13:46.937Z",
+      "id": "H150-885720",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "mobile": "6001410543",
+      "kycStatus": "not_submitted",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "passwordHash": "cGFzc2E5OTk=",
+      "role": "user",
+      "isEmailVerified": true,
+      "fullName": "Mustafa Kamal Passa",
+      "password": "passa999",
+      "lastLoginAt": "2026-09-23T04:28:32.433Z",
+      "email": "mk0270426@gmail.com",
+      "id": "H150-605391",
+      "status": "active",
+      "isMobileVerified": true,
+      "joinedAt": "2026-09-23T04:28:32.433Z",
+      "ipAddress": "157.34.120.64",
+      "sponsorId": "H150-387571",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 15; en; Infi",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "status": "active",
+      "joinedAt": "2026-09-22T15:23:16.786Z",
+      "ipAddress": "157.34.120.50",
+      "email": "rajendra.wavetech@gmail.com",
+      "sponsorId": "H150-387571",
+      "kycStatus": "not_submitted",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "lastLoginAt": "2026-09-22T15:23:16.786Z",
+      "isMobileVerified": true,
+      "mobile": "7008201344",
+      "fullName": "Rajendra Narayan Mohanty",
+      "password": "Help150",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "passwordHash": "SGVscDE1MA==",
+      "isEmailVerified": true,
+      "id": "H150-555448",
+      "role": "user",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "mobile": "9916787343",
+      "sponsorId": "H150-387571",
+      "isEmailVerified": true,
+      "lastLoginAt": "2026-09-22T15:28:41.959Z",
+      "email": "shyamp1606@gmail.com",
+      "joinedAt": "2026-09-22T15:28:41.959Z",
+      "role": "user",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "passwordHash": "R3JhcGVzMTYq",
+      "ipAddress": "157.34.120.29",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "id": "H150-545625",
+      "password": "Grapes16*",
+      "fullName": "Shyam Kumar",
+      "isMobileVerified": true,
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "ipAddress": "157.34.120.29",
+      "sponsorId": "H150-387571",
+      "status": "active",
+      "email": "shukveergujjar07@gmail.com",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "joinedAt": "2026-09-23T07:51:29.581Z",
+      "id": "H150-323960",
+      "passwordHash": "VnZnZ3R0NDQ1NQ==",
+      "role": "user",
+      "mobile": "8440833845",
+      "isMobileVerified": true,
+      "kycStatus": "not_submitted",
+      "lastLoginAt": "2026-09-23T07:51:29.581Z",
+      "fullName": "Vishnu",
+      "password": "Vvggtt4455",
+      "isEmailVerified": true,
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "id": "H150-990036",
+      "role": "user",
+      "password": "9883678288aB",
+      "mobile": "9883678288",
+      "passwordHash": "OTg4MzY3ODI4OGFC",
+      "status": "active",
+      "sponsorId": "H150-387571",
+      "isMobileVerified": true,
+      "lastLoginAt": "2026-09-18T15:24:05.997Z",
+      "fullName": "Prem Prakash Mishra",
+      "isEmailVerified": true,
+      "ipAddress": "157.34.120.55",
+      "email": "premprakashm81@gmail.com",
+      "joinedAt": "2026-09-18T15:24:05.997Z",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "isEmailVerified": true,
+      "internalNotes": [
+        "Referred by H150-838728"
+      ],
+      "mobile": "9929344524",
+      "fullName": "hitesh Saini",
+      "status": "active",
+      "email": "h.saini2026@gmail.com",
+      "sponsorId": "H150-838728",
+      "isMobileVerified": true,
+      "joinedAt": "2026-09-18T16:05:33.272Z",
+      "role": "user",
+      "passwordHash": "SElURVNIQGJoYWk=",
+      "ipAddress": "157.34.120.39",
+      "password": "HITESH@bhai",
+      "lastLoginAt": "2026-09-18T16:05:33.272Z",
+      "id": "H150-958203",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "password": "Luky1@Sub",
+      "sponsorId": "H150-387571",
+      "status": "active",
+      "isMobileVerified": true,
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "mobile": "9398561078",
+      "fullName": "Aravind",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "email": "jenjirala@gmail.com",
+      "joinedAt": "2026-09-19T00:57:18.644Z",
+      "role": "user",
+      "passwordHash": "THVreTFAU3Vi",
+      "isEmailVerified": true,
+      "id": "H150-934948",
+      "lastLoginAt": "2026-09-19T00:57:18.644Z",
+      "ipAddress": "157.34.120.85",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "ipAddress": "157.34.120.50",
+      "isEmailVerified": true,
+      "isMobileVerified": true,
+      "status": "active",
+      "password": "223604",
+      "passwordHash": "MjIzNjA0",
+      "mobile": "8094737041",
+      "kycStatus": "not_submitted",
+      "lastLoginAt": "2026-09-23T11:03:04.342Z",
+      "joinedAt": "2026-09-18T15:55:45.822Z",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "email": "ppm.saini@gmail.com",
+      "fullName": "Prem prakash",
+      "id": "H150-838728",
+      "role": "user",
+      "sponsorId": "H150-387571",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "ipAddress": "157.34.120.60",
+      "role": "user",
+      "passwordHash": "YWJoaXNoZWtAMTIz",
+      "isEmailVerified": true,
+      "password": "abhishek@123",
+      "kycStatus": "not_submitted",
+      "mobile": "6306661649",
+      "email": "rituakash419@gmail.com",
+      "internalNotes": [
+        "Referred by H150-602548"
+      ],
+      "joinedAt": "2026-09-18T12:35:07.569Z",
+      "id": "H150-816549",
+      "sponsorId": "H150-602548",
+      "fullName": "Abhishek singh",
+      "status": "active",
+      "lastLoginAt": "2026-09-18T12:35:07.569Z",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "isMobileVerified": true,
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "mobile": "8529507921",
+      "lastLoginAt": "2026-09-18T15:59:54.094Z",
+      "internalNotes": [
+        "Referred by H150-838728"
+      ],
+      "isMobileVerified": true,
+      "ipAddress": "157.34.120.40",
+      "role": "user",
+      "passwordHash": "VmlzaGFsQDIyMzY=",
+      "status": "active",
+      "password": "Vishal@2236",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "email": "vishal22360@gmail.com",
+      "joinedAt": "2026-09-18T15:59:54.094Z",
+      "id": "H150-611583",
+      "sponsorId": "H150-838728",
+      "isEmailVerified": true,
+      "fullName": "Vishal Saini",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "isEmailVerified": true,
+      "fullName": "Ravi saini",
+      "email": "saini223604@gmail.com",
+      "role": "user",
+      "kycStatus": "not_submitted",
+      "status": "active",
+      "id": "H150-485659",
+      "joinedAt": "2026-09-18T16:54:08.420Z",
+      "mobile": "9119347921",
+      "isMobileVerified": true,
+      "ipAddress": "157.34.120.57",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "password": "223604",
+      "sponsorId": "H150-838728",
+      "internalNotes": [
+        "Referred by H150-838728"
+      ],
+      "passwordHash": "MjIzNjA0",
+      "lastLoginAt": "2026-09-18T16:54:08.420Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "email": "balusu369@gmail.com",
+      "password": "Loksai315777@",
+      "kycStatus": "not_submitted",
+      "id": "H150-443289",
+      "ipAddress": "157.34.120.18",
+      "mobile": "9493733777",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "fullName": "B.ramesh",
+      "sponsorId": "H150-387571",
+      "role": "user",
+      "lastLoginAt": "2026-09-18T16:31:48.747Z",
+      "isMobileVerified": true,
+      "joinedAt": "2026-09-18T16:31:48.747Z",
+      "isEmailVerified": true,
+      "status": "active",
+      "passwordHash": "TG9rc2FpMzE1Nzc3QA==",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "fullName": "Gopal raj",
+      "email": "solutiondgm@gmail.com",
+      "ipAddress": "157.34.120.32",
+      "status": "active",
+      "kycStatus": "not_submitted",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "isEmailVerified": true,
+      "lastLoginAt": "2026-09-18T11:45:56.121Z",
+      "sponsorId": "H150-387571",
+      "id": "H150-627809",
+      "password": "R114466",
+      "isMobileVerified": true,
+      "joinedAt": "2026-09-18T11:45:56.121Z",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "mobile": "9829083337",
+      "role": "user",
+      "passwordHash": "UjExNDQ2Ng==",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "password": "kanwhizz12",
+      "ipAddress": "157.34.120.37",
+      "isEmailVerified": true,
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "id": "H150-602548",
+      "fullName": "Amandeep",
+      "kycStatus": "not_submitted",
+      "email": "ban2kafour@gmail.com",
+      "mobile": "8858204386",
+      "passwordHash": "a2Fud2hpenoxMg==",
+      "lastLoginAt": "2026-09-17T10:25:11.684Z",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "isMobileVerified": true,
+      "status": "active",
+      "sponsorId": "H150-387571",
+      "role": "user",
+      "joinedAt": "2026-09-17T10:25:11.684Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "sponsorId": "H150-387571",
+      "mobile": "8969591394",
+      "isEmailVerified": true,
+      "lastLoginAt": "2026-09-18T02:52:43.499Z",
+      "passwordHash": "MTIzMTIz",
+      "email": "singh8412com@gmail.com",
+      "joinedAt": "2026-09-18T02:52:43.499Z",
+      "id": "H150-548699",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 14; V2420) A",
+      "isMobileVerified": true,
+      "role": "user",
+      "password": "123123",
+      "kycStatus": "not_submitted",
+      "ipAddress": "157.34.120.63",
+      "fullName": "Harishankar singh",
+      "status": "active",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "fullName": "AFATAB ALAM",
+      "kycStatus": "not_submitted",
+      "isEmailVerified": true,
+      "internalNotes": [
+        "Referred by H150-304071"
+      ],
+      "id": "H150-873093",
+      "role": "user",
+      "status": "active",
+      "isMobileVerified": true,
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "mobile": "8757871134",
+      "ipAddress": "157.34.120.74",
+      "sponsorId": "H150-304071",
+      "joinedAt": "2026-09-16T16:40:22.414Z",
+      "password": "Aplove786",
+      "lastLoginAt": "2026-09-16T16:40:22.414Z",
+      "passwordHash": "QXBsb3ZlNzg2",
+      "email": "talentcyber786@gmail.com",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "mobile": "9981556999",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "fullName": "ANAND MAHAJAN",
+      "password": "Join@999",
+      "lastLoginAt": "2026-09-22T15:26:54.304Z",
+      "id": "H150-639179",
+      "joinedAt": "2026-09-15T12:30:08.913Z",
+      "ipAddress": "157.34.120.88",
+      "email": "pan451001@gmail.com",
+      "sponsorId": "H150-387571",
+      "passwordHash": "Sm9pbkA5OTk=",
+      "isEmailVerified": true,
+      "role": "user",
+      "status": "active",
+      "isMobileVerified": true,
+      "kycStatus": "not_submitted",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "status": "active",
+      "fullName": "MANJIT SINGH",
+      "mobile": "9855917006",
+      "joinedAt": "2026-09-15T03:06:18.027Z",
+      "isMobileVerified": true,
+      "lastLoginAt": "2026-09-15T03:06:18.027Z",
+      "kycStatus": "not_submitted",
+      "passwordHash": "MTExMTEx",
+      "id": "H150-480417",
+      "sponsorId": "H150-387571",
+      "email": "manjitsingh571960@gmail.com",
+      "role": "user",
+      "password": "111111",
+      "deviceInfo": "Mozilla/5.0 (X11; Linux x86_64) AppleWeb",
+      "ipAddress": "157.34.120.66",
+      "isEmailVerified": true,
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "internalNotes": [
+        "Referred by H150-304071"
+      ],
+      "sponsorId": "H150-304071",
+      "mobile": "9340299656",
+      "isMobileVerified": true,
+      "id": "H150-700469",
+      "joinedAt": "2026-09-14T17:12:21.330Z",
+      "lastLoginAt": "2026-09-14T17:12:21.330Z",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "isEmailVerified": true,
+      "password": "hh1977ss",
+      "fullName": "Sudha",
+      "passwordHash": "aGgxOTc3c3M=",
+      "email": "ramkinkarshukla98@gmail.com",
+      "ipAddress": "157.34.120.35",
+      "status": "active",
+      "role": "user",
+      "kycStatus": "not_submitted",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "internalNotes": [
+        "Referred by H150-304071"
+      ],
+      "passwordHash": "TG92ZUAwMDc=",
+      "lastLoginAt": "2026-09-14T12:31:36.072Z",
+      "isMobileVerified": true,
+      "email": "manjeetmonga436@gmail.com",
+      "role": "user",
+      "fullName": "MANJEET MONGA",
+      "password": "Love@007",
+      "sponsorId": "H150-304071",
+      "isEmailVerified": true,
+      "status": "active",
+      "mobile": "9992803370",
+      "id": "H150-385231",
+      "kycStatus": "not_submitted",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "joinedAt": "2026-09-14T12:31:36.072Z",
+      "ipAddress": "157.34.120.17",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "sponsorId": "H150-304071",
+      "passwordHash": "UHJhbW9kOTg1Mw==",
+      "isMobileVerified": true,
+      "email": "mpramod180@gmail.com",
+      "status": "active",
+      "ipAddress": "157.34.120.79",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 15; V2355) A",
+      "id": "H150-446720",
+      "joinedAt": "2026-09-14T12:20:22.771Z",
+      "kycStatus": "not_submitted",
+      "fullName": "Pramod  Ku Mallick",
+      "internalNotes": [
+        "Referred by H150-304071"
+      ],
+      "password": "Pramod9853",
+      "isEmailVerified": true,
+      "mobile": "7008855481",
+      "role": "user",
+      "lastLoginAt": "2026-09-14T12:21:25.288Z",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "status": "active",
+      "id": "H150-304071",
+      "email": "buddheshwarmahato26@gmail.com",
+      "role": "user",
+      "passwordHash": "QjEyMzQ1Njc4",
+      "isEmailVerified": true,
+      "password": "B12345678",
+      "lastLoginAt": "2026-09-14T11:39:08.371Z",
+      "sponsorId": "H150-387571",
+      "ipAddress": "157.34.120.38",
+      "isMobileVerified": true,
+      "mobile": "7634872890",
+      "joinedAt": "2026-09-14T11:38:23.162Z",
+      "fullName": "Buddheshwar mahato",
+      "deviceInfo": "Mozilla/5.0 (Linux; Android 10; K) Apple",
+      "kycStatus": "not_submitted",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "status": "active",
+      "password": "123321",
+      "deviceInfo": "Mozilla/5.0 (Linux; U; Android 15; en-gb",
+      "id": "H150-426292",
+      "internalNotes": [
+        "Referred by H150-387571"
+      ],
+      "email": "yanku2@gmail.com",
+      "mobile": "7066463676",
+      "passwordHash": "MTIzMzIx",
+      "role": "user",
+      "kycStatus": "not_submitted",
+      "ipAddress": "157.34.120.55",
+      "lastLoginAt": "2026-09-12T12:24:24.138Z",
+      "isMobileVerified": true,
+      "isEmailVerified": true,
+      "sponsorId": "H150-387571",
+      "joinedAt": "2026-09-12T12:24:24.138Z",
+      "fullName": "Yanku",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
+    },
+    {
+      "lastLoginAt": "2026-09-13T15:48:18.410Z",
+      "status": "active",
+      "id": "H150-387571",
+      "joinedAt": "2026-09-12T02:34:47.218Z",
+      "mobile": "9638527410",
+      "fullName": "Ashish",
+      "kycStatus": "not_submitted",
+      "passwordHash": "MTIzMzIx",
+      "email": "ashishbadawat77@gmail.com",
+      "ipAddress": "157.34.120.42",
+      "isEmailVerified": true,
+      "isMobileVerified": true,
+      "internalNotes": [
+        "Referred by H150-ADMIN01"
+      ],
+      "deviceInfo": "Mozilla/5.0 (Linux; U; Android 15; en-gb",
+      "role": "user",
+      "password": "123321",
+      "sponsorId": "H150-ADMIN01",
+      "isAdminAccount": false,
+      "accountType": "registered_user"
     }
   ],
   "wallets": {
     "H150-ADMIN01": {
       "userId": "H150-ADMIN01",
-      "availableBalance": 50000,
+      "availableBalance": 2500,
       "pendingBalance": 0,
-      "totalHelpedGiven": 0,
-      "totalHelpedReceived": 0,
+      "totalHelpedGiven": 1500,
+      "totalHelpedReceived": 4000,
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
-      "lastUpdated": "2026-09-11T06:37:15.763Z"
+      "lastUpdated": "2026-09-07T22:33:10.335Z"
     },
     "H150-784920": {
       "userId": "H150-784920",
-      "availableBalance": 400,
-      "pendingBalance": 150,
-      "totalHelpedGiven": 150,
-      "totalHelpedReceived": 300,
-      "totalReferralRewards": 50,
-      "totalWithdrawn": 0,
-      "lastUpdated": "2026-09-11T06:37:15.763Z"
+      "availableBalance": 600,
+      "pendingBalance": 350,
+      "totalHelpedGiven": 650,
+      "totalHelpedReceived": 1000,
+      "totalReferralRewards": 200,
+      "totalWithdrawn": 200,
+      "lastUpdated": "2026-09-14T10:09:47.467Z"
     },
     "H150-918234": {
       "userId": "H150-918234",
-      "availableBalance": 150,
+      "availableBalance": 200,
       "pendingBalance": 0,
       "totalHelpedGiven": 150,
       "totalHelpedReceived": 300,
       "totalReferralRewards": 50,
       "totalWithdrawn": 0,
-      "lastUpdated": "2026-09-11T06:37:15.763Z"
+      "lastUpdated": "2026-09-07T22:33:10.335Z"
     },
     "H150-449102": {
       "userId": "H150-449102",
@@ -184,7 +836,7 @@
       "totalHelpedReceived": 0,
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
-      "lastUpdated": "2026-09-11T06:37:15.763Z"
+      "lastUpdated": "2026-09-07T22:33:10.335Z"
     },
     "H150-240211": {
       "userId": "H150-240211",
@@ -215,9 +867,653 @@
       "totalReferralRewards": 0,
       "totalWithdrawn": 0,
       "lastUpdated": "2026-09-12T02:27:13.838Z"
+    },
+    "H150-610293": {
+      "userId": "H150-610293",
+      "availableBalance": 150,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 150,
+      "totalHelpedReceived": 300,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-07T22:33:10.335Z"
+    },
+    "H150-338291": {
+      "userId": "H150-338291",
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-07T22:33:10.335Z"
+    },
+    "H150-387571": {
+      "availableBalance": 0,
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-12T02:34:47.218Z",
+      "totalWithdrawn": 0,
+      "totalReferralRewards": 0,
+      "userId": "H150-387571",
+      "totalHelpedReceived": 0,
+      "pendingBalance": 0
+    },
+    "H150-426292": {
+      "totalHelpedReceived": 0,
+      "pendingBalance": 0,
+      "totalReferralRewards": 0,
+      "userId": "H150-426292",
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-12T12:24:24.138Z",
+      "totalWithdrawn": 0,
+      "availableBalance": 0
+    },
+    "H150-304071": {
+      "userId": "H150-304071",
+      "pendingBalance": 0,
+      "lastUpdated": "2026-09-14T11:38:23.162Z",
+      "totalHelpedReceived": 0,
+      "totalWithdrawn": 0,
+      "availableBalance": 0,
+      "totalReferralRewards": 0,
+      "totalHelpedGiven": 0
+    },
+    "H150-446720": {
+      "totalWithdrawn": 0,
+      "totalHelpedGiven": 0,
+      "totalHelpedReceived": 0,
+      "userId": "H150-446720",
+      "availableBalance": 0,
+      "totalReferralRewards": 0,
+      "lastUpdated": "2026-09-14T12:20:22.771Z",
+      "pendingBalance": 0
+    },
+    "H150-385231": {
+      "totalHelpedGiven": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedReceived": 0,
+      "userId": "H150-385231",
+      "pendingBalance": 0,
+      "availableBalance": 0,
+      "totalReferralRewards": 0,
+      "lastUpdated": "2026-09-14T12:31:36.072Z"
+    },
+    "H150-700469": {
+      "totalHelpedReceived": 0,
+      "totalHelpedGiven": 0,
+      "userId": "H150-700469",
+      "pendingBalance": 0,
+      "lastUpdated": "2026-09-14T17:12:21.330Z",
+      "availableBalance": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0
+    },
+    "H150-480417": {
+      "totalHelpedReceived": 0,
+      "availableBalance": 0,
+      "userId": "H150-480417",
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-15T03:06:18.027Z"
+    },
+    "H150-639179": {
+      "pendingBalance": 0,
+      "lastUpdated": "2026-09-15T12:30:08.913Z",
+      "totalReferralRewards": 0,
+      "totalHelpedGiven": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedReceived": 0,
+      "userId": "H150-639179",
+      "availableBalance": 0
+    },
+    "H150-873093": {
+      "totalHelpedReceived": 0,
+      "totalHelpedGiven": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-16T16:40:22.414Z",
+      "pendingBalance": 0,
+      "userId": "H150-873093",
+      "availableBalance": 0
+    },
+    "H150-548699": {
+      "totalHelpedReceived": 0,
+      "lastUpdated": "2026-09-18T02:52:43.499Z",
+      "totalReferralRewards": 0,
+      "userId": "H150-548699",
+      "totalWithdrawn": 0,
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "totalHelpedGiven": 0
+    },
+    "H150-602548": {
+      "totalReferralRewards": 0,
+      "userId": "H150-602548",
+      "totalHelpedReceived": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-17T10:25:11.684Z",
+      "pendingBalance": 0,
+      "availableBalance": 0
+    },
+    "H150-627809": {
+      "totalHelpedGiven": 0,
+      "totalReferralRewards": 0,
+      "lastUpdated": "2026-09-18T11:45:56.121Z",
+      "totalWithdrawn": 0,
+      "pendingBalance": 0,
+      "userId": "H150-627809",
+      "availableBalance": 0,
+      "totalHelpedReceived": 0
+    },
+    "H150-443289": {
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedReceived": 0,
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-18T16:31:48.747Z",
+      "pendingBalance": 0,
+      "availableBalance": 0,
+      "userId": "H150-443289"
+    },
+    "H150-485659": {
+      "pendingBalance": 0,
+      "totalHelpedReceived": 0,
+      "lastUpdated": "2026-09-18T16:54:08.420Z",
+      "totalReferralRewards": 0,
+      "availableBalance": 0,
+      "userId": "H150-485659",
+      "totalHelpedGiven": 0,
+      "totalWithdrawn": 0
+    },
+    "H150-611583": {
+      "userId": "H150-611583",
+      "totalHelpedReceived": 0,
+      "totalWithdrawn": 0,
+      "pendingBalance": 0,
+      "availableBalance": 0,
+      "lastUpdated": "2026-09-18T15:59:54.094Z",
+      "totalReferralRewards": 0,
+      "totalHelpedGiven": 0
+    },
+    "H150-816549": {
+      "availableBalance": 0,
+      "lastUpdated": "2026-09-18T12:35:07.569Z",
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedGiven": 0,
+      "pendingBalance": 0,
+      "userId": "H150-816549"
+    },
+    "H150-838728": {
+      "totalReferralRewards": 0,
+      "totalHelpedGiven": 0,
+      "availableBalance": 0,
+      "lastUpdated": "2026-09-18T15:55:45.822Z",
+      "totalWithdrawn": 0,
+      "userId": "H150-838728",
+      "pendingBalance": 0,
+      "totalHelpedReceived": 0
+    },
+    "H150-934948": {
+      "totalReferralRewards": 0,
+      "lastUpdated": "2026-09-19T00:57:18.644Z",
+      "totalWithdrawn": 0,
+      "userId": "H150-934948",
+      "totalHelpedGiven": 0,
+      "pendingBalance": 0,
+      "availableBalance": 0,
+      "totalHelpedReceived": 0
+    },
+    "H150-958203": {
+      "totalReferralRewards": 0,
+      "totalHelpedGiven": 0,
+      "availableBalance": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-18T16:05:33.272Z",
+      "pendingBalance": 0,
+      "userId": "H150-958203",
+      "totalHelpedReceived": 0
+    },
+    "H150-990036": {
+      "totalReferralRewards": 0,
+      "pendingBalance": 0,
+      "totalWithdrawn": 0,
+      "totalHelpedGiven": 0,
+      "lastUpdated": "2026-09-18T15:24:05.997Z",
+      "userId": "H150-990036",
+      "totalHelpedReceived": 0,
+      "availableBalance": 0
+    },
+    "H150-323960": {
+      "userId": "H150-323960",
+      "totalWithdrawn": 0,
+      "totalHelpedReceived": 0,
+      "totalHelpedGiven": 0,
+      "availableBalance": 0,
+      "totalReferralRewards": 0,
+      "pendingBalance": 0,
+      "lastUpdated": "2026-09-23T07:51:29.581Z"
+    },
+    "H150-545625": {
+      "lastUpdated": "2026-09-22T15:28:41.959Z",
+      "userId": "H150-545625",
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "pendingBalance": 0,
+      "availableBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalWithdrawn": 0
+    },
+    "H150-555448": {
+      "totalReferralRewards": 0,
+      "pendingBalance": 0,
+      "totalHelpedReceived": 0,
+      "lastUpdated": "2026-09-22T15:23:16.786Z",
+      "userId": "H150-555448",
+      "totalWithdrawn": 0,
+      "totalHelpedGiven": 0,
+      "availableBalance": 0
+    },
+    "H150-605391": {
+      "pendingBalance": 0,
+      "userId": "H150-605391",
+      "totalReferralRewards": 0,
+      "totalHelpedReceived": 0,
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-23T04:28:32.433Z",
+      "totalHelpedGiven": 0,
+      "availableBalance": 0
+    },
+    "H150-885720": {
+      "pendingBalance": 0,
+      "totalHelpedReceived": 0,
+      "totalReferralRewards": 0,
+      "userId": "H150-885720",
+      "totalWithdrawn": 0,
+      "lastUpdated": "2026-09-22T18:13:46.937Z",
+      "totalHelpedGiven": 0,
+      "availableBalance": 0
+    },
+    "H150-989903": {
+      "pendingBalance": 0,
+      "totalReferralRewards": 0,
+      "userId": "H150-989903",
+      "totalHelpedReceived": 0,
+      "lastUpdated": "2026-09-23T02:03:46.251Z",
+      "availableBalance": 0,
+      "totalHelpedGiven": 0,
+      "totalWithdrawn": 0
     }
   },
   "helpRequests": [
+    {
+      "userId": "H150-700469",
+      "userName": "Sudha",
+      "amount": 150,
+      "timerStatus": "pending",
+      "userUpi": "h150-700469@upi",
+      "userMobile": "9340299656",
+      "id": "HP-35508708",
+      "adminApproved": false,
+      "type": "give_help",
+      "userEmail": "ramkinkarshukla98@gmail.com",
+      "createdAt": "2026-09-14T17:12:21.330Z",
+      "status": "pending_match"
+    },
+    {
+      "adminApproved": false,
+      "userId": "H150-426292",
+      "amount": 150,
+      "userMobile": "7066463676",
+      "userUpi": "h150-426292@upi",
+      "userEmail": "yanku2@gmail.com",
+      "type": "give_help",
+      "status": "pending_match",
+      "userName": "Yanku",
+      "timerStatus": "pending",
+      "createdAt": "2026-09-12T12:24:24.138Z",
+      "id": "HP-41018991"
+    },
+    {
+      "id": "HP-43768822",
+      "status": "pending_match",
+      "timerStatus": "pending",
+      "userName": "AFATAB ALAM",
+      "userEmail": "talentcyber786@gmail.com",
+      "adminApproved": false,
+      "userMobile": "8757871134",
+      "createdAt": "2026-09-16T16:40:22.414Z",
+      "userId": "H150-873093",
+      "type": "give_help",
+      "userUpi": "h150-873093@upi",
+      "amount": 150
+    },
+    {
+      "userName": "ANAND MAHAJAN",
+      "userEmail": "pan451001@gmail.com",
+      "id": "HP-45491128",
+      "type": "give_help",
+      "timerStatus": "pending",
+      "status": "pending_match",
+      "userMobile": "9981556999",
+      "adminApproved": false,
+      "createdAt": "2026-09-15T12:30:08.913Z",
+      "amount": 150,
+      "userId": "H150-639179",
+      "userUpi": "h150-639179@upi"
+    },
+    {
+      "userName": "MANJEET MONGA",
+      "status": "pending_match",
+      "id": "HP-51595797",
+      "userId": "H150-385231",
+      "timerStatus": "pending",
+      "userEmail": "manjeetmonga436@gmail.com",
+      "amount": 150,
+      "createdAt": "2026-09-14T12:31:36.072Z",
+      "type": "give_help",
+      "userMobile": "9992803370",
+      "adminApproved": false,
+      "userUpi": "h150-385231@upi"
+    },
+    {
+      "status": "pending_match",
+      "createdAt": "2026-09-17T10:25:11.684Z",
+      "adminApproved": false,
+      "userUpi": "h150-602548@upi",
+      "timerStatus": "pending",
+      "userEmail": "ban2kafour@gmail.com",
+      "type": "give_help",
+      "id": "HP-60546888",
+      "userName": "Amandeep",
+      "userMobile": "8858204386",
+      "amount": 150,
+      "userId": "H150-602548"
+    },
+    {
+      "userName": "Harishankar singh",
+      "userUpi": "h150-548699@upi",
+      "userEmail": "singh8412com@gmail.com",
+      "id": "HP-68154618",
+      "userId": "H150-548699",
+      "timerStatus": "pending",
+      "createdAt": "2026-09-18T02:52:43.499Z",
+      "amount": 150,
+      "userMobile": "8969591394",
+      "status": "pending_match",
+      "adminApproved": false,
+      "type": "give_help"
+    },
+    {
+      "userId": "H150-446720",
+      "userName": "Pramod  Ku Mallick",
+      "adminApproved": false,
+      "userEmail": "mpramod180@gmail.com",
+      "timerStatus": "pending",
+      "amount": 150,
+      "userMobile": "7008855481",
+      "createdAt": "2026-09-14T12:20:22.771Z",
+      "userUpi": "h150-446720@upi",
+      "status": "pending_match",
+      "type": "give_help",
+      "id": "HP-77917936"
+    },
+    {
+      "timerStatus": "pending",
+      "userUpi": "h150-304071@upi",
+      "userId": "H150-304071",
+      "userMobile": "7634872890",
+      "userName": "Buddheshwar mahato",
+      "amount": 150,
+      "createdAt": "2026-09-14T11:38:23.162Z",
+      "status": "pending_match",
+      "adminApproved": false,
+      "id": "HP-79818074",
+      "userEmail": "buddheshwarmahato26@gmail.com",
+      "type": "give_help"
+    },
+    {
+      "userId": "H150-387571",
+      "createdAt": "2026-09-12T02:34:47.218Z",
+      "amount": 150,
+      "userMobile": "9638527410",
+      "userName": "Ashish",
+      "adminApproved": false,
+      "userEmail": "ashishbadawat77@gmail.com",
+      "timerStatus": "pending",
+      "type": "give_help",
+      "userUpi": "h150-387571@upi",
+      "id": "HP-85670962",
+      "status": "pending_match"
+    },
+    {
+      "userId": "H150-480417",
+      "adminApproved": false,
+      "amount": 150,
+      "timerStatus": "pending",
+      "userUpi": "h150-480417@upi",
+      "id": "HP-98645940",
+      "userMobile": "9855917006",
+      "createdAt": "2026-09-15T03:06:18.027Z",
+      "userEmail": "manjitsingh571960@gmail.com",
+      "type": "give_help",
+      "userName": "MANJIT SINGH",
+      "status": "pending_match"
+    },
+    {
+      "status": "pending_match",
+      "type": "give_help",
+      "userUpi": "h150-627809@upi",
+      "userMobile": "9829083337",
+      "id": "HP-43669988",
+      "adminApproved": false,
+      "createdAt": "2026-09-18T11:45:56.121Z",
+      "userId": "H150-627809",
+      "amount": 150,
+      "userEmail": "solutiondgm@gmail.com",
+      "timerStatus": "pending",
+      "userName": "Gopal raj"
+    },
+    {
+      "userUpi": "h150-838728@upi",
+      "type": "give_help",
+      "userEmail": "ppm.saini@gmail.com",
+      "id": "HP-31757623",
+      "timerStatus": "pending",
+      "createdAt": "2026-09-18T15:55:45.822Z",
+      "userId": "H150-838728",
+      "amount": 150,
+      "userMobile": "8094737041",
+      "adminApproved": false,
+      "userName": "Prem prakash",
+      "status": "pending_match"
+    },
+    {
+      "amount": 150,
+      "userId": "H150-485659",
+      "status": "pending_match",
+      "userName": "Ravi saini",
+      "timerStatus": "pending",
+      "userEmail": "saini223604@gmail.com",
+      "userUpi": "h150-485659@upi",
+      "adminApproved": false,
+      "id": "HP-36803873",
+      "userMobile": "9119347921",
+      "createdAt": "2026-09-18T16:54:08.420Z",
+      "type": "give_help"
+    },
+    {
+      "status": "pending_match",
+      "userEmail": "premprakashm81@gmail.com",
+      "amount": 150,
+      "userId": "H150-990036",
+      "userMobile": "9883678288",
+      "userName": "Prem Prakash Mishra",
+      "adminApproved": false,
+      "createdAt": "2026-09-18T15:24:05.997Z",
+      "timerStatus": "pending",
+      "type": "give_help",
+      "userUpi": "h150-990036@upi",
+      "id": "HP-37943498"
+    },
+    {
+      "id": "HP-41607397",
+      "userName": "Aravind",
+      "amount": 150,
+      "userId": "H150-934948",
+      "type": "give_help",
+      "userUpi": "h150-934948@upi",
+      "status": "pending_match",
+      "createdAt": "2026-09-19T00:57:18.644Z",
+      "userMobile": "9398561078",
+      "timerStatus": "pending",
+      "userEmail": "jenjirala@gmail.com",
+      "adminApproved": false
+    },
+    {
+      "adminApproved": false,
+      "userMobile": "6306661649",
+      "userUpi": "h150-816549@upi",
+      "userName": "Abhishek singh",
+      "createdAt": "2026-09-18T12:35:07.569Z",
+      "userId": "H150-816549",
+      "amount": 150,
+      "userEmail": "rituakash419@gmail.com",
+      "type": "give_help",
+      "timerStatus": "pending",
+      "status": "pending_match",
+      "id": "HP-63944988"
+    },
+    {
+      "userEmail": "h.saini2026@gmail.com",
+      "adminApproved": false,
+      "id": "HP-67069865",
+      "type": "give_help",
+      "timerStatus": "pending",
+      "userUpi": "h150-958203@upi",
+      "status": "pending_match",
+      "userMobile": "9929344524",
+      "createdAt": "2026-09-18T16:05:33.272Z",
+      "userName": "hitesh Saini",
+      "amount": 150,
+      "userId": "H150-958203"
+    },
+    {
+      "userEmail": "vishal22360@gmail.com",
+      "adminApproved": false,
+      "id": "HP-95291675",
+      "timerStatus": "pending",
+      "status": "pending_match",
+      "createdAt": "2026-09-18T15:59:54.094Z",
+      "userUpi": "h150-611583@upi",
+      "amount": 150,
+      "userId": "H150-611583",
+      "type": "give_help",
+      "userName": "Vishal Saini",
+      "userMobile": "8529507921"
+    },
+    {
+      "status": "pending_match",
+      "userEmail": "balusu369@gmail.com",
+      "userId": "H150-443289",
+      "amount": 150,
+      "userMobile": "9493733777",
+      "userName": "B.ramesh",
+      "createdAt": "2026-09-18T16:31:48.747Z",
+      "adminApproved": false,
+      "timerStatus": "pending",
+      "type": "give_help",
+      "userUpi": "h150-443289@upi",
+      "id": "HP-99041111"
+    },
+    {
+      "userUpi": "h150-989903@upi",
+      "adminApproved": false,
+      "amount": 150,
+      "userMobile": "9123281353",
+      "timerStatus": "pending",
+      "createdAt": "2026-09-23T02:03:46.251Z",
+      "userName": "Mohammad Ayyub Ansari",
+      "userId": "H150-989903",
+      "status": "pending_match",
+      "id": "HP-27061344",
+      "type": "give_help",
+      "userEmail": "siansari78@gmail.com"
+    },
+    {
+      "adminApproved": false,
+      "type": "give_help",
+      "status": "pending_match",
+      "userId": "H150-555448",
+      "userUpi": "h150-555448@upi",
+      "id": "HP-30388860",
+      "userEmail": "rajendra.wavetech@gmail.com",
+      "amount": 150,
+      "timerStatus": "pending",
+      "userName": "Rajendra Narayan Mohanty",
+      "userMobile": "7008201344",
+      "createdAt": "2026-09-22T15:23:16.786Z"
+    },
+    {
+      "adminApproved": false,
+      "userUpi": "h150-545625@upi",
+      "amount": 150,
+      "type": "give_help",
+      "userId": "H150-545625",
+      "status": "pending_match",
+      "userName": "Shyam Kumar",
+      "userEmail": "shyamp1606@gmail.com",
+      "id": "HP-32227327",
+      "createdAt": "2026-09-22T15:28:41.959Z",
+      "timerStatus": "pending",
+      "userMobile": "9916787343"
+    },
+    {
+      "userMobile": "8440833845",
+      "userId": "H150-323960",
+      "status": "pending_match",
+      "type": "give_help",
+      "timerStatus": "pending",
+      "amount": 150,
+      "userName": "Vishnu",
+      "id": "HP-40698661",
+      "userEmail": "shukveergujjar07@gmail.com",
+      "userUpi": "h150-323960@upi",
+      "createdAt": "2026-09-23T07:51:29.581Z",
+      "adminApproved": false
+    },
+    {
+      "userId": "H150-605391",
+      "status": "pending_match",
+      "timerStatus": "pending",
+      "userMobile": "6001410543",
+      "userName": "Mustafa Kamal Passa",
+      "adminApproved": false,
+      "userEmail": "mk0270426@gmail.com",
+      "id": "HP-88398948",
+      "type": "give_help",
+      "amount": 150,
+      "userUpi": "h150-605391@upi",
+      "createdAt": "2026-09-23T04:28:32.433Z"
+    },
+    {
+      "userId": "H150-885720",
+      "status": "pending_match",
+      "type": "give_help",
+      "timerStatus": "pending",
+      "createdAt": "2026-09-22T18:13:46.937Z",
+      "userEmail": "ravalnikhil42@gmail.com",
+      "id": "HP-89862717",
+      "userName": "Raval nikhil",
+      "adminApproved": false,
+      "userMobile": "4019121830",
+      "amount": 150,
+      "userUpi": "h150-885720@upi"
+    },
     {
       "id": "HP-25811577",
       "userId": "H150-656508",
@@ -261,8 +1557,182 @@
       "createdAt": "2026-09-11T18:52:05.820Z"
     }
   ],
-  "transactions": [],
-  "kycRecords": [],
+  "transactions": [
+    {
+      "id": "TXN-150-1007",
+      "userId": "H150-784920",
+      "type": "admin_credit",
+      "amount": 277.5,
+      "balanceAfter": 400,
+      "status": "completed",
+      "referenceId": "ADM-ADJ-491",
+      "remarks": "Platform adjustment for verified community coordination",
+      "createdAt": "2026-09-07T20:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1006",
+      "userId": "H150-784920",
+      "type": "withdrawal",
+      "amount": 200,
+      "balanceAfter": 122.5,
+      "status": "completed",
+      "referenceId": "WTH-200-001",
+      "remarks": "Payout completed to Bank: SBIN0001420 (UTR: SBIN9840219401)",
+      "createdAt": "2026-09-07T14:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1005",
+      "userId": "H150-784920",
+      "type": "referral_reward",
+      "amount": 7.5,
+      "balanceAfter": 322.5,
+      "status": "completed",
+      "referenceId": "REF-L2-610293",
+      "remarks": "Level 2 Qualifying Activity Incentive (Sunita Patel)",
+      "senderUserId": "H150-ADMIN01",
+      "receiverUserId": "H150-784920",
+      "createdAt": "2026-09-07T09:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1004",
+      "userId": "H150-784920",
+      "type": "help_received",
+      "amount": 150,
+      "balanceAfter": 315,
+      "status": "completed",
+      "referenceId": "REQ-150-004-REL",
+      "remarks": "Community Help assistance received",
+      "senderUserId": "H150-610293",
+      "receiverUserId": "H150-784920",
+      "senderName": "Sunita Patel",
+      "receiverName": "Ashok Kumar",
+      "createdAt": "2026-09-07T09:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1003",
+      "userId": "H150-784920",
+      "type": "referral_reward",
+      "amount": 15,
+      "balanceAfter": 165,
+      "status": "completed",
+      "referenceId": "REF-L1-918234",
+      "remarks": "Level 1 Qualifying Platform Activity Reward (Priya Sharma)",
+      "senderUserId": "H150-ADMIN01",
+      "receiverUserId": "H150-784920",
+      "createdAt": "2026-09-06T07:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1002",
+      "userId": "H150-784920",
+      "type": "help_received",
+      "amount": 150,
+      "balanceAfter": 150,
+      "status": "completed",
+      "referenceId": "REQ-150-002",
+      "remarks": "Peer Help assistance received from Priya Sharma",
+      "senderUserId": "H150-918234",
+      "receiverUserId": "H150-784920",
+      "senderName": "Priya Sharma",
+      "receiverName": "Ashok Kumar",
+      "createdAt": "2026-09-06T07:33:10.335Z"
+    },
+    {
+      "id": "TXN-150-1001",
+      "userId": "H150-784920",
+      "type": "help_given",
+      "amount": 150,
+      "balanceAfter": 0,
+      "status": "completed",
+      "referenceId": "REQ-150-001",
+      "remarks": "Voluntary ₹150 Community Help sent to Community Pool",
+      "senderUserId": "H150-784920",
+      "receiverUserId": "H150-ADMIN01",
+      "senderName": "Ashok Kumar",
+      "receiverName": "Community Treasury",
+      "createdAt": "2026-09-05T00:33:10.335Z"
+    },
+    {
+      "id": "TXN-CYC-601881",
+      "userId": "H150-784920",
+      "type": "help_received",
+      "amount": 200,
+      "balanceAfter": 400,
+      "status": "completed",
+      "referenceId": "REC-200-310648",
+      "remarks": "₹200 Help Received for Cycle #1 (Net Profit ₹50)",
+      "senderUserId": "COMMUNITY-PEER",
+      "receiverUserId": "H150-784920",
+      "senderName": "Community Peer Member",
+      "receiverName": "Ashok Kumar",
+      "createdAt": "2026-09-13T11:56:41.881Z"
+    },
+    {
+      "id": "TXN-CYC-587467",
+      "userId": "H150-784920",
+      "type": "help_received",
+      "amount": 200,
+      "balanceAfter": 600,
+      "status": "completed",
+      "referenceId": "REC-200-637992",
+      "remarks": "₹200 Help Received for Cycle #2 (Net Profit ₹50)",
+      "senderUserId": "COMMUNITY-PEER",
+      "receiverUserId": "H150-784920",
+      "senderName": "Community Peer Member",
+      "receiverName": "Ashok Kumar",
+      "createdAt": "2026-09-14T10:09:47.467Z"
+    }
+  ],
+  "kycRecords": [
+    {
+      "id": "KYC-449102",
+      "userId": "H150-449102",
+      "fullNameAsPerId": "Rahul Verma",
+      "aadhaarNumber": "XXXX-XXXX-3312",
+      "panNumber": "RHLVR9012M",
+      "documentType": "aadhaar",
+      "upiId": "rahulverma@paytm",
+      "bankName": "HDFC Bank",
+      "accountNumber": "XXXXXX1299",
+      "ifscCode": "HDFC0000450",
+      "status": "pending",
+      "submittedAt": "2026-09-07T16:33:10.335Z",
+      "adminNotes": "Awaiting compliance manual review"
+    },
+    {
+      "id": "KYC-918234",
+      "userId": "H150-918234",
+      "fullNameAsPerId": "Priya Sharma",
+      "aadhaarNumber": "XXXX-XXXX-8821",
+      "panNumber": "PRYSH5678K",
+      "documentType": "pan",
+      "upiId": "priyasharma@icici",
+      "bankName": "ICICI Bank",
+      "accountNumber": "XXXXXX8832",
+      "ifscCode": "ICIC0000102",
+      "status": "verified",
+      "submittedAt": "2026-09-06T01:33:10.335Z",
+      "reviewedAt": "2026-09-06T06:33:10.335Z",
+      "reviewedBy": "H150-COMP01",
+      "adminNotes": "Verified PAN Card and UPI handle."
+    },
+    {
+      "id": "KYC-784920",
+      "userId": "H150-784920",
+      "fullNameAsPerId": "Ashok Kumar",
+      "aadhaarNumber": "XXXX-XXXX-4819",
+      "panNumber": "ABCDE1234F",
+      "documentType": "aadhaar",
+      "upiId": "ashok.kumar@okaxis",
+      "bankName": "State Bank of India",
+      "accountNumber": "XXXXXX5910",
+      "ifscCode": "SBIN0001420",
+      "status": "verified",
+      "submittedAt": "2026-09-05T00:33:10.335Z",
+      "reviewedAt": "2026-09-05T05:33:10.335Z",
+      "reviewedBy": "H150-COMP01",
+      "adminNotes": "Aadhaar and PAN matched successfully. Verified bank account."
+    }
+  ],
   "notifications": [
     {
       "id": "NOTIF-033838",
@@ -323,6 +1793,1553 @@
     "helpAmountDefault": 150,
     "minWithdrawalAmount": 200,
     "withdrawalMultiple": 200,
-    "timerDurationHours": 24
-  }
+    "timerDurationHours": 24,
+    "linkSystemEnabled": true,
+    "promotionMode": false,
+    "promotionDaysTotal": 0,
+    "promotionEndDate": "",
+    "promotionEndedV1": true
+  },
+  "helpCycles": [
+    {
+      "id": "CYC-TEST-001",
+      "userId": "H150-ADMIN01",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-262426",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790251112931
+      },
+      "secondLink": {
+        "requestId": "LNK-100-976566",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790251112931
+      }
+    },
+    {
+      "id": "CYC-H150387571-1-0812",
+      "userId": "H150-387571",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-524880",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-122381",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150426292-1-0812",
+      "userId": "H150-426292",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-660387",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-275773",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150304071-1-0812",
+      "userId": "H150-304071",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-173281",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-514311",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150446720-1-0812",
+      "userId": "H150-446720",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-728920",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-356395",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150385231-1-0812",
+      "userId": "H150-385231",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-839794",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-693329",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150700469-1-0812",
+      "userId": "H150-700469",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-710132",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-206891",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150480417-1-0812",
+      "userId": "H150-480417",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-948082",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-198491",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150639179-1-0812",
+      "userId": "H150-639179",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-498332",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-696990",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150873093-1-0812",
+      "userId": "H150-873093",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-416852",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-788705",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150548699-1-0812",
+      "userId": "H150-548699",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-199064",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-147902",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150602548-1-0812",
+      "userId": "H150-602548",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-687784",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-478579",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150627809-1-0812",
+      "userId": "H150-627809",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-611005",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-646894",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150443289-1-0812",
+      "userId": "H150-443289",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-638282",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-128235",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150485659-1-0812",
+      "userId": "H150-485659",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-107400",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-845375",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150611583-1-0812",
+      "userId": "H150-611583",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-757410",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-866663",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150816549-1-0812",
+      "userId": "H150-816549",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-170595",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-222582",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150838728-1-0812",
+      "userId": "H150-838728",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-867061",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-364522",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150934948-1-0812",
+      "userId": "H150-934948",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-449419",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-372487",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150958203-1-0812",
+      "userId": "H150-958203",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-609365",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-418542",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150990036-1-0812",
+      "userId": "H150-990036",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-392685",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-391167",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150323960-1-0812",
+      "userId": "H150-323960",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-885470",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-268983",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150545625-1-0812",
+      "userId": "H150-545625",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-687330",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-815390",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150555448-1-0812",
+      "userId": "H150-555448",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-233840",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-120421",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150605391-1-0812",
+      "userId": "H150-605391",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-652413",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-339593",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150885720-1-0812",
+      "userId": "H150-885720",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-320726",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-190527",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150989903-1-0812",
+      "userId": "H150-989903",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-466475",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "secondLink": {
+        "requestId": "LNK-100-346568",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730812
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.812Z"
+    },
+    {
+      "id": "CYC-H150338291-1-0811",
+      "userId": "H150-338291",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-422139",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-530454",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150610293-1-0811",
+      "userId": "H150-610293",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-894246",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-794150",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150449102-1-0811",
+      "userId": "H150-449102",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-752139",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-576779",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150918234-1-0811",
+      "userId": "H150-918234",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-745168",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-944430",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150240211-1-0811",
+      "userId": "H150-240211",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-701647",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India",
+          "accountNumber": "32103707641"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-850181",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150779184-1-0811",
+      "userId": "H150-779184",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-755822",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-801238",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150656508-1-0811",
+      "userId": "H150-656508",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-848845",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "ifscCode": "SBIN0003078",
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "secondLink": {
+        "requestId": "LNK-100-870596",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "accountNumber": "32103707641",
+          "accountHolderName": "Yenkanna Badawat",
+          "ifscCode": "SBIN0003078",
+          "bankName": "State Bank of India"
+        },
+        "deadlineTime": 1790250730811
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-23T11:52:10.811Z"
+    },
+    {
+      "id": "CYC-H150784920-1-2392",
+      "userId": "H150-784920",
+      "cycleNumber": 1,
+      "status": "provide_verification",
+      "verificationLink": {
+        "requestId": "LNK-50-717865",
+        "amount": 50,
+        "title": "Provide Verification Link (₹50)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078"
+        },
+        "deadlineTime": 1789815802392,
+        "proofReference": "125875368526888",
+        "slipUrl": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"380\" viewBox=\"0 0 600 380\"><rect width=\"600\" height=\"380\" fill=\"%23090d16\"/><rect x=\"16\" y=\"16\" width=\"568\" height=\"348\" rx=\"16\" fill=\"%23131b2e\" stroke=\"%2338bdf8\" stroke-width=\"2\"/><text x=\"40\" y=\"60\" fill=\"%2338bdf8\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"bold\">BANK / UPI TRANSACTION RECEIPT</text><text x=\"40\" y=\"90\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"13\">HELP150 Community Plan • Cycle Payment Proof</text><line x1=\"40\" y1=\"110\" x2=\"560\" y2=\"110\" stroke=\"%23334155\" stroke-width=\"1\"/><text x=\"40\" y=\"150\" fill=\"%23cbd5e1\" font-family=\"sans-serif\" font-size=\"16\">Amount: <tspan fill=\"%234ade80\" font-weight=\"bold\">₹50.00</tspan></text><text x=\"40\" y=\"190\" fill=\"%23cbd5e1\" font-family=\"sans-serif\" font-size=\"15\">Status: <tspan fill=\"%2322c55e\" font-weight=\"bold\">SUBMITTED / COMPLETED</tspan></text><text x=\"40\" y=\"230\" fill=\"%23cbd5e1\" font-family=\"sans-serif\" font-size=\"15\">UTR / Ref: <tspan fill=\"%23f8fafc\" font-weight=\"bold\">125875368526888</tspan></text><text x=\"40\" y=\"270\" fill=\"%23cbd5e1\" font-family=\"sans-serif\" font-size=\"15\">Payer/Sender: <tspan fill=\"%2338bdf8\">H150-784920</tspan></text><text x=\"40\" y=\"320\" fill=\"%2364748b\" font-family=\"sans-serif\" font-size=\"11\">Verified on Peer Network • 12-Hour Maturation Cycle</text></svg>",
+        "submittedAt": "2026-09-23T09:46:04.791Z"
+      },
+      "secondLink": {
+        "requestId": "LNK-100-687482",
+        "amount": 100,
+        "title": "Second Link (₹100)",
+        "status": "pending",
+        "matchedWithUserId": "H150-ADMIN01",
+        "matchedWithUserName": "Yenkanna Badawat (Admin Treasury)",
+        "matchedWithUpi": "7066463676@naviaxis",
+        "matchedWithMobile": "7066463676",
+        "matchedWithEmail": "admin@help150.org",
+        "matchedWithBankDetails": {
+          "bankName": "State Bank of India",
+          "accountHolderName": "Yenkanna Badawat",
+          "accountNumber": "32103707641",
+          "ifscCode": "SBIN0003078"
+        }
+      },
+      "timerDurationHours": 12,
+      "createdAt": "2026-09-18T11:03:22.392Z"
+    }
+  ]
 }

@@ -214,45 +214,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
   return (
     <div id="home-page-root" className="w-full pb-20 overflow-x-hidden text-slate-100 font-sans">
       {/* ========================================================================= */}
-      {/* 1. TOP ANNOUNCEMENT BANNER: 4-DAY PRE-LAUNCH COUNTDOWN TICKER & PDF CTA   */}
-      {/* ========================================================================= */}
-      {isPromotionActive && (
-        <div className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-rose-600 text-slate-950 font-black py-2.5 px-4 shadow-lg text-xs sm:text-sm">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-            <div className="flex items-center gap-2 justify-center">
-              <span className="flex h-6 w-6 rounded-full bg-black text-amber-300 items-center justify-center text-xs shrink-0 animate-bounce">
-                ⏳
-              </span>
-              <span className="text-slate-950 tracking-tight">
-                <strong className="underline uppercase">{state.settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय:</strong>{' '}
-                समय 3 दिन और बढ़ाया गया है! अभी टीम बनाएं, टाइमर खत्म होते ही लिंक्स चालू होंगे!
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Quick Download PDF Button in Top Bar */}
-              <button
-                onClick={handleDownloadPdf}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-300 hover:bg-black font-bold text-[11px] border border-amber-400/80 shadow cursor-pointer transition active:scale-95 shrink-0"
-              >
-                <FileText className="h-3 w-3 text-rose-400" />
-                <span>प्लान PDF</span>
-              </button>
-
-              {/* Compact Top Timer */}
-              <div className="inline-flex items-center gap-1.5 bg-black/90 text-amber-300 px-3 py-1 rounded-full font-mono text-xs font-bold border border-amber-400/50 shadow-inner">
-                <Clock className="h-3.5 w-3.5 text-rose-400 animate-pulse" />
-                <span>
-                  {String(countdown.days).padStart(2, '0')}d : {String(countdown.hours).padStart(2, '0')}h :{' '}
-                  {String(countdown.minutes).padStart(2, '0')}m : {String(countdown.seconds).padStart(2, '0')}s
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
       {/* 2. GLOWING HERO SECTION WITH EMBLEM & DUAL BOX VISUAL                     */}
       {/* ========================================================================= */}
       <section className="relative pt-10 pb-16 sm:pt-16 sm:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -387,62 +348,62 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
           </div>
 
           {/* ========================================================================= */}
-          {/* 3. VIBRANT 4-DAY PRE-LAUNCH COUNTDOWN SHOWCASE CARD                       */}
+          {/* 3. VIBRANT LIVE SYSTEM SHOWCASE CARD                                      */}
           {/* ========================================================================= */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#0F1026] via-[#161A3D] to-[#0A0E28] border-2 border-amber-400/80 shadow-2xl shadow-indigo-950/90 relative overflow-hidden text-left mb-8">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#0F1026] via-[#161A3D] to-[#0A0E28] border-2 border-emerald-400/80 shadow-2xl shadow-indigo-950/90 relative overflow-hidden text-left mb-8">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-2 text-center md:text-left max-w-md">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold uppercase tracking-wider">
-                  <Clock className="h-3.5 w-3.5 animate-spin" />
-                  <span>PRE-LAUNCH COUNTDOWN ACTIVE</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 font-mono text-xs font-bold uppercase tracking-wider">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>HELPING LINKS SYSTEM LIVE</span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-white font-heading">
-                  {state.settings.promotionDaysTotal || 7}-दिवसीय प्री-लॉन्च प्रमोशन अवधि
+                  ऑटोमैटिक हेल्पिंग लिंक्स सक्रिय हैं!
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है। नीचे चल रहा लाइव टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!
+                  प्रमोशन पूर्ण हो चुका है। सभी सदस्यों के डैशबोर्ड में Provide Help (₹50 + ₹100) और Receive Help (₹200) लिंक्स लाइव चालू हैं।
                 </p>
               </div>
 
-              {/* Four Giant Glowing Digits matching Banner Colors */}
-              <div className="grid grid-cols-4 gap-2.5 sm:gap-3 shrink-0">
+              {/* 4 Steps Showcase Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 shrink-0">
                 <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-rose-600 via-red-600 to-rose-950 border-2 border-rose-400/90 text-center shadow-lg min-w-[70px] sm:min-w-[85px]">
-                  <div className="text-2xl sm:text-4xl font-black text-white font-mono drop-shadow">
-                    {String(countdown.days).padStart(2, '0')}
+                  <div className="text-xl sm:text-3xl font-black text-white font-mono drop-shadow">
+                    ₹50
                   </div>
-                  <div className="text-[10px] sm:text-xs font-bold text-rose-200 uppercase mt-0.5">DAYS</div>
-                </div>
-
-                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-amber-500 via-orange-600 to-amber-950 border-2 border-amber-300/90 text-center shadow-lg min-w-[70px] sm:min-w-[85px]">
-                  <div className="text-2xl sm:text-4xl font-black text-white font-mono drop-shadow">
-                    {String(countdown.hours).padStart(2, '0')}
-                  </div>
-                  <div className="text-[10px] sm:text-xs font-bold text-amber-200 uppercase mt-0.5">HOURS</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-rose-200 uppercase mt-0.5">1. VERIFY</div>
                 </div>
 
                 <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-fuchsia-600 via-purple-600 to-purple-950 border-2 border-fuchsia-400/90 text-center shadow-lg min-w-[70px] sm:min-w-[85px]">
-                  <div className="text-2xl sm:text-4xl font-black text-white font-mono drop-shadow">
-                    {String(countdown.minutes).padStart(2, '0')}
+                  <div className="text-xl sm:text-3xl font-black text-white font-mono drop-shadow">
+                    ₹100
                   </div>
-                  <div className="text-[10px] sm:text-xs font-bold text-fuchsia-200 uppercase mt-0.5">MINUTES</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-fuchsia-200 uppercase mt-0.5">2. SECOND</div>
+                </div>
+
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-amber-500 via-orange-600 to-amber-950 border-2 border-amber-300/90 text-center shadow-lg min-w-[70px] sm:min-w-[85px]">
+                  <div className="text-xl sm:text-3xl font-black text-white font-mono drop-shadow">
+                    12h
+                  </div>
+                  <div className="text-[10px] sm:text-xs font-bold text-amber-200 uppercase mt-0.5">3. TIMER</div>
                 </div>
 
                 <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-cyan-500 via-teal-600 to-teal-950 border-2 border-cyan-300/90 text-center shadow-lg min-w-[70px] sm:min-w-[85px]">
-                  <div className="text-2xl sm:text-4xl font-black text-white font-mono animate-pulse drop-shadow">
-                    {String(countdown.seconds).padStart(2, '0')}
+                  <div className="text-xl sm:text-3xl font-black text-white font-mono drop-shadow">
+                    ₹200
                   </div>
-                  <div className="text-[10px] sm:text-xs font-bold text-cyan-200 uppercase mt-0.5">SECONDS</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-cyan-200 uppercase mt-0.5">4. RECEIVE</div>
                 </div>
               </div>
             </div>
 
-            {/* Fast Action Ticker within countdown */}
+            {/* Fast Action Ticker */}
             <div className="mt-5 pt-4 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-amber-300 font-semibold">
-                <Sparkles className="h-4 w-4 text-yellow-400" />
-                <span>अभी अपनी टीम बनाएं: लेवल 1 से 6 तक अनलिमिटेड इनकम का अवसर!</span>
+              <div className="flex items-center gap-2 text-emerald-300 font-semibold">
+                <Sparkles className="h-4 w-4 text-emerald-400" />
+                <span>लाइव पीयर-टू-पीयर कम्युनिटी: पारदर्शी, स्वचालित और सुरक्षित!</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -454,7 +415,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenLogin, onOpenRegister 
                 </button>
                 <button
                   onClick={onOpenRegister}
-                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs hover:brightness-110 cursor-pointer shadow"
+                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black text-xs hover:brightness-110 cursor-pointer shadow"
                 >
                   फ्री आईडी बनाएं ➔
                 </button>

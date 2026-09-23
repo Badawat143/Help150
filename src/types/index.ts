@@ -391,6 +391,7 @@ export interface WebsiteSettings {
   promotionStartDate: string; // ISO string
   promotionEndDate: string; // ISO string
   promotionExtended3DaysV2?: boolean;
+  promotionEndedV1?: boolean;
   promotionNoticeTitle?: string;
   promotionNoticeText?: string;
   maintenanceMode: boolean;

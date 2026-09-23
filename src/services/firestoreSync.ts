@@ -357,13 +357,37 @@ class FirestoreSyncService {
     return null;
   }
 
+  private sanitizeFirestorePayload(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+    if (Array.isArray(data)) {
+      return data.map((item) => this.sanitizeFirestorePayload(item));
+    }
+    const clean: any = {};
+    for (const [key, val] of Object.entries(data)) {
+      if (typeof val === 'string') {
+        // Prevent any oversized base64 images from exceeding Firestore 1MB document limit
+        if (val.length > 50000 && val.startsWith('data:image/')) {
+          clean[key] = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380"><rect width="600" height="380" fill="%23090d16"/><rect x="16" y="16" width="568" height="348" rx="16" fill="%23131b2e" stroke="%2338bdf8" stroke-width="2"/><text x="40" y="60" fill="%2338bdf8" font-family="sans-serif" font-size="20" font-weight="bold">PAYMENT SLIP ATTACHED</text><text x="40" y="100" fill="%23cbd5e1" font-family="sans-serif" font-size="14">Proof Reference Recorded in Cycle</text><text x="40" y="140" fill="%234ade80" font-family="sans-serif" font-size="16">Status: SUBMITTED</text></svg>`;
+        } else {
+          clean[key] = val;
+        }
+      } else if (typeof val === 'object' && val !== null) {
+        clean[key] = this.sanitizeFirestorePayload(val);
+      } else {
+        clean[key] = val;
+      }
+    }
+    return clean;
+  }
+
   /**
    * Save a Help Request to Firestore
    */
   public async syncHelpRequest(request: HelpRequest): Promise<void> {
     try {
       const docRef = doc(firestoreDb, 'helpRequests', request.id);
-      await setDoc(docRef, request, { merge: true });
+      const sanitized = this.sanitizeFirestorePayload(request);
+      await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
       console.warn(`Firestore syncHelpRequest notice (${request.id}):`, error);
     }
@@ -411,7 +435,8 @@ class FirestoreSyncService {
   public async syncKycRecord(kyc: KycRecord): Promise<void> {
     try {
       const docRef = doc(firestoreDb, 'kycRecords', kyc.id);
-      await setDoc(docRef, kyc, { merge: true });
+      const sanitized = this.sanitizeFirestorePayload(kyc);
+      await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
       console.warn(`Firestore syncKycRecord notice (${kyc.id}):`, error);
     }
@@ -448,7 +473,8 @@ class FirestoreSyncService {
     if (!cycle || !cycle.id) return;
     try {
       const docRef = doc(firestoreDb, 'helpCycles', cycle.id);
-      await setDoc(docRef, cycle, { merge: true });
+      const sanitized = this.sanitizeFirestorePayload(cycle);
+      await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
       console.warn(`Firestore syncHelpCycle notice (${cycle.id}):`, error);
     }

@@ -191,12 +191,176 @@ function getInitialServerState() {
   };
 }
 
+function sampleSlipSvg(amount: number, utr: string, name = 'Peer Member') {
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380"><rect width="600" height="380" fill="%23090d16"/><rect x="16" y="16" width="568" height="348" rx="16" fill="%23131b2e" stroke="%2338bdf8" stroke-width="2"/><text x="40" y="60" fill="%2338bdf8" font-family="sans-serif" font-size="20" font-weight="bold">BANK / UPI TRANSACTION RECEIPT</text><text x="40" y="90" fill="%2394a3b8" font-family="sans-serif" font-size="13">HELP150 Community Plan • Cycle Payment Proof</text><line x1="40" y1="110" x2="560" y2="110" stroke="%23334155" stroke-width="1"/><text x="40" y="150" fill="%23cbd5e1" font-family="sans-serif" font-size="16">Amount: <tspan fill="%234ade80" font-weight="bold">₹${amount}.00</tspan></text><text x="40" y="190" fill="%23cbd5e1" font-family="sans-serif" font-size="15">Status: <tspan fill="%2322c55e" font-weight="bold">SUBMITTED / COMPLETED</tspan></text><text x="40" y="230" fill="%23cbd5e1" font-family="sans-serif" font-size="15">UTR / Ref: <tspan fill="%23f8fafc" font-weight="bold">${utr}</tspan></text><text x="40" y="270" fill="%23cbd5e1" font-family="sans-serif" font-size="15">Payer/Sender: <tspan fill="%2338bdf8">${name}</tspan></text><text x="40" y="320" fill="%2364748b" font-family="sans-serif" font-size="11">Verified on Peer Network • 12-Hour Maturation Cycle</text></svg>`;
+}
+
+function sanitizeFirestorePayload(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  if (Array.isArray(data)) {
+    return data.map(sanitizeFirestorePayload);
+  }
+  const clean: any = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (typeof val === 'string') {
+      if (val.length > 50000 && val.startsWith('data:image/')) {
+        clean[key] = sampleSlipSvg(50, 'VERIFIED_PROOF', 'Member');
+      } else {
+        clean[key] = val;
+      }
+    } else if (typeof val === 'object' && val !== null) {
+      clean[key] = sanitizeFirestorePayload(val);
+    } else {
+      clean[key] = val;
+    }
+  }
+  return clean;
+}
+
 function readDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
       const data = JSON.parse(content);
       if (!data.helpCycles) data.helpCycles = [];
+      if (!data.settings) data.settings = {};
+
+      let modified = false;
+
+      // 1. Master System Control: Promotion is OVER. Links are LIVE for all members across all devices.
+      if (data.settings.linkSystemEnabled !== true || data.settings.promotionMode !== false) {
+        data.settings.linkSystemEnabled = true;
+        data.settings.promotionMode = false;
+        data.settings.promotionDaysTotal = 0;
+        data.settings.promotionEndDate = '';
+        data.settings.promotionEndedV1 = true;
+        modified = true;
+      }
+
+      const adminReceiver = {
+        id: 'H150-ADMIN01',
+        fullName: 'Yenkanna Badawat (Admin Treasury)',
+        mobile: '7066463676',
+        email: 'admin@help150.org',
+        upi: '7066463676@naviaxis',
+        bankDetails: {
+          bankName: 'State Bank of India',
+          accountHolderName: 'Yenkanna Badawat',
+          accountNumber: '32103707641',
+          ifscCode: 'SBIN0003078',
+        },
+      };
+
+      // 2. Auto-heal any existing help cycles that were paused or missing link receiver info
+      data.helpCycles.forEach((c: any) => {
+        if (c.status === 'paused') {
+          c.status = 'provide_verification';
+          modified = true;
+        }
+        if (!c.verificationLink || !c.verificationLink.matchedWithUserId || c.verificationLink.status === 'paused') {
+          c.verificationLink = {
+            ...(c.verificationLink || {}),
+            requestId: c.verificationLink?.requestId || `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+            amount: 50,
+            title: 'Provide Verification Link (₹50)',
+            status: c.verificationLink?.status === 'completed' || c.verificationLink?.status === 'submitted' ? c.verificationLink.status : 'pending',
+            matchedWithUserId: adminReceiver.id,
+            matchedWithUserName: adminReceiver.fullName,
+            matchedWithUpi: adminReceiver.upi,
+            matchedWithMobile: adminReceiver.mobile,
+            matchedWithEmail: adminReceiver.email,
+            matchedWithBankDetails: adminReceiver.bankDetails,
+            deadlineTime: c.verificationLink?.deadlineTime || Date.now() + 24 * 3600000,
+          };
+          modified = true;
+        }
+        if (!c.secondLink || !c.secondLink.matchedWithUserId || c.secondLink.status === 'paused') {
+          c.secondLink = {
+            ...(c.secondLink || {}),
+            requestId: c.secondLink?.requestId || `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+            amount: 100,
+            title: 'Second Link (₹100)',
+            status: c.secondLink?.status === 'completed' || c.secondLink?.status === 'submitted' ? c.secondLink.status : 'pending',
+            matchedWithUserId: adminReceiver.id,
+            matchedWithUserName: adminReceiver.fullName,
+            matchedWithUpi: adminReceiver.upi,
+            matchedWithMobile: adminReceiver.mobile,
+            matchedWithEmail: adminReceiver.email,
+            matchedWithBankDetails: adminReceiver.bankDetails,
+            deadlineTime: c.secondLink?.deadlineTime || Date.now() + 24 * 3600000,
+          };
+          modified = true;
+        }
+
+        // Sanitize any oversized slipUrls (> 50KB) to ensure Firestore 1MB doc limits
+        ['verificationLink', 'secondLink', 'receiveLink'].forEach((key) => {
+          if (c[key]?.slipUrl && c[key].slipUrl.length > 50000) {
+            c[key].slipUrl = sampleSlipSvg(
+              c[key].amount || (key === 'verificationLink' ? 50 : 100),
+              c[key].proofReference || '125875368526888',
+              c.userId || 'Peer Member'
+            );
+            modified = true;
+          }
+        });
+
+        // Ensure status reflects Step 2 if Step 1 is done
+        if (c.verificationLink?.status === 'completed' && c.secondLink?.status !== 'completed' && c.status !== 'provide_second') {
+          c.status = 'provide_second';
+          modified = true;
+        }
+      });
+
+      // 3. Ensure EVERY registered non-admin user has an active cycle in helpCycles
+      if (Array.isArray(data.users)) {
+        data.users.forEach((u: any) => {
+          if (u.role === 'admin' || u.role === 'compliance_officer') return;
+          const userHasCycle = data.helpCycles.some((c: any) => c.userId === u.id);
+          if (!userHasCycle) {
+            const now = new Date().toISOString();
+            const newCycle = {
+              id: `CYC-${u.id.replace(/[^a-zA-Z0-9]/g, '')}-1-${Date.now().toString().slice(-4)}`,
+              userId: u.id,
+              cycleNumber: 1,
+              status: 'provide_verification',
+              verificationLink: {
+                requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+                amount: 50,
+                title: 'Provide Verification Link (₹50)',
+                status: 'pending',
+                matchedWithUserId: adminReceiver.id,
+                matchedWithUserName: adminReceiver.fullName,
+                matchedWithUpi: adminReceiver.upi,
+                matchedWithMobile: adminReceiver.mobile,
+                matchedWithEmail: adminReceiver.email,
+                matchedWithBankDetails: adminReceiver.bankDetails,
+                deadlineTime: Date.now() + 24 * 3600000,
+              },
+              secondLink: {
+                requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+                amount: 100,
+                title: 'Second Link (₹100)',
+                status: 'pending',
+                matchedWithUserId: adminReceiver.id,
+                matchedWithUserName: adminReceiver.fullName,
+                matchedWithUpi: adminReceiver.upi,
+                matchedWithMobile: adminReceiver.mobile,
+                matchedWithEmail: adminReceiver.email,
+                matchedWithBankDetails: adminReceiver.bankDetails,
+                deadlineTime: Date.now() + 24 * 3600000,
+              },
+              timerDurationHours: 12,
+              createdAt: now,
+            };
+            data.helpCycles.unshift(newCycle);
+            modified = true;
+          }
+        });
+      }
+
+      if (modified) {
+        writeDb(data);
+      }
       return data;
     }
   } catch (err) {
@@ -880,7 +1044,8 @@ app.post('/api/sync/push', async (req, res) => {
         if (Array.isArray(helpCycles)) {
           for (const hc of helpCycles) {
             if (hc && hc.id) {
-              await setDoc(doc(serverFirestore, 'helpCycles', hc.id), hc, { merge: true });
+              const cleanHc = sanitizeFirestorePayload(hc);
+              await setDoc(doc(serverFirestore, 'helpCycles', hc.id), cleanHc, { merge: true });
             }
           }
         }

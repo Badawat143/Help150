@@ -69,14 +69,15 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   autoDispatchOnRegistration: false,
   defaultLinkReceiverType: 'admin_treasury',
   maxLinksPerReceiver: 1,
-  linkSystemEnabled: false, // Default to OFF for initial pre-launch promotion
-  promotionMode: true,
-  promotionDaysTotal: 7,
-  promotionStartDate: new Date().toISOString(),
-  promotionEndDate: new Date(Date.now() + 7 * 24 * 3600000).toISOString(),
+  linkSystemEnabled: true, // Promotion is complete. Automatic helping links are LIVE across all devices.
+  promotionMode: false,
+  promotionDaysTotal: 0,
+  promotionStartDate: '',
+  promotionEndDate: '',
   promotionExtended3DaysV2: true,
-  promotionNoticeTitle: '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (3 दिन का समय बढ़ाया गया)',
-  promotionNoticeText: 'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! वर्तमान में 7 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!',
+  promotionEndedV1: true,
+  promotionNoticeTitle: '🟢 हेल्पिंग लिंक्स लाइव हैं (Helping Links Active)',
+  promotionNoticeText: 'विशेष सूचना: प्रमोशन अवधि समाप्त हो चुकी है। सभी ऑटोमैटिक हेल्पिंग लिंक्स लाइव हैं!',
   maintenanceMode: false,
   officialTelegramLink: 'https://t.me/help150_official',
   officialWhatsappNumber: '+91 98765 43210',
@@ -1021,6 +1022,19 @@ class DatabaseManager {
           };
           if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles) || loadedState.helpCycles.length === 0) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
+          } else {
+            // Auto-heal and sanitize oversized slip images (> 50KB) to prevent Firestore 1MB doc limits
+            loadedState.helpCycles.forEach((c: any) => {
+              ['verificationLink', 'secondLink', 'receiveLink'].forEach((linkKey) => {
+                if (c[linkKey]?.slipUrl && c[linkKey].slipUrl.length > 50000) {
+                  c[linkKey].slipUrl = sampleSlipUrl(
+                    c[linkKey].amount || 50,
+                    c[linkKey].proofReference || '125875368526888',
+                    c.userId || 'Peer Member'
+                  );
+                }
+              });
+            });
           }
           if (!loadedState.helpRequests || !Array.isArray(loadedState.helpRequests) || loadedState.helpRequests.length === 0) {
             loadedState.helpRequests = getSeedDatabase().helpRequests;
@@ -1080,20 +1094,15 @@ class DatabaseManager {
             ...(loadedState.settings || {}),
           };
 
-          // 3-Day Extension for Link Launch: Ensure existing users get 3 additional days added
-          if (!loadedState.settings.promotionExtended3DaysV2) {
-            const currentEnd = loadedState.settings.promotionEndDate
-              ? new Date(loadedState.settings.promotionEndDate).getTime()
-              : Date.now();
-            // Add 3 full days (72 hours) to whatever end date was configured, or from now if already past
-            const baseTime = Math.max(Date.now(), currentEnd);
-            loadedState.settings.promotionEndDate = new Date(baseTime + 3 * 24 * 3600000).toISOString();
-            loadedState.settings.promotionDaysTotal = (loadedState.settings.promotionDaysTotal || 4) + 3;
-            loadedState.settings.promotionExtended3DaysV2 = true;
-            loadedState.settings.linkSystemEnabled = false;
-            loadedState.settings.promotionMode = true;
-            loadedState.settings.promotionNoticeTitle = '🎉 7-दिवसीय प्री-लॉन्च प्रमोशन अवधि सक्रिय (3 दिन का समय बढ़ाया गया)';
-            loadedState.settings.promotionNoticeText = 'विशेष सूचना: लिंक स्टार्ट होने का समय 3 दिन और बढ़ा दिया गया है! वर्तमान में 7 दिन का विशेष प्रमोशन चल रहा है। सभी सदस्य रजिस्ट्रेशन करें, अपनी बड़ी टीम बनाएं और KYC पूरा करें। टाइमर समाप्त होते ही ऑटोमैटिक हेल्पिंग लिंक्स शुरू हो जाएंगे!';
+          // Promotion Finished Migration: Automatically end promotion mode and activate link system for all users & devices
+          if (!loadedState.settings.promotionEndedV1) {
+            loadedState.settings.linkSystemEnabled = true;
+            loadedState.settings.promotionMode = false;
+            loadedState.settings.promotionEndDate = '';
+            loadedState.settings.promotionDaysTotal = 0;
+            loadedState.settings.promotionEndedV1 = true;
+            loadedState.settings.promotionNoticeTitle = '🟢 हेल्पिंग लिंक्स लाइव हैं';
+            loadedState.settings.promotionNoticeText = 'प्रमोशन समाप्त हो गया है। लिंक्स लाइव हैं!';
             this.saveToStorage(loadedState);
           }
           return loadedState;
@@ -1496,10 +1505,56 @@ class DatabaseManager {
       this.notifySubscribers();
     }
 
-    // Auto-Healing & Transition: If Step 1 (₹50 verification) is completed, ALWAYS ensure Step 2 (₹100) is ready and active
+    // Auto-Healing & Transition: Ensure cycle is unpaused and links have full receiver details
     if (activeCycle) {
+      let changed = false;
+
+      // 1. Unpause cycle if it was paused during pre-launch promotion
+      if (activeCycle.status === 'paused') {
+        activeCycle.status = 'provide_verification';
+        changed = true;
+      }
+
+      // 2. Ensure Step 1 (₹50 verification link) is fully configured
+      if (!activeCycle.verificationLink || !activeCycle.verificationLink.matchedWithUserId || (activeCycle.verificationLink.status as string) === 'paused') {
+        if (!activeCycle.verificationLink) {
+          activeCycle.verificationLink = {
+            requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+            amount: 50,
+            title: 'Provide Verification Link (₹50)',
+            status: 'pending',
+            matchedWithUserId: adminReceiver.id,
+            matchedWithUserName: adminReceiver.fullName,
+            matchedWithUpi: adminReceiver.upi,
+            matchedWithMobile: adminReceiver.mobile,
+            matchedWithEmail: adminReceiver.email,
+            matchedWithBankDetails: adminReceiver.bankDetails,
+            deadlineTime: Date.now() + 24 * 3600000,
+          };
+          changed = true;
+        } else {
+          activeCycle.verificationLink.title = 'Provide Verification Link (₹50)';
+          activeCycle.verificationLink.matchedWithUserId = adminReceiver.id;
+          activeCycle.verificationLink.matchedWithUserName = adminReceiver.fullName;
+          activeCycle.verificationLink.matchedWithUpi = adminReceiver.upi;
+          activeCycle.verificationLink.matchedWithMobile = adminReceiver.mobile;
+          activeCycle.verificationLink.matchedWithEmail = adminReceiver.email;
+          activeCycle.verificationLink.matchedWithBankDetails = adminReceiver.bankDetails;
+          if (!activeCycle.verificationLink.requestId) {
+            activeCycle.verificationLink.requestId = `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`;
+          }
+          if (!activeCycle.verificationLink.deadlineTime) {
+            activeCycle.verificationLink.deadlineTime = Date.now() + 24 * 3600000;
+          }
+          if (activeCycle.verificationLink.status !== 'completed' && activeCycle.verificationLink.status !== 'submitted') {
+            activeCycle.verificationLink.status = 'pending';
+          }
+          changed = true;
+        }
+      }
+
+      // 3. If Step 1 (₹50 verification) is completed, ALWAYS ensure Step 2 (₹100) is ready and active
       if (activeCycle.verificationLink?.status === 'completed' && activeCycle.secondLink?.status !== 'completed') {
-        let changed = false;
         if (activeCycle.status !== 'provide_second') {
           activeCycle.status = 'provide_second';
           changed = true;
@@ -1542,9 +1597,11 @@ class DatabaseManager {
             changed = true;
           }
         }
-        if (changed) {
-          this.saveToStorage(this.state);
-        }
+      }
+
+      if (changed) {
+        this.saveToStorage(this.state);
+        this.notifySubscribers();
       }
     }
 
@@ -1591,41 +1648,6 @@ class DatabaseManager {
     const now = new Date().toISOString();
     const cycleId = `CYC-${userId.replace(/[^a-zA-Z0-9]/g, '')}-${cycleNumber}-${Date.now().toString().slice(-4)}`;
 
-    const isLinkEnabled = this.state.settings.linkSystemEnabled !== false;
-
-    if (!isLinkEnabled) {
-      return {
-        id: cycleId,
-        userId,
-        cycleNumber,
-        status: 'paused',
-        verificationLink: {
-          requestId: '',
-          amount: 50,
-          title: 'Provide Verification Link (Paused by Admin)',
-          status: 'pending',
-          matchedWithUserId: '',
-          matchedWithUserName: '',
-          matchedWithUpi: '',
-          matchedWithMobile: '',
-          matchedWithEmail: '',
-        },
-        secondLink: {
-          requestId: '',
-          amount: 100,
-          title: 'Second Link (Paused by Admin)',
-          status: 'pending',
-          matchedWithUserId: '',
-          matchedWithUserName: '',
-          matchedWithUpi: '',
-          matchedWithMobile: '',
-          matchedWithEmail: '',
-        },
-        timerDurationHours: 12,
-        createdAt: now,
-      };
-    }
-
     return {
       id: cycleId,
       userId,
@@ -1634,7 +1656,7 @@ class DatabaseManager {
       verificationLink: {
         requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
         amount: 50,
-        title: isLinkEnabled ? 'Provide Verification Link (₹50)' : 'Provide Verification Link (₹50 - Paused by Admin)',
+        title: 'Provide Verification Link (₹50)',
         status: 'pending',
         matchedWithUserId: adminReceiver.id,
         matchedWithUserName: adminReceiver.fullName,
@@ -1642,7 +1664,7 @@ class DatabaseManager {
         matchedWithMobile: adminReceiver.mobile,
         matchedWithEmail: adminReceiver.email,
         matchedWithBankDetails: adminReceiver.bankDetails,
-        deadlineTime: isLinkEnabled ? Date.now() + 24 * 3600000 : undefined, // No deadline when links are paused
+        deadlineTime: Date.now() + 24 * 3600000,
       },
       secondLink: {
         requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -1650,11 +1672,12 @@ class DatabaseManager {
         title: 'Second Link (₹100)',
         status: 'pending',
         matchedWithUserId: adminReceiver.id,
-        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUserName: adminReceiver.fullName,
         matchedWithUpi: adminReceiver.upi,
         matchedWithMobile: adminReceiver.mobile,
         matchedWithEmail: adminReceiver.email,
         matchedWithBankDetails: adminReceiver.bankDetails,
+        deadlineTime: Date.now() + 24 * 3600000,
       },
       timerDurationHours: 12,
       createdAt: now,
@@ -1670,10 +1693,16 @@ class DatabaseManager {
     const cycle = this.getUserHelpCycle(userId);
     const now = new Date().toISOString();
 
+    const cleanSlip = (raw?: string, amt = 50) => {
+      if (!raw) return sampleSlipUrl(amt, proofRef);
+      if (raw.length > 50000) return sampleSlipUrl(amt, proofRef);
+      return raw;
+    };
+
     if (linkType === 'verification') {
       cycle.verificationLink.status = 'submitted';
       cycle.verificationLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
-      cycle.verificationLink.slipUrl = slipUrl || sampleSlipUrl(50, proofRef);
+      cycle.verificationLink.slipUrl = cleanSlip(slipUrl, 50);
       cycle.verificationLink.submittedAt = now;
       delete cycle.verificationLink.rejectionReason;
       delete cycle.verificationLink.rejectedAt;
@@ -1692,7 +1721,7 @@ class DatabaseManager {
     } else if (linkType === 'second') {
       cycle.secondLink.status = 'submitted';
       cycle.secondLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
-      cycle.secondLink.slipUrl = slipUrl || sampleSlipUrl(100, proofRef);
+      cycle.secondLink.slipUrl = cleanSlip(slipUrl, 100);
       cycle.secondLink.submittedAt = now;
       delete cycle.secondLink.rejectionReason;
       delete cycle.secondLink.rejectedAt;

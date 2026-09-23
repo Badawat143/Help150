@@ -801,12 +801,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           </div>
 
           {/* ======================================================================= */}
-          {/* 📢 4-DAY PRE-LAUNCH PROMOTION BANNER                                    */}
-          {/* Shows promotion countdown when links are OFF, or live indicator when ON */}
-          {/* ======================================================================= */}
-          <PromotionNoticeBanner />
-
-          {/* ======================================================================= */}
           {/* 🔴 PROVIDE HELP BOX (Red) & 🔵 RECEIVE HELP BOX (Sky Blue)               */}
           {/* Cycle: 50 -> 100 -> 12h Maturation Timer -> 200 Receive Help & Loop     */}
           {/* ======================================================================= */}

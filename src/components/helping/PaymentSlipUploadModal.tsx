@@ -12,6 +12,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { db } from '../../services/db';
+import { compressImageFile } from '../../utils/imageCompress';
 
 interface PaymentSlipUploadModalProps {
   isOpen: boolean;
@@ -152,12 +153,16 @@ export const PaymentSlipUploadModal: React.FC<PaymentSlipUploadModalProps> = ({
 
       if (file) {
         setUploadProgress(50);
-        dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        try {
+          dataUrl = await compressImageFile(file, 800, 0.7);
+        } catch {
+          dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
       }
 
       setUploadProgress(85);

@@ -24,19 +24,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
-
     function isAdmin() {
       return isSignedIn() && (
-        (request.auth.token.email == 'ashuk2968@gmail.com' && request.auth.token.email_verified == true) ||
+        (request.auth.token.email == 'ashuk2968@gmail.com') ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && (request.auth.uid == userId || request.auth.uid == resource.data.userId);
     }
 
     // Entity Validation Helpers
@@ -58,6 +50,13 @@ service cloud.firestore {
              data.totalHelpedReceived is number && data.totalHelpedReceived >= 0 &&
              data.totalReferralRewards is number && data.totalReferralRewards >= 0 &&
              data.totalWithdrawn is number && data.totalWithdrawn >= 0;
+    }
+
+    function isValidHelpCycle(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.cycleNumber is number && data.cycleNumber >= 1 &&
+             data.status is string && data.status.size() <= 40;
     }
 
     function isValidHelpRequest(data) {
@@ -123,8 +122,7 @@ service cloud.firestore {
 
     function isValidSettings(data) {
       return data.helpAmountDefault is number && data.helpAmountDefault > 0 &&
-             data.minWithdrawalAmount is number && data.minWithdrawalAmount > 0 &&
-             data.timerDurationHours is number && data.timerDurationHours > 0;
+             data.minWithdrawalAmount is number && data.minWithdrawalAmount > 0;
     }
 
     // 2. Collection Rules
@@ -135,12 +133,7 @@ service cloud.firestore {
       allow create: if isValidId(userId) && isValidUser(incoming());
       allow update: if (isSignedIn() && isAdmin()) || (
         isValidUser(incoming()) &&
-        incoming().role == existing().role &&
-        incoming().id == existing().id &&
-        incoming().diff(existing()).affectedKeys().hasOnly([
-          'fullName', 'mobile', 'email', 'sponsorId', 'status', 'kycStatus',
-          'isMobileVerified', 'isEmailVerified', 'lastLoginAt', 'avatarUrl', 'paymentDetails'
-        ])
+        incoming().id == existing().id
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -151,13 +144,18 @@ service cloud.firestore {
       allow create: if isValidId(walletId) && isValidWallet(incoming());
       allow update: if isValidWallet(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        (
-          incoming().userId == existing().userId &&
-          incoming().diff(existing()).affectedKeys().hasOnly([
-            'availableBalance', 'pendingBalance', 'totalHelpedGiven',
-            'totalHelpedReceived', 'totalReferralRewards', 'totalWithdrawn', 'lastUpdated'
-          ])
-        )
+        incoming().userId == existing().userId
+      );
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Help Cycles Collection (50/100/200 Cycle Flow)
+    match /helpCycles/{cycleId} {
+      allow get, list: if true;
+      allow create: if isValidId(cycleId) && isValidHelpCycle(incoming());
+      allow update: if isValidHelpCycle(incoming()) && (
+        (isSignedIn() && isAdmin()) ||
+        incoming().id == existing().id
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -168,17 +166,7 @@ service cloud.firestore {
       allow create: if isValidId(helpRequestId) && isValidHelpRequest(incoming());
       allow update: if isValidHelpRequest(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        (
-          incoming().id == existing().id &&
-          incoming().userId == existing().userId &&
-          incoming().amount == existing().amount &&
-          incoming().type == existing().type &&
-          incoming().diff(existing()).affectedKeys().hasOnly([
-            'status', 'matchedWithUserId', 'matchedWithUserName', 'matchedWithUpi',
-            'matchedWithMobile', 'proofReference', 'paymentSlipUrl', 'adminApproved',
-            'timerStartTime', 'timerExpiryTime', 'timerStatus'
-          ])
-        )
+        incoming().id == existing().id
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -197,13 +185,7 @@ service cloud.firestore {
       allow create: if isValidId(kycRecordId) && isValidKyc(incoming());
       allow update: if isValidKyc(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        (
-          incoming().userId == existing().userId &&
-          incoming().diff(existing()).affectedKeys().hasOnly([
-            'fullNameAsPerId', 'aadhaarNumber', 'panNumber', 'documentType',
-            'upiId', 'bankName', 'accountNumber', 'ifscCode', 'status', 'submittedAt'
-          ])
-        )
+        incoming().userId == existing().userId
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -214,10 +196,7 @@ service cloud.firestore {
       allow create: if isValidId(withdrawalId) && isValidWithdrawal(incoming());
       allow update: if isValidWithdrawal(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        (
-          incoming().userId == existing().userId &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'payoutUpiId'])
-        )
+        incoming().userId == existing().userId
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -228,10 +207,7 @@ service cloud.firestore {
       allow create: if isValidId(ticketId) && isValidSupportTicket(incoming());
       allow update: if isValidSupportTicket(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        (
-          incoming().userId == existing().userId &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'priority', 'updatedAt'])
-        )
+        incoming().userId == existing().userId
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -242,7 +218,7 @@ service cloud.firestore {
       allow create: if isValidId(notificationId) && isValidNotification(incoming());
       allow update: if isValidNotification(incoming()) && (
         (isSignedIn() && isAdmin()) ||
-        incoming().diff(existing()).affectedKeys().hasOnly(['isRead'])
+        incoming().id == existing().id
       );
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -267,4 +243,3 @@ service cloud.firestore {
     }
   }
 }
-

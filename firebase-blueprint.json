@@ -533,6 +533,36 @@
         "maintenanceMode": { "type": "boolean", "description": "Maintenance mode state" }
       },
       "required": ["helpAmountDefault", "minWithdrawalAmount", "timerDurationHours"]
+    },
+    "helpCycle": {
+      "title": "User Help Cycle",
+      "description": "50/100/200 peer-to-peer help loop cycle state tracking",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique Cycle identifier",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Associated user account ID",
+          "maxLength": 64
+        },
+        "cycleNumber": {
+          "type": "number",
+          "description": "Sequential cycle iteration index"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current lifecycle status of cycle"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Cycle creation ISO timestamp"
+        }
+      },
+      "required": ["id", "userId", "cycleNumber", "status"]
     }
   },
   "firestore": {
@@ -543,6 +573,10 @@
     "/wallets/{walletId}": {
       "schema": "wallet",
       "description": "User wallet ledger collection"
+    },
+    "/helpCycles/{cycleId}": {
+      "schema": "helpCycle",
+      "description": "User helping cycle progress and link states"
     },
     "/helpRequests/{helpRequestId}": {
       "schema": "helpRequest",
