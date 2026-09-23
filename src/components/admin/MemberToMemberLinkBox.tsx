@@ -36,18 +36,20 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
 import { api, isAdminOrTestId } from '../../services/api';
-import { HelpRequest, User } from '../../types';
+import { HelpRequest, User, DispatchedProvideHelpLink } from '../../types';
 import { CountdownTimer } from '../common/CountdownTimer';
 import { MasterLinkSwitchCard } from './MasterLinkSwitchCard';
 
 interface MemberToMemberLinkBoxProps {
   currentUser: { id: string; name: string; role: string; fullName?: string };
   onRefresh?: () => void;
+  initialTab?: 'provide_help_links' | 'provide_help_queue' | 'manual_dispatch' | 'auto_mode' | 'active_links';
 }
 
 export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
   currentUser,
   onRefresh,
+  initialTab,
 }) => {
   const { loginAs, setActiveTab: setAppActiveTab } = useAuth();
   const state = db.getState();
@@ -57,8 +59,59 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
   const defaultHelpAmount = settings.helpAmountDefault || 150;
   const defaultTimerHours = settings.timerDurationHours || 24;
 
-  // Active Main Tab: 'provide_help_queue' | 'manual_dispatch' | 'auto_mode' | 'active_links'
-  const [activeTab, setActiveTab] = useState<'provide_help_queue' | 'manual_dispatch' | 'auto_mode' | 'active_links'>('provide_help_queue');
+  // Active Main Tab: 'provide_help_links' | 'provide_help_queue' | 'manual_dispatch' | 'auto_mode' | 'active_links'
+  const [activeTab, setActiveTab] = useState<'provide_help_links' | 'provide_help_queue' | 'manual_dispatch' | 'auto_mode' | 'active_links'>(
+    initialTab || 'provide_help_links'
+  );
+
+  // Provide Help Dispatched Links States
+  const [phSearch, setPhSearch] = useState('');
+  const [phFilter, setPhFilter] = useState<'all' | '50' | '100' | 'pending' | 'submitted' | 'completed' | 'rejected'>('all');
+  const [selectedPhSlip, setSelectedPhSlip] = useState<DispatchedProvideHelpLink | null>(null);
+
+  const allProvideHelpLinks = db.getAllDispatchedProvideHelpLinks();
+  const countTotalLinks = allProvideHelpLinks.length;
+  const count50Links = allProvideHelpLinks.filter((l) => l.amount === 50).length;
+  const count100Links = allProvideHelpLinks.filter((l) => l.amount === 100).length;
+  const countPendingLinks = allProvideHelpLinks.filter((l) => l.status === 'pending').length;
+  const countSubmittedLinks = allProvideHelpLinks.filter((l) => l.status === 'submitted').length;
+  const countCompletedLinks = allProvideHelpLinks.filter((l) => l.status === 'completed').length;
+
+  const filteredProvideHelpLinks = allProvideHelpLinks.filter((link) => {
+    const q = phSearch.toLowerCase();
+    const matches =
+      link.id.toLowerCase().includes(q) ||
+      link.senderName.toLowerCase().includes(q) ||
+      link.senderUserId.toLowerCase().includes(q) ||
+      link.senderMobile.includes(q) ||
+      link.receiverName.toLowerCase().includes(q) ||
+      link.receiverUserId.toLowerCase().includes(q) ||
+      link.receiverUpi.toLowerCase().includes(q) ||
+      (link.proofReference && link.proofReference.toLowerCase().includes(q));
+
+    if (!matches) return false;
+
+    if (phFilter === '50') return link.amount === 50;
+    if (phFilter === '100') return link.amount === 100;
+    if (phFilter === 'pending') return link.status === 'pending';
+    if (phFilter === 'submitted') return link.status === 'submitted';
+    if (phFilter === 'completed') return link.status === 'completed';
+    if (phFilter === 'rejected') return link.status === 'rejected';
+
+    return true;
+  });
+
+  const handleApprovePhLink = (linkId: string) => {
+    setIsProcessing(true);
+    const res = db.adminApproveProvideHelpLink(linkId, `Verified by Admin (${currentUser.fullName || currentUser.name || 'Admin'})`);
+    setIsProcessing(false);
+    if (res.success) {
+      showToast(`✅ प्रोवाइड हेल्प लिंक #${linkId} सफलतापूर्वक स्वीकृत (Approved) किया गया!`);
+      if (onRefresh) onRefresh();
+    } else {
+      showToast('सत्यापन विफल रहा', 'error');
+    }
+  };
 
   // Provide Help Queue Selection & Search
   const [queueSearch, setQueueSearch] = useState('');
@@ -512,8 +565,25 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
           </div>
         </div>
 
-        {/* 4 MAIN NAVIGATION TABS */}
+        {/* 5 MAIN NAVIGATION TABS */}
         <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-white/10">
+          <button
+            onClick={() => setActiveTab('provide_help_links')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'provide_help_links'
+                ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 shadow-lg font-extrabold ring-2 ring-emerald-300'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
+          >
+            <Send className="h-4 w-4" />
+            <span>📩 भेजे गए प्रोवाइड हेल्प लिंक्स (Dispatched Links)</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+              activeTab === 'provide_help_links' ? 'bg-slate-950 text-emerald-400' : 'bg-emerald-400 text-slate-950'
+            }`}>
+              {countTotalLinks}
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('provide_help_queue')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
@@ -575,6 +645,308 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* PRIMARY TAB: ALL DISPATCHED PROVIDE HELP LINKS (जीतने प्रोवाइड हेल्प लिंक गया है) */}
+      {/* ========================================================================= */}
+      {activeTab === 'provide_help_links' && (
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 space-y-5">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <Send className="h-4 w-4" />
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 font-heading">
+                  भेजे गए प्रोवाइड हेल्प लिंक्स (All Dispatched Provide Help Links)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                सिस्टम व एडमिन द्वारा सभी सदस्यों को भेजे गए ₹50 वेरिफिकेशन लिंक्स, ₹100 सेकंड लिंक्स और डायरेक्ट लिंक्स की संपूर्ण लाइव सूची।
+              </p>
+            </div>
+
+            {/* Live Search Bar */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="खोजें: प्रदाता, प्राप्तकर्ता, मोबाइल, UTR, ID..."
+                value={phSearch}
+                onChange={(e) => setPhSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 transition"
+              />
+            </div>
+          </div>
+
+          {/* 6 Metric summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="text-[11px] font-bold text-slate-500">कुल भेजे गए लिंक</div>
+              <div className="text-xl font-black text-slate-900 font-mono mt-0.5">{countTotalLinks}</div>
+              <div className="text-[10px] text-slate-400">All Dispatched</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
+              <div className="text-[11px] font-bold text-amber-700">₹50 वेरिफिकेशन लिंक</div>
+              <div className="text-xl font-black text-amber-900 font-mono mt-0.5">{count50Links}</div>
+              <div className="text-[10px] text-amber-600">Step 1 Verification</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200">
+              <div className="text-[11px] font-bold text-purple-700">₹100 सेकंड लिंक</div>
+              <div className="text-xl font-black text-purple-900 font-mono mt-0.5">{count100Links}</div>
+              <div className="text-[10px] text-purple-600">Step 2 Community Help</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200">
+              <div className="text-[11px] font-bold text-blue-700">लंबित भुगतान</div>
+              <div className="text-xl font-black text-blue-900 font-mono mt-0.5">{countPendingLinks}</div>
+              <div className="text-[10px] text-blue-600">Pending 24h Timer</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200">
+              <div className="text-[11px] font-bold text-indigo-700">रसीद / UTR अपलोड</div>
+              <div className="text-xl font-black text-indigo-900 font-mono mt-0.5">{countSubmittedLinks}</div>
+              <div className="text-[10px] text-indigo-600">Slip Uploaded</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200">
+              <div className="text-[11px] font-bold text-emerald-700">सत्यापित / पूर्ण</div>
+              <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{countCompletedLinks}</div>
+              <div className="text-[10px] text-emerald-600">Completed & Settled</div>
+            </div>
+          </div>
+
+          {/* Quick Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            {[
+              { id: 'all', label: `सभी लिंक्स (${countTotalLinks})` },
+              { id: '50', label: `₹50 लिंक्स (${count50Links})` },
+              { id: '100', label: `₹100 लिंक्स (${count100Links})` },
+              { id: 'pending', label: `लंबित (${countPendingLinks})` },
+              { id: 'submitted', label: `स्लिप अपलोड (${countSubmittedLinks})` },
+              { id: 'completed', label: `सत्यापित (${countCompletedLinks})` },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setPhFilter(f.id as any)}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+                  phFilter === f.id
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Data Table */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="text-[11px] font-bold text-slate-500 border-b border-slate-200 bg-slate-50">
+                <tr>
+                  <th className="py-3 px-3.5">लिंक ID व प्रकार</th>
+                  <th className="py-3 px-3.5">हेल्प प्रदाता (Sender)</th>
+                  <th className="py-3 px-3.5">प्राप्तकर्ता (Beneficiary)</th>
+                  <th className="py-3 px-3.5">राशि व UPI ID</th>
+                  <th className="py-3 px-3.5">रसीद / UTR संख्या</th>
+                  <th className="py-3 px-3.5">स्थिति (Status)</th>
+                  <th className="py-3 px-3.5 text-right">एडमिन कार्यवाही (Actions)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {filteredProvideHelpLinks.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                      कोई प्रोवाइड हेल्प लिंक नहीं मिला।
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProvideHelpLinks.map((link) => {
+                    const cleanMobile = (link.senderMobile || '').replace(/\D/g, '');
+                    const waText = `*HELP150 प्रोवाइड हेल्प लिंक विवरण*\n\nनमस्ते ${link.senderName},\nआपको ${link.stepName} के तहत ₹${link.amount} की सहायता भेजने हेतु लिंक जारी किया गया है।\n\nप्राप्तकर्ता: ${link.receiverName}\nUPI ID: ${link.receiverUpi}\nमोबाइल: ${link.receiverMobile}\n\nकृपया समय रहते सहायता भेजकर UTR नंबर व स्लिप अपलोड करें।\nधन्यवाद, HELP150 Community`;
+                    const waUrl = `https://wa.me/91${cleanMobile.length === 10 ? cleanMobile : cleanMobile.slice(-10)}?text=${encodeURIComponent(waText)}`;
+                    const directLinkUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://help150.org'}/?action=help_link&id=${link.id}`;
+
+                    return (
+                      <tr key={link.id} className="hover:bg-slate-50/80 transition">
+                        {/* Link ID & Step */}
+                        <td className="py-3.5 px-3.5">
+                          <div className="font-mono font-black text-blue-600 text-xs flex items-center gap-1.5">
+                            <span>#{link.id}</span>
+                          </div>
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                              link.amount === 50
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : link.amount === 100
+                                ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            }`}>
+                              {link.stepName}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            {link.createdAt ? new Date(link.createdAt).toLocaleDateString('en-GB') : 'सक्रिय'}
+                          </div>
+                        </td>
+
+                        {/* Sender */}
+                        <td className="py-3.5 px-3.5">
+                          <div className="font-bold text-slate-900">{link.senderName}</div>
+                          <div className="text-[11px] font-mono font-semibold text-slate-600 flex items-center gap-1">
+                            <span>{link.senderUserId}</span>
+                          </div>
+                          {link.senderMobile && (
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                              <Phone className="h-3 w-3 text-slate-400 inline" />
+                              <span>{link.senderMobile}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Receiver */}
+                        <td className="py-3.5 px-3.5">
+                          <div className="font-bold text-emerald-700 flex items-center gap-1">
+                            <span>{link.receiverName}</span>
+                            {isAdminOrTestId(link.receiverUserId) && (
+                              <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[9px] font-bold uppercase">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] font-mono text-slate-600">{link.receiverUserId}</div>
+                          {link.receiverMobile && (
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                              📞 {link.receiverMobile}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Amount & UPI */}
+                        <td className="py-3.5 px-3.5">
+                          <div className="font-mono font-black text-slate-900 text-sm">
+                            ₹{link.amount}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="font-mono text-[11px] text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 truncate max-w-[130px]">
+                              {link.receiverUpi}
+                            </span>
+                            <button
+                              onClick={() => handleCopyText(link.receiverUpi, `ph_upi_${link.id}`)}
+                              className="p-1 hover:bg-slate-200 rounded text-slate-500"
+                              title="Copy UPI ID"
+                            >
+                              {copiedId === `ph_upi_${link.id}` ? (
+                                <Check className="h-3 w-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Proof & Slip */}
+                        <td className="py-3.5 px-3.5">
+                          {link.proofReference ? (
+                            <div>
+                              <div className="font-mono font-bold text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block">
+                                {link.proofReference}
+                              </div>
+                              {link.slipUrl && (
+                                <div className="mt-1">
+                                  <button
+                                    onClick={() => setSelectedPhSlip(link)}
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    <span>रसीद देखें (View Slip)</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">UTR प्रतीक्षित</span>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-3.5">
+                          {link.status === 'completed' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                              <span>सत्यापित (Completed)</span>
+                            </span>
+                          ) : link.status === 'submitted' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-300 animate-pulse">
+                              <Clock className="h-3 w-3 text-blue-600" />
+                              <span>समीक्षा प्रतीक्षित (Slip Uploaded)</span>
+                            </span>
+                          ) : link.status === 'rejected' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                              <X className="h-3 w-3 text-rose-600" />
+                              <span>अस्वीकृत (Rejected)</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                              <Clock className="h-3 w-3 text-amber-600" />
+                              <span>भुगतान लंबित (Pending)</span>
+                            </span>
+                          )}
+                          {link.deadlineTime && link.status === 'pending' && (
+                            <div className="text-[10px] text-slate-500 font-mono mt-1">
+                              शेष: <CountdownTimer targetDate={link.deadlineTime} />
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Admin Actions */}
+                        <td className="py-3.5 px-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {link.status !== 'completed' && (
+                              <button
+                                onClick={() => handleApprovePhLink(link.id)}
+                                disabled={isProcessing}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50"
+                                title="Approve and mark completed"
+                              >
+                                <Check className="h-3 w-3" />
+                                <span>स्वीकृत करें</span>
+                              </button>
+                            )}
+
+                            {link.senderMobile && (
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm inline-flex items-center justify-center"
+                                title="Send WhatsApp Details"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+
+                            <button
+                              onClick={() => handleCopyText(directLinkUrl, `copy_ph_${link.id}`)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 inline-flex items-center justify-center cursor-pointer"
+                              title="Copy Direct Link URL"
+                            >
+                              {copiedId === `copy_ph_${link.id}` ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* TAB 1: PROVIDE HELP LIST (Provide Help Queue)                             */}
@@ -1658,6 +2030,97 @@ export const MemberToMemberLinkBox: React.FC<MemberToMemberLinkBoxProps> = ({
               >
                 Approve & Mark Completed
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW PROVIDE HELP LINK SLIP MODAL */}
+      {selectedPhSlip && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-base font-black text-slate-900 font-heading">
+                  प्रोवाइड हेल्प भुगतान रसीद (Payment Slip)
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedPhSlip(null)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-500">लिंक ID:</span>
+                <span className="font-mono font-bold text-blue-600">#{selectedPhSlip.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">प्रकार:</span>
+                <span className="font-bold text-slate-800">{selectedPhSlip.stepName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">हेल्प प्रदाता (Sender):</span>
+                <span className="font-bold text-slate-900">{selectedPhSlip.senderName} ({selectedPhSlip.senderUserId})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">प्राप्तकर्ता (Beneficiary):</span>
+                <span className="font-bold text-emerald-700">{selectedPhSlip.receiverName} ({selectedPhSlip.receiverUserId})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">UPI ID:</span>
+                <span className="font-mono font-bold text-indigo-700">{selectedPhSlip.receiverUpi}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">राशि (Amount):</span>
+                <span className="font-mono font-black text-emerald-700 text-sm">₹{selectedPhSlip.amount}.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">UTR / Reference No:</span>
+                <span className="font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  {selectedPhSlip.proofReference || 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {selectedPhSlip.slipUrl ? (
+              <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-950 p-2 flex items-center justify-center max-h-80">
+                <img
+                  src={selectedPhSlip.slipUrl}
+                  alt="Payment Slip Proof"
+                  className="max-h-72 object-contain rounded-xl"
+                />
+              </div>
+            ) : (
+              <div className="p-6 text-center text-xs text-slate-400 border-2 border-dashed rounded-2xl">
+                रसीद की छवि अपलोड नहीं है। UTR संख्या: {selectedPhSlip.proofReference || 'उपलब्ध नहीं'}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setSelectedPhSlip(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                बंद करें
+              </button>
+              {selectedPhSlip.status !== 'completed' && (
+                <button
+                  onClick={() => {
+                    handleApprovePhLink(selectedPhSlip.id);
+                    setSelectedPhSlip(null);
+                  }}
+                  disabled={isProcessing}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>भुगतान स्वीकृत करें (Approve)</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

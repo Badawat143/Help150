@@ -403,3 +403,38 @@ export interface WebsiteSettings {
   termsContent: string;
   privacyContent: string;
 }
+
+export interface DispatchedProvideHelpLink {
+  id: string; // e.g. "LNK-50-784901" or "HP-150-784905"
+  source: 'cycle_step1' | 'cycle_step2' | 'p2p_request';
+  cycleId?: string;
+  stepName: string; // 'Step 1: ₹50 Verification Link' | 'Step 2: ₹100 Second Link' | 'Direct Help (₹150)'
+  stepTag: string; // '₹50' | '₹100' | '₹150'
+  amount: number; // 50, 100, 150
+  
+  // Sender (who gives help)
+  senderUserId: string;
+  senderName: string;
+  senderMobile: string;
+  senderEmail?: string;
+  senderUpi?: string;
+
+  // Receiver (beneficiary who receives help)
+  receiverUserId: string;
+  receiverName: string;
+  receiverMobile: string;
+  receiverEmail?: string;
+  receiverUpi: string;
+
+  // Link status & proof
+  status: 'pending' | 'submitted' | 'completed' | 'rejected';
+  rawStatus: string;
+  deadlineTime?: number;
+  timerDurationHours?: number;
+  proofReference?: string; // UTR
+  slipUrl?: string;
+  submittedAt?: string;
+  completedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}

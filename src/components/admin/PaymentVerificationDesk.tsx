@@ -44,8 +44,39 @@ export const PaymentVerificationDesk: React.FC<PaymentVerificationDeskProps> = (
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Combine standard P2P help requests and system cycle provide help links
+  const cycleLinksAsRequests: HelpRequest[] = db.getAllDispatchedProvideHelpLinks()
+    .filter((l) => l.source !== 'p2p_request')
+    .map((l) => ({
+      id: l.id,
+      userId: l.senderUserId,
+      userName: l.senderName,
+      userMobile: l.senderMobile,
+      userEmail: l.senderEmail || '',
+      userUpi: l.senderUpi || '',
+      amount: l.amount,
+      type: 'give_help',
+      status: (l.status === 'completed' ? 'COMPLETED' : l.status === 'submitted' ? 'SLIP_UPLOADED' : l.status === 'rejected' ? 'REJECTED' : 'PENDING') as any,
+      matchedWithUserId: l.receiverUserId,
+      matchedWithUserName: l.receiverName,
+      matchedWithUpi: l.receiverUpi,
+      matchedWithMobile: l.receiverMobile,
+      matchedWithEmail: l.receiverEmail || '',
+      proofReference: l.proofReference,
+      paymentSlipUrl: l.slipUrl,
+      paymentSlipUploadedAt: l.submittedAt,
+      proofSubmittedAt: l.submittedAt,
+      paymentVerifiedAt: l.completedAt,
+      slipReviewStatus: (l.status === 'completed' ? 'verified' : l.status === 'submitted' ? 'pending' : l.status === 'rejected' ? 'rejected' : undefined) as any,
+      adminApproved: l.status === 'completed',
+      timerStatus: 'running' as const,
+      createdAt: l.createdAt,
+    }));
+
+  const allCombinedRequests = [...helpRequests, ...cycleLinksAsRequests];
+
   // Filter help requests with slips or UTRs
-  const requestsWithSlips = helpRequests.filter(
+  const requestsWithSlips = allCombinedRequests.filter(
     (r) => r.paymentSlipUrl || r.proofReference || ['SLIP_UPLOADED', 'VERIFICATION_PENDING', 'proof_submitted', 'COMPLETED', 'completed'].includes(r.status)
   );
 

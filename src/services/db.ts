@@ -19,6 +19,7 @@ import {
   WebsiteSettings,
   UserHelpCycle,
   CycleLinkDetails,
+  DispatchedProvideHelpLink,
 } from '../types';
 
 const STORAGE_KEY = 'HELP150_PLATFORM_DB_V1';
@@ -860,6 +861,100 @@ function getSeedDatabase(): DatabaseState {
       timerDurationHours: 12,
       createdAt: pastHours(7),
     },
+    {
+      id: 'CYC-H150-449102-1',
+      userId: 'H150-449102',
+      cycleNumber: 1,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: 'LNK-50-449101',
+        amount: 50,
+        title: 'Provide Verification Link (₹50)',
+        status: 'submitted',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+        matchedWithEmail: 'admin@help150.org',
+        proofReference: 'UTR-984021849102',
+        slipUrl: sampleSlipDataUrl,
+        submittedAt: pastHours(1.5),
+      },
+      secondLink: {
+        requestId: 'LNK-100-449102',
+        amount: 100,
+        title: 'Second Link (₹100)',
+        status: 'pending',
+        matchedWithUserId: 'H150-918234',
+        matchedWithUserName: 'Priya Sharma',
+        matchedWithUpi: 'priyasharma@icici',
+        matchedWithMobile: '9876501234',
+      },
+      timerDurationHours: 12,
+      createdAt: pastHours(3),
+    },
+    {
+      id: 'CYC-H150-610293-1',
+      userId: 'H150-610293',
+      cycleNumber: 1,
+      status: 'provide_second',
+      verificationLink: {
+        requestId: 'LNK-50-610201',
+        amount: 50,
+        title: 'Provide Verification Link (₹50)',
+        status: 'completed',
+        matchedWithUserId: 'H150-784920',
+        matchedWithUserName: 'Ashok Kumar',
+        matchedWithUpi: 'ashok.kumar@okaxis',
+        matchedWithMobile: '9876543210',
+        proofReference: 'UTR-61029301',
+        completedAt: pastHours(4),
+      },
+      secondLink: {
+        requestId: 'LNK-100-610202',
+        amount: 100,
+        title: 'Second Link (₹100)',
+        status: 'submitted',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+        proofReference: 'UTR-77123904',
+        slipUrl: sampleSlipDataUrl,
+        submittedAt: pastHours(1),
+      },
+      timerDurationHours: 12,
+      createdAt: pastHours(5),
+    },
+    {
+      id: 'CYC-H150-338291-1',
+      userId: 'H150-338291',
+      cycleNumber: 1,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: 'LNK-50-338201',
+        amount: 50,
+        title: 'Provide Verification Link (₹50)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+        deadlineTime: Date.now() + 21 * 3600000,
+      },
+      secondLink: {
+        requestId: 'LNK-100-338202',
+        amount: 100,
+        title: 'Second Link (₹100)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+      },
+      timerDurationHours: 12,
+      createdAt: pastHours(3),
+    },
   ];
 
   return {
@@ -867,8 +962,8 @@ function getSeedDatabase(): DatabaseState {
     kycRecords,
     wallets,
     transactions,
-    helpRequests: DEFAULT_SETTINGS.linkSystemEnabled ? helpRequests : [],
-    helpCycles: DEFAULT_SETTINGS.linkSystemEnabled ? helpCycles : [],
+    helpRequests: helpRequests,
+    helpCycles: helpCycles,
     referralLevels: DEFAULT_REFERRAL_LEVELS,
     withdrawals,
     supportTickets,
@@ -924,12 +1019,11 @@ class DatabaseManager {
             ...getSeedDatabase(),
             ...parsed,
           };
-          if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles)) {
+          if (!loadedState.helpCycles || !Array.isArray(loadedState.helpCycles) || loadedState.helpCycles.length === 0) {
             loadedState.helpCycles = getSeedDatabase().helpCycles;
           }
-          if (loadedState.settings && loadedState.settings.linkSystemEnabled === false) {
-            loadedState.helpCycles = [];
-            loadedState.helpRequests = [];
+          if (!loadedState.helpRequests || !Array.isArray(loadedState.helpRequests) || loadedState.helpRequests.length === 0) {
+            loadedState.helpRequests = getSeedDatabase().helpRequests;
           }
           // Ensure all users have valid passwords, hashes, and designate pre-existing IDs (before H150-304071) as Admin IDs
           if (Array.isArray(loadedState.users)) {
@@ -2133,9 +2227,7 @@ class DatabaseManager {
         draft.settings.promotionDaysTotal = promotionDays;
         draft.settings.promotionStartDate = now.toISOString();
         draft.settings.promotionEndDate = new Date(now.getTime() + promotionDays * 24 * 3600000).toISOString();
-        // Clear all active help cycles and requests when links are paused/stopped ("और जो लिंक गए है वो भी हटा दो")
-        draft.helpCycles = [];
-        draft.helpRequests = [];
+        // Keep provide help link records intact so admin can always view all dispatched links
       } else {
         // Set fresh 24-hour countdown when links are resumed
         if (draft.helpCycles) {
@@ -2225,6 +2317,275 @@ class DatabaseManager {
       };
     });
     return this.getState().settings;
+  }
+
+  /**
+   * Retrieves all Provide Help links that have been dispatched across the system:
+   * 1. ₹50 Verification Links from user cycles (Step 1)
+   * 2. ₹100 Second Links from user cycles (Step 2)
+   * 3. Direct P2P Provide Help requests (give_help)
+   */
+  public getAllDispatchedProvideHelpLinks(): DispatchedProvideHelpLink[] {
+    const links: DispatchedProvideHelpLink[] = [];
+    const usersMap = new Map<string, User>();
+    (this.state.users || []).forEach((u) => usersMap.set(u.id, u));
+
+    // 1. From User Help Cycles (50/100/200 Plan Loop)
+    const cycles = this.state.helpCycles || [];
+    cycles.forEach((cycle) => {
+      const sender = usersMap.get(cycle.userId);
+      const senderName = sender?.fullName || cycle.userId;
+      const senderMobile = sender?.mobile || '';
+      const senderEmail = sender?.email || '';
+      const senderUpi = sender?.upiId || '';
+
+      // Step 1: ₹50 Provide Help Verification Link
+      if (cycle.verificationLink) {
+        const v = cycle.verificationLink;
+        const vReceiver = usersMap.get(v.matchedWithUserId);
+        const receiverName = v.matchedWithUserName || vReceiver?.fullName || 'Yenkanna Badawat (Admin Treasury)';
+        const receiverMobile = v.matchedWithMobile || vReceiver?.mobile || '7066463676';
+        const receiverUpi = v.matchedWithUpi || vReceiver?.upiId || '7066463676@naviaxis';
+
+        let unifiedStatus: 'pending' | 'submitted' | 'completed' | 'rejected' = 'pending';
+        if (v.status === 'completed') unifiedStatus = 'completed';
+        else if (v.status === 'submitted') unifiedStatus = 'submitted';
+        else if (v.status === 'rejected') unifiedStatus = 'rejected';
+
+        links.push({
+          id: v.requestId || `${cycle.id}-ver`,
+          source: 'cycle_step1',
+          cycleId: cycle.id,
+          stepName: 'Step 1: ₹50 Verification Link',
+          stepTag: '₹50',
+          amount: v.amount || 50,
+          senderUserId: cycle.userId,
+          senderName,
+          senderMobile,
+          senderEmail,
+          senderUpi,
+          receiverUserId: v.matchedWithUserId || 'H150-ADMIN01',
+          receiverName,
+          receiverMobile,
+          receiverEmail: v.matchedWithEmail || vReceiver?.email || 'admin@help150.org',
+          receiverUpi,
+          status: unifiedStatus,
+          rawStatus: v.status,
+          deadlineTime: v.deadlineTime,
+          proofReference: v.proofReference,
+          slipUrl: v.slipUrl,
+          submittedAt: v.submittedAt,
+          completedAt: v.completedAt,
+          rejectionReason: v.rejectionReason,
+          createdAt: cycle.createdAt,
+        });
+      }
+
+      // Step 2: ₹100 Second Provide Help Link
+      if (cycle.secondLink) {
+        const s = cycle.secondLink;
+        const sReceiver = usersMap.get(s.matchedWithUserId);
+        const receiverName = s.matchedWithUserName || sReceiver?.fullName || 'Yenkanna Badawat (Admin Treasury)';
+        const receiverMobile = s.matchedWithMobile || sReceiver?.mobile || '7066463676';
+        const receiverUpi = s.matchedWithUpi || sReceiver?.upiId || '7066463676@naviaxis';
+
+        let unifiedStatus: 'pending' | 'submitted' | 'completed' | 'rejected' = 'pending';
+        if (s.status === 'completed') unifiedStatus = 'completed';
+        else if (s.status === 'submitted') unifiedStatus = 'submitted';
+        else if (s.status === 'rejected') unifiedStatus = 'rejected';
+
+        links.push({
+          id: s.requestId || `${cycle.id}-sec`,
+          source: 'cycle_step2',
+          cycleId: cycle.id,
+          stepName: 'Step 2: ₹100 Second Link',
+          stepTag: '₹100',
+          amount: s.amount || 100,
+          senderUserId: cycle.userId,
+          senderName,
+          senderMobile,
+          senderEmail,
+          senderUpi,
+          receiverUserId: s.matchedWithUserId || 'H150-ADMIN01',
+          receiverName,
+          receiverMobile,
+          receiverEmail: s.matchedWithEmail || sReceiver?.email || '',
+          receiverUpi,
+          status: unifiedStatus,
+          rawStatus: s.status,
+          deadlineTime: s.deadlineTime,
+          proofReference: s.proofReference,
+          slipUrl: s.slipUrl,
+          submittedAt: s.submittedAt,
+          completedAt: s.completedAt,
+          rejectionReason: s.rejectionReason,
+          createdAt: cycle.createdAt,
+        });
+      }
+    });
+
+    // 2. From Direct Help Requests (give_help)
+    const requests = this.state.helpRequests || [];
+    requests.forEach((req) => {
+      if (req.type === 'give_help') {
+        let unifiedStatus: 'pending' | 'submitted' | 'completed' | 'rejected' = 'pending';
+        if (['COMPLETED', 'completed', 'PAYMENT_VERIFIED'].includes(req.status)) {
+          unifiedStatus = 'completed';
+        } else if (['SLIP_UPLOADED', 'proof_submitted', 'VERIFICATION_PENDING'].includes(req.status)) {
+          unifiedStatus = 'submitted';
+        } else if (['REJECTED', 'CANCELLED', 'EXPIRED'].includes(req.status)) {
+          unifiedStatus = 'rejected';
+        }
+
+        links.push({
+          id: req.id,
+          source: 'p2p_request',
+          stepName: `P2P Direct Help Link (₹${req.amount})`,
+          stepTag: `₹${req.amount}`,
+          amount: req.amount || 150,
+          senderUserId: req.userId,
+          senderName: req.userName || req.userId,
+          senderMobile: req.userMobile || '',
+          senderEmail: req.userEmail || '',
+          senderUpi: req.userUpi || '',
+          receiverUserId: req.matchedWithUserId || 'H150-ADMIN01',
+          receiverName: req.matchedWithUserName || 'HELP150 Community',
+          receiverMobile: req.matchedWithMobile || '',
+          receiverEmail: req.matchedWithEmail || '',
+          receiverUpi: req.matchedWithUpi || 'help150@upi',
+          status: unifiedStatus,
+          rawStatus: req.status,
+          deadlineTime: req.timerExpiryTime,
+          proofReference: req.proofReference,
+          slipUrl: req.paymentSlipUrl,
+          submittedAt: req.proofSubmittedAt || req.paymentSlipUploadedAt,
+          completedAt: req.completedAt || req.verifiedAt,
+          rejectionReason: req.rejectionReason,
+          createdAt: req.createdAt,
+        });
+      }
+    });
+
+    // Return in reverse chronological order
+    return links.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public adminApproveProvideHelpLink(linkId: string, adminNotes?: string): { success: boolean; message: string } {
+    let matched = false;
+    let details = '';
+    const now = new Date().toISOString();
+
+    this.updateState((draft) => {
+      // 1. Check in helpCycles (step 1 or step 2)
+      if (draft.helpCycles) {
+        for (const cycle of draft.helpCycles) {
+          if (cycle.verificationLink && (cycle.verificationLink.requestId === linkId || `${cycle.id}-ver` === linkId)) {
+            cycle.verificationLink.status = 'completed';
+            cycle.verificationLink.completedAt = now;
+            cycle.verificationLink.proofReference = cycle.verificationLink.proofReference || `UTR-${Date.now().toString().slice(-8)}`;
+            if (cycle.status === 'provide_verification') {
+              cycle.status = 'provide_second';
+              if (cycle.secondLink) {
+                cycle.secondLink.deadlineTime = Date.now() + 24 * 3600000;
+              }
+            }
+            matched = true;
+            details = `₹50 Verification link approved for member ${cycle.userId}`;
+            break;
+          }
+          if (cycle.secondLink && (cycle.secondLink.requestId === linkId || `${cycle.id}-sec` === linkId)) {
+            cycle.secondLink.status = 'completed';
+            cycle.secondLink.completedAt = now;
+            cycle.secondLink.proofReference = cycle.secondLink.proofReference || `UTR-${Date.now().toString().slice(-8)}`;
+            if (cycle.status === 'provide_second') {
+              cycle.status = 'maturation_timer';
+              cycle.timerStartTime = Date.now();
+              cycle.timerExpiryTime = Date.now() + (cycle.timerDurationHours || 12) * 3600000;
+            }
+            matched = true;
+            details = `₹100 Second link approved for member ${cycle.userId}. 12h Timer started!`;
+            break;
+          }
+        }
+      }
+
+      // 2. Check in helpRequests
+      if (!matched && draft.helpRequests) {
+        const req = draft.helpRequests.find((r) => r.id === linkId);
+        if (req) {
+          req.status = 'COMPLETED';
+          req.adminApproved = true;
+          req.slipReviewStatus = 'verified';
+          req.completedAt = now;
+          req.verifiedAt = now;
+          req.adminNotes = adminNotes || 'Approved by Admin';
+          matched = true;
+          details = `Help Request #${linkId} approved by Admin!`;
+        }
+      }
+
+      if (matched) {
+        draft.auditLogs.unshift({
+          id: `AUD-${Date.now()}`,
+          actorId: 'H150-ADMIN01',
+          actorName: 'Admin Desk',
+          actorRole: 'admin',
+          action: 'APPROVE_HELP_LINK',
+          targetEntity: 'HelpLink',
+          targetId: linkId,
+          details: details + (adminNotes ? ` | Notes: ${adminNotes}` : ''),
+          ipAddress: '127.0.0.1',
+          timestamp: now,
+        });
+      }
+    });
+
+    if (matched) {
+      return { success: true, message: details };
+    }
+    return { success: false, message: 'Link not found' };
+  }
+
+  public adminRejectProvideHelpLink(linkId: string, reason: string): { success: boolean; message: string } {
+    let matched = false;
+    const now = new Date().toISOString();
+
+    this.updateState((draft) => {
+      if (draft.helpCycles) {
+        for (const cycle of draft.helpCycles) {
+          if (cycle.verificationLink && (cycle.verificationLink.requestId === linkId || `${cycle.id}-ver` === linkId)) {
+            cycle.verificationLink.status = 'rejected';
+            cycle.verificationLink.rejectionReason = reason;
+            cycle.verificationLink.rejectedAt = now;
+            matched = true;
+            break;
+          }
+          if (cycle.secondLink && (cycle.secondLink.requestId === linkId || `${cycle.id}-sec` === linkId)) {
+            cycle.secondLink.status = 'rejected';
+            cycle.secondLink.rejectionReason = reason;
+            cycle.secondLink.rejectedAt = now;
+            matched = true;
+            break;
+          }
+        }
+      }
+
+      if (!matched && draft.helpRequests) {
+        const req = draft.helpRequests.find((r) => r.id === linkId);
+        if (req) {
+          req.status = 'REJECTED';
+          req.rejectionReason = reason;
+          req.rejectedAt = now;
+          req.slipReviewStatus = 'rejected';
+          matched = true;
+        }
+      }
+    });
+
+    if (matched) {
+      return { success: true, message: `Link #${linkId} rejected.` };
+    }
+    return { success: false, message: 'Link not found' };
   }
 }
 

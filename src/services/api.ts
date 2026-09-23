@@ -1117,7 +1117,20 @@ export const api = {
     const { adminActor, requestId, action, rejectionReason, notes } = params;
     const state = db.getState();
     const req = state.helpRequests.find((r) => r.id === requestId);
-    if (!req) return { success: false, error: 'Help request not found' };
+    if (!req) {
+      if (action === 'verify') {
+        const approveRes = db.adminApproveProvideHelpLink(requestId, notes || `Verified by Admin (${adminActor.name})`);
+        if (approveRes.success) {
+          return { success: true, data: { id: requestId } as any };
+        }
+      } else if (action === 'reject') {
+        const rejectRes = db.adminRejectProvideHelpLink(requestId, rejectionReason || 'Payment rejected by Admin');
+        if (rejectRes.success) {
+          return { success: true, data: { id: requestId } as any };
+        }
+      }
+      return { success: false, error: 'Help request not found' };
+    }
 
     if (action === 'verify') {
       return this.approveHelpRequest(adminActor, requestId, notes || 'Verified by Admin Payment Desk');

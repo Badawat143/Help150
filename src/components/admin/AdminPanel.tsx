@@ -230,10 +230,21 @@ export const AdminPanel: React.FC = () => {
     );
   }, [state.users]);
 
+  // All Dispatched Provide Help Links for Admin monitoring
+  const dispatchedProvideHelpLinks = useMemo(() => {
+    return db.getAllDispatchedProvideHelpLinks();
+  }, [state.helpCycles, state.helpRequests, state.users]);
+
   // Sidebar Menu Items matching the 22 items in image
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, hasArrow: false },
-    { id: 'member_link_box', label: 'Member-to-Member Link Box', icon: Send, hasArrow: true, badge: 'P2P' },
+    {
+      id: 'member_link_box',
+      label: 'भेजे गए प्रोवाइड हेल्प लिंक्स',
+      icon: Send,
+      hasArrow: true,
+      badge: dispatchedProvideHelpLinks.length > 0 ? `${dispatchedProvideHelpLinks.length} Links` : '0',
+    },
     { id: 'email_campaigns', label: 'Brevo Email Campaigns', icon: Mail, hasArrow: true, badge: 'Brevo' },
     { id: 'users', label: 'Users', icon: Users, hasArrow: true },
     {
@@ -1380,13 +1391,18 @@ export const AdminPanel: React.FC = () => {
               </h3>
 
               <div className="grid grid-cols-2 gap-2.5 pt-3">
-                {/* 0. Member-to-Member Send Link Box (Vibrant Gold & Blue Gradient) */}
+                {/* 0. Member-to-Member Send Link Box (Vibrant Emerald & Teal Gradient) */}
                 <button
                   onClick={() => handleQuickAction('member_link_box')}
-                  className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  className="col-span-2 p-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:brightness-105 text-slate-950 font-black text-xs flex items-center justify-between px-4 shadow-md shadow-emerald-500/20 transition cursor-pointer"
                 >
-                  <Send className="h-4 w-4 shrink-0 text-slate-950" />
-                  <span className="truncate uppercase tracking-wide">Member to Member Send Link Box</span>
+                  <div className="flex items-center gap-2">
+                    <Send className="h-4 w-4 shrink-0 text-slate-950" />
+                    <span className="truncate uppercase tracking-wide">भेजे गए प्रोवाइड हेल्प लिंक्स (Dispatched Links)</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-950 text-emerald-400 text-[10px] font-mono font-black shrink-0">
+                    {dispatchedProvideHelpLinks.length} Links
+                  </span>
                 </button>
 
                 {/* Brevo Email Campaigns (Vibrant Indigo & Blue Gradient) */}
@@ -1485,6 +1501,134 @@ export const AdminPanel: React.FC = () => {
                   <span className="truncate">Generate Report</span>
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* ===================================================================== */}
+          {/* 3.5 DEDICATED SECTION: भेजे गए प्रोवाइड हेल्प लिंक्स (DISPATCHED PROVIDE HELP LINKS) */}
+          {/* ===================================================================== */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-sm font-black">
+                  <Send className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 font-heading flex items-center gap-2">
+                    <span>भेजे गए प्रोवाइड हेल्प लिंक्स (Dispatched Provide Help Links)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                      {dispatchedProvideHelpLinks.length} Links
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    सभी सदस्यों को प्रेषित ₹50 वेरिफिकेशन व ₹100 सेकंड हेल्प लिंक्स की वास्तविक स्थिति व रसीद विवरण।
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveModal('member_link_box')}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                >
+                  <Send className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>सभी लिंक्स देखें व प्रबंधित करें (Manage All)</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Table of Latest Dispatched Provide Help Links */}
+            <div className="overflow-x-auto mt-3">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="text-[11px] font-bold text-slate-400 border-b border-slate-100 bg-slate-50/50">
+                  <tr>
+                    <th className="py-2.5 px-3">लिंक ID</th>
+                    <th className="py-2.5 px-3">प्रकार (Stage)</th>
+                    <th className="py-2.5 px-3">प्रदाता (Sender)</th>
+                    <th className="py-2.5 px-3">प्राप्तकर्ता (Beneficiary)</th>
+                    <th className="py-2.5 px-3">राशि</th>
+                    <th className="py-2.5 px-3">रसीद / UTR</th>
+                    <th className="py-2.5 px-3">स्थिति</th>
+                    <th className="py-2.5 px-3 text-right">कार्यवाही</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {dispatchedProvideHelpLinks.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                        वर्तमान में कोई प्रोवाइड हेल्प लिंक नहीं है।
+                      </td>
+                    </tr>
+                  ) : (
+                    dispatchedProvideHelpLinks.slice(0, 6).map((l) => (
+                      <tr key={l.id} className="hover:bg-slate-50/70 transition">
+                        <td className="py-3 px-3">
+                          <span className="font-mono font-bold text-blue-600">#{l.id}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            l.amount === 50
+                              ? 'bg-amber-100 text-amber-800'
+                              : l.amount === 100
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {l.stepName}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-bold text-slate-900">{l.senderName}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">{l.senderUserId}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-bold text-emerald-700">{l.receiverName}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">{l.receiverUpi}</div>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-black text-slate-900 text-sm">
+                          ₹{l.amount}
+                        </td>
+                        <td className="py-3 px-3">
+                          {l.proofReference ? (
+                            <span className="font-mono text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[11px]">
+                              {l.proofReference}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">प्रतीक्षित</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          {l.status === 'completed' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                              सत्यापित (Completed)
+                            </span>
+                          ) : l.status === 'submitted' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 animate-pulse">
+                              स्लिप अपलोड (Review)
+                            </span>
+                          ) : l.status === 'rejected' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
+                              अस्वीकृत
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
+                              लंबित (Pending)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => setActiveModal('member_link_box')}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] transition cursor-pointer"
+                          >
+                            विवरण देखें
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1928,6 +2072,7 @@ export const AdminPanel: React.FC = () => {
             <MemberToMemberLinkBox
               currentUser={currentUser || ({ id: 'ADMIN-1', fullName: 'Super Admin', role: 'admin' } as any)}
               onRefresh={refreshUserData}
+              initialTab="provide_help_links"
             />
           </div>
         </div>
