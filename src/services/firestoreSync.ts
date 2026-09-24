@@ -21,6 +21,30 @@ class FirestoreSyncService {
   private isInitialized = false;
   private unsubscribeListeners: (() => void)[] = [];
   private pollInterval: any = null;
+  private quotaCooldownUntil = 0;
+
+  public isQuotaExhaustedError(err: any): boolean {
+    const msg = String(err?.message || err?.code || err || '').toLowerCase();
+    return (
+      msg.includes('resource_exhausted') ||
+      msg.includes('resource-exhausted') ||
+      msg.includes('quota limit exceeded') ||
+      msg.includes('quota exceeded') ||
+      msg.includes('free daily write units') ||
+      msg.includes('free daily read units')
+    );
+  }
+
+  private handleQuotaExceeded(err: any): boolean {
+    if (this.isQuotaExhaustedError(err)) {
+      this.quotaCooldownUntil = Date.now() + 30 * 60 * 1000; // 30-min backoff
+      console.warn(
+        '⚠️ [Cloud Firestore] Daily write units quota limit reached for free tier. Pausing cloud writes. The application will continue operating smoothly via local state & full-stack server.'
+      );
+      return true;
+    }
+    return false;
+  }
 
   /**
    * Sync initial data to Firestore if not already present,
@@ -40,11 +64,13 @@ class FirestoreSyncService {
           db.updateState((draft) => {
             draft.settings = { ...draft.settings, ...(snap.data() as any) };
           });
-        } else {
+        } else if (Date.now() >= this.quotaCooldownUntil) {
           await setDoc(settingsDocRef, db.getState().settings);
         }
       } catch (err) {
-        console.warn('Firestore settings sync notice:', err);
+        if (!this.handleQuotaExceeded(err)) {
+          console.warn('Firestore settings sync notice:', err);
+        }
       }
 
       // 2. Real-time listener for ALL USERS (accessible to all devices for instant team downlines)
@@ -253,10 +279,12 @@ class FirestoreSyncService {
       // 8. Initial Fetch to immediately hydrate state
       await this.fetchAllFromCloud();
 
-      // 9. Background Polling Fallback (every 10 seconds to ensure consistency across any browser/network state)
+      // 9. Periodic Fetch Fallback (every 5 minutes to prevent excessive read quota usage while maintaining sync)
       this.pollInterval = setInterval(() => {
-        this.fetchAllFromCloud();
-      }, 10000);
+        if (Date.now() >= this.quotaCooldownUntil) {
+          this.fetchAllFromCloud();
+        }
+      }, 300000);
 
     } catch (e) {
       console.warn('Firestore sync initialization notice:', e);
@@ -267,6 +295,7 @@ class FirestoreSyncService {
    * One-time fetch of all users and records from Firestore
    */
   public async fetchAllFromCloud(): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const usersSnap = await getDocs(collection(firestoreDb, 'users'));
       if (!usersSnap.empty) {
@@ -359,7 +388,9 @@ class FirestoreSyncService {
         });
       }
     } catch (err) {
-      console.warn('Periodic cloud fetch note:', err);
+      if (!this.handleQuotaExceeded(err)) {
+        console.warn('Periodic cloud fetch note:', err);
+      }
     }
   }
 
@@ -367,6 +398,7 @@ class FirestoreSyncService {
    * Fetch a single user by ID directly from Firestore
    */
   public async fetchUserDirect(userId: string): Promise<User | null> {
+    if (Date.now() < this.quotaCooldownUntil) return null;
     try {
       const cleanId = userId.trim().toUpperCase();
       const docRef = doc(firestoreDb, 'users', cleanId);
@@ -410,7 +442,9 @@ class FirestoreSyncService {
         }
       }
     } catch (e) {
-      console.warn('Direct user lookup note:', e);
+      if (!this.handleQuotaExceeded(e)) {
+        console.warn('Direct user lookup note:', e);
+      }
     }
     return null;
   }
@@ -442,12 +476,15 @@ class FirestoreSyncService {
    * Save a Help Request to Firestore
    */
   public async syncHelpRequest(request: HelpRequest): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'helpRequests', request.id);
       const sanitized = this.sanitizeFirestorePayload(request);
       await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncHelpRequest notice (${request.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncHelpRequest notice (${request.id}):`, error);
+      }
     }
   }
 
@@ -455,11 +492,14 @@ class FirestoreSyncService {
    * Save a Transaction to Firestore
    */
   public async syncTransaction(transaction: Transaction): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'transactions', transaction.id);
       await setDoc(docRef, transaction, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncTransaction notice (${transaction.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncTransaction notice (${transaction.id}):`, error);
+      }
     }
   }
 
@@ -467,11 +507,14 @@ class FirestoreSyncService {
    * Save a User Profile to Firestore
    */
   public async syncUser(user: User): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'users', user.id);
       await setDoc(docRef, user, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncUser notice (${user.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncUser notice (${user.id}):`, error);
+      }
     }
   }
 
@@ -479,11 +522,14 @@ class FirestoreSyncService {
    * Save Wallet to Firestore
    */
   public async syncWallet(wallet: Wallet): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'wallets', wallet.userId);
       await setDoc(docRef, wallet, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncWallet notice (${wallet.userId}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncWallet notice (${wallet.userId}):`, error);
+      }
     }
   }
 
@@ -491,12 +537,15 @@ class FirestoreSyncService {
    * Save KYC Record to Firestore
    */
   public async syncKycRecord(kyc: KycRecord): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'kycRecords', kyc.id);
       const sanitized = this.sanitizeFirestorePayload(kyc);
       await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncKycRecord notice (${kyc.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncKycRecord notice (${kyc.id}):`, error);
+      }
     }
   }
 
@@ -504,11 +553,14 @@ class FirestoreSyncService {
    * Save Withdrawal Request to Firestore
    */
   public async syncWithdrawal(withdrawal: WithdrawalRequest): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'withdrawals', withdrawal.id);
       await setDoc(docRef, withdrawal, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncWithdrawal notice (${withdrawal.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncWithdrawal notice (${withdrawal.id}):`, error);
+      }
     }
   }
 
@@ -516,11 +568,14 @@ class FirestoreSyncService {
    * Save Notification to Firestore
    */
   public async syncNotification(notification: NotificationItem): Promise<void> {
+    if (Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'notifications', notification.id);
       await setDoc(docRef, notification, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncNotification notice (${notification.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncNotification notice (${notification.id}):`, error);
+      }
     }
   }
 
@@ -528,13 +583,15 @@ class FirestoreSyncService {
    * Save a User Help Cycle to Firestore
    */
   public async syncHelpCycle(cycle: any): Promise<void> {
-    if (!cycle || !cycle.id) return;
+    if (!cycle || !cycle.id || Date.now() < this.quotaCooldownUntil) return;
     try {
       const docRef = doc(firestoreDb, 'helpCycles', cycle.id);
       const sanitized = this.sanitizeFirestorePayload(cycle);
       await setDoc(docRef, sanitized, { merge: true });
     } catch (error) {
-      console.warn(`Firestore syncHelpCycle notice (${cycle.id}):`, error);
+      if (!this.handleQuotaExceeded(error)) {
+        console.warn(`Firestore syncHelpCycle notice (${cycle.id}):`, error);
+      }
     }
   }
 

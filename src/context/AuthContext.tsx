@@ -147,10 +147,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     hasAnyUpdate = true;
                   } else {
                     const local = draft.helpCycles[hcIdx];
-                    const serverVerDone = hc.verificationLink?.status === 'completed';
-                    const localVerDone = local.verificationLink?.status === 'completed';
-                    const serverSecDone = hc.secondLink?.status === 'completed';
-                    const localSecDone = local.secondLink?.status === 'completed';
+                    const serverVerDone = hc.verificationLink?.status === 'completed' || hc.verificationLink?.status === 'submitted';
+                    const localVerDone = local.verificationLink?.status === 'completed' || local.verificationLink?.status === 'submitted';
+                    const serverSecDone = hc.secondLink?.status === 'completed' || hc.secondLink?.status === 'submitted';
+                    const localSecDone = local.secondLink?.status === 'completed' || local.secondLink?.status === 'submitted';
 
                     const verReceiverChanged =
                       hc.verificationLink?.matchedWithUserId &&
@@ -197,7 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         secondLink: {
                           ...(local.secondLink || {}),
                           ...(hc.secondLink || {}),
-                          status: secFinalStatus,
+                          status: secFinalStatus === 'completed' ? 'completed' : 'pending',
+                          deadlineTime: hc.secondLink?.deadlineTime || local.secondLink?.deadlineTime || Date.now() + 24 * 3600000,
                         },
                         receiveLink: hc.receiveLink ? {
                           ...(local.receiveLink || {}),

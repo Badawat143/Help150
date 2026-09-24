@@ -114,6 +114,32 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser]);
 
+  // Handle direct WhatsApp / SMS Member Link URLs (?action=member_help_link&req=...&from=...&to=...&amt=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const reqId = urlParams.get('req');
+    const fromUser = urlParams.get('from');
+
+    if (action === 'member_help_link' || reqId) {
+      if (fromUser && (!currentUser || currentUser.id !== fromUser)) {
+        loginAs(fromUser.toUpperCase());
+      }
+      setActiveTab('dashboard');
+      setTimeout(() => {
+        const el = document.getElementById('box-provide-help') || document.getElementById('link-box-arrival-banner');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'animate-pulse');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400', 'animate-pulse');
+          }, 3500);
+        }
+      }, 700);
+    }
+  }, [currentUser, loginAs, setActiveTab]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
       {/* Mandatory Statutory Compliance Banner */}

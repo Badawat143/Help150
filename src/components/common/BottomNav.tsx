@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Users, Wallet, User as UserIcon, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { db } from '../../services/db';
 
 interface BottomNavProps {
   onOpenAdJunction?: () => void;
@@ -8,6 +9,33 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ onOpenAdJunction }) => {
   const { activeTab, setActiveTab, currentUser } = useAuth();
+
+  const hasActiveProvideLink = React.useMemo(() => {
+    if (!currentUser?.id) return false;
+    const cycle = db.getUserHelpCycle(currentUser.id);
+    const step1 = cycle?.verificationLink;
+    const step2 = cycle?.secondLink;
+    const isStep1Done = step1?.status === 'completed' || step1?.status === 'accepted';
+    const isStep2Done = step2?.status === 'completed' || step2?.status === 'accepted';
+    const isStep1Active =
+      !isStep1Done &&
+      cycle?.status !== 'maturation_timer' &&
+      cycle?.status !== 'receive_help' &&
+      cycle?.status !== 'completed';
+    const isStep2Active =
+      (isStep1Done || cycle?.status === 'provide_second') &&
+      !isStep2Done &&
+      cycle?.status !== 'maturation_timer' &&
+      cycle?.status !== 'receive_help' &&
+      cycle?.status !== 'completed';
+    const activeReq = (db.getState().helpRequests || []).find(
+      (r) =>
+        r.userId === currentUser.id &&
+        r.type === 'give_help' &&
+        ['PENDING', 'ACCEPTED', 'PAYMENT_PENDING', 'pending_match', 'matched'].includes(r.status)
+    );
+    return isStep1Active || isStep2Active || Boolean(activeReq);
+  }, [currentUser?.id, activeTab]);
 
   if (!currentUser) return null;
 
@@ -17,14 +45,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenAdJunction }) => {
         {/* 1. HOME */}
         <button
           onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 transition cursor-pointer relative ${
             activeTab === 'dashboard' || activeTab === 'home'
               ? 'text-blue-400'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Home className="h-5 w-5" />
-          <span className="text-[10px] font-bold tracking-tight mt-0.5">HOME</span>
+          <div className="relative">
+            <Home className="h-5 w-5" />
+            {hasActiveProvideLink && (
+              <span className="absolute -top-1.5 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-slate-950 animate-ping" />
+            )}
+            {hasActiveProvideLink && (
+              <span className="absolute -top-1.5 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-2 ring-slate-950">
+                !
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] font-bold tracking-tight mt-0.5 flex items-center gap-0.5">
+            HOME
+            {hasActiveProvideLink && <span className="text-[8px] text-amber-400 font-black">●लिंक</span>}
+          </span>
         </button>
 
         {/* 2. TEAM */}

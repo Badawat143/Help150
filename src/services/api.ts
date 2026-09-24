@@ -1362,6 +1362,14 @@ export const api = {
         });
       }
 
+      // Automatically unblock sender if blocked so they can view and pay link immediately
+      if (sender.status === 'blocked') {
+        sender.status = 'active';
+        delete (sender as any).blockedAt;
+        delete (sender as any).autoDeleteAt;
+        delete (sender as any).blockedReason;
+      }
+
       // CRITICAL: Synchronize sender's and receiver's UserHelpCycle so both users see the Link Boxes on all devices!
       if (!draft.helpCycles) draft.helpCycles = [];
       let senderCycle = draft.helpCycles.find((c) => c.userId === sender.id && c.status !== 'completed');
@@ -1387,7 +1395,7 @@ export const api = {
           matchedWithEmail: receiver?.email || '',
           deadlineTime: expiryTime,
         };
-      } else {
+      } else if (amount === 100) {
         // Step 2: ₹100 or Second Help Link
         senderCycle.secondLink = {
           requestId: assignedReqId,
@@ -1403,6 +1411,49 @@ export const api = {
         };
         if (senderCycle.verificationLink?.status === 'completed') {
           senderCycle.status = 'provide_second';
+        }
+      } else {
+        // Full ₹150 Link: Configure Step 1 first (or Step 2 if Step 1 is done)
+        if (senderCycle.verificationLink?.status !== 'completed') {
+          senderCycle.status = 'provide_verification';
+          senderCycle.verificationLink = {
+            requestId: assignedReqId,
+            amount: 50,
+            title: 'Provide Verification Link (₹50)',
+            status: 'pending',
+            matchedWithUserId: params.receiverUserId,
+            matchedWithUserName: receiverName,
+            matchedWithUpi: receiverUpi,
+            matchedWithMobile: receiverMobile,
+            matchedWithEmail: receiver?.email || '',
+            deadlineTime: expiryTime,
+          };
+          senderCycle.secondLink = {
+            requestId: `LNK-100-${Date.now().toString().slice(-6)}`,
+            amount: 100,
+            title: 'Second Link (₹100)',
+            status: 'pending',
+            matchedWithUserId: params.receiverUserId,
+            matchedWithUserName: receiverName,
+            matchedWithUpi: receiverUpi,
+            matchedWithMobile: receiverMobile,
+            matchedWithEmail: receiver?.email || '',
+            deadlineTime: expiryTime,
+          };
+        } else {
+          senderCycle.status = 'provide_second';
+          senderCycle.secondLink = {
+            requestId: assignedReqId,
+            amount: 100,
+            title: 'Second Link (₹100)',
+            status: 'pending',
+            matchedWithUserId: params.receiverUserId,
+            matchedWithUserName: receiverName,
+            matchedWithUpi: receiverUpi,
+            matchedWithMobile: receiverMobile,
+            matchedWithEmail: receiver?.email || '',
+            deadlineTime: expiryTime,
+          };
         }
       }
 

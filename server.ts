@@ -25,6 +25,19 @@ try {
   console.warn('[SERVER] Could not initialize Firestore:', e);
 }
 
+let serverFirestoreQuotaCooldown = 0;
+
+function isFirestoreQuotaError(err: any): boolean {
+  const msg = String(err?.message || err?.code || err || '').toLowerCase();
+  return (
+    msg.includes('resource_exhausted') ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('quota limit exceeded') ||
+    msg.includes('quota exceeded') ||
+    msg.includes('free daily write units')
+  );
+}
+
 // Ensure server data directory exists
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -304,10 +317,25 @@ function readDb() {
           }
         });
 
-        // Ensure status reflects Step 2 if Step 1 is done
-        if (c.verificationLink?.status === 'completed' && c.secondLink?.status !== 'completed' && c.status !== 'provide_second') {
+        // Auto-heal any submitted or paid verification link to completed so ₹50 box disappears & ₹100 box appears
+        if (c.verificationLink?.status === 'submitted') {
+          c.verificationLink.status = 'completed';
+          c.verificationLink.completedAt = c.verificationLink.completedAt || new Date().toISOString();
           c.status = 'provide_second';
           modified = true;
+        }
+
+        // Ensure status reflects Step 2 if Step 1 is done
+        if (c.verificationLink?.status === 'completed' && c.secondLink?.status !== 'completed') {
+          if (c.status !== 'provide_second') {
+            c.status = 'provide_second';
+            modified = true;
+          }
+          if (c.secondLink && c.secondLink.status !== 'completed') {
+            c.secondLink.status = 'pending';
+            c.secondLink.deadlineTime = c.secondLink.deadlineTime || Date.now() + 24 * 3600000;
+            modified = true;
+          }
         }
       });
 
@@ -411,6 +439,16 @@ function enforceServerPenalties() {
         activeCycle.status === 'provide_verification' &&
         activeCycle.verificationLink?.status === 'pending'
       ) {
+        // Skip penalty if slip uploaded or reference provided or status submitted
+        if (
+          activeCycle.verificationLink.slipUrl ||
+          activeCycle.verificationLink.proofReference ||
+          (activeCycle.verificationLink.status as string) === 'submitted' ||
+          (activeCycle.verificationLink.status as string) === 'completed'
+        ) {
+          continue;
+        }
+
         const deadline =
           activeCycle.verificationLink.deadlineTime ||
           new Date(activeCycle.createdAt).getTime() + 24 * 3600000;
@@ -983,10 +1021,10 @@ app.post('/api/sync/push', async (req, res) => {
         const idx = dbData.helpCycles.findIndex((x: any) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.cycleNumber === hc.cycleNumber));
         if (idx >= 0) {
           const old = dbData.helpCycles[idx];
-          const verStatus = (old.verificationLink?.status === 'completed' && hc.verificationLink?.status !== 'completed')
+          const verStatus = (old.verificationLink?.status === 'completed' || hc.verificationLink?.status === 'completed' || hc.verificationLink?.status === 'submitted')
             ? 'completed'
             : (hc.verificationLink?.status || old.verificationLink?.status || 'pending');
-          const secStatus = (old.secondLink?.status === 'completed' && hc.secondLink?.status !== 'completed')
+          const secStatus = (old.secondLink?.status === 'completed' || hc.secondLink?.status === 'completed')
             ? 'completed'
             : (hc.secondLink?.status || old.secondLink?.status || 'pending');
 
@@ -1037,35 +1075,44 @@ app.post('/api/sync/push', async (req, res) => {
     writeDb(dbData);
 
     if (serverFirestore) {
-      try {
-        if (Array.isArray(users)) {
-          for (const u of users) {
-            await setDoc(doc(serverFirestore, 'users', u.id), u, { merge: true });
-          }
-        }
-        if (wallets && typeof wallets === 'object') {
-          for (const uid of Object.keys(wallets)) {
-            await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
-          }
-        }
-        if (Array.isArray(helpRequests)) {
-          for (const hr of helpRequests) {
-            if (hr && hr.id) {
-              const cleanHr = sanitizeFirestorePayload(hr);
-              await setDoc(doc(serverFirestore, 'helpRequests', hr.id), cleanHr, { merge: true });
+      if (Date.now() < serverFirestoreQuotaCooldown) {
+        // Quota is exhausted, skip cloud push during cooldown; local server db.json is operational
+      } else {
+        try {
+          if (Array.isArray(users)) {
+            for (const u of users) {
+              await setDoc(doc(serverFirestore, 'users', u.id), u, { merge: true });
             }
           }
-        }
-        if (Array.isArray(helpCycles)) {
-          for (const hc of helpCycles) {
-            if (hc && hc.id) {
-              const cleanHc = sanitizeFirestorePayload(hc);
-              await setDoc(doc(serverFirestore, 'helpCycles', hc.id), cleanHc, { merge: true });
+          if (wallets && typeof wallets === 'object') {
+            for (const uid of Object.keys(wallets)) {
+              await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
             }
           }
+          if (Array.isArray(helpRequests)) {
+            for (const hr of helpRequests) {
+              if (hr && hr.id) {
+                const cleanHr = sanitizeFirestorePayload(hr);
+                await setDoc(doc(serverFirestore, 'helpRequests', hr.id), cleanHr, { merge: true });
+              }
+            }
+          }
+          if (Array.isArray(helpCycles)) {
+            for (const hc of helpCycles) {
+              if (hc && hc.id) {
+                const cleanHc = sanitizeFirestorePayload(hc);
+                await setDoc(doc(serverFirestore, 'helpCycles', hc.id), cleanHc, { merge: true });
+              }
+            }
+          }
+        } catch (fErr) {
+          if (isFirestoreQuotaError(fErr)) {
+            serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000; // 1 hour cooldown
+            console.warn('[SERVER PUSH] Cloud Firestore write quota limit reached. Pausing cloud push for 1 hour. Server JSON database is fully active.');
+          } else {
+            console.warn('[SERVER PUSH] Cloud Firestore sync warning:', fErr);
+          }
         }
-      } catch (fErr) {
-        console.warn('[SERVER PUSH] Cloud Firestore sync warning:', fErr);
       }
     }
 
@@ -1073,6 +1120,146 @@ app.post('/api/sync/push', async (req, res) => {
   } catch (err: any) {
     console.error('Push sync error:', err);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Dedicated Real-Time Endpoint: Submit Provide Help Link (₹50 or ₹100)
+app.post('/api/cycle/submit-provide', async (req, res) => {
+  try {
+    const { userId, linkType, proofRef, slipUrl } = req.body;
+    if (!userId || !linkType) {
+      return res.status(400).json({ success: false, message: 'userId and linkType are required' });
+    }
+
+    const dbData = readDb();
+    if (!dbData.helpCycles) dbData.helpCycles = [];
+
+    const cycle = dbData.helpCycles.find((c: any) => c.userId === userId && c.status !== 'completed');
+    if (!cycle) {
+      return res.status(404).json({ success: false, message: 'Active cycle not found for user' });
+    }
+
+    const now = new Date().toISOString();
+    const finalProof = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
+
+    if (linkType === 'verification') {
+      cycle.verificationLink.status = 'completed';
+      cycle.verificationLink.completedAt = now;
+      cycle.verificationLink.proofReference = finalProof;
+      if (slipUrl) cycle.verificationLink.slipUrl = slipUrl;
+      cycle.status = 'provide_second';
+
+      if (!cycle.secondLink) {
+        cycle.secondLink = {
+          requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+          amount: 100,
+          title: 'Second Link (₹100)',
+          status: 'pending',
+          matchedWithUserId: 'H150-ADMIN01',
+          matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+          matchedWithUpi: '7066463676@naviaxis',
+          matchedWithMobile: '7066463676',
+          deadlineTime: Date.now() + 24 * 3600000,
+        };
+      } else {
+        cycle.secondLink.status = 'pending';
+        cycle.secondLink.deadlineTime = cycle.secondLink.deadlineTime || Date.now() + 24 * 3600000;
+      }
+
+      // Update provider wallet
+      if (!dbData.wallets) dbData.wallets = {};
+      if (!dbData.wallets[userId]) {
+        dbData.wallets[userId] = { userId, availableBalance: 0, totalHelpedGiven: 0, totalHelpedReceived: 0 };
+      }
+      dbData.wallets[userId].totalHelpedGiven = (dbData.wallets[userId].totalHelpedGiven || 0) + 50;
+    } else if (linkType === 'second') {
+      cycle.secondLink.status = 'completed';
+      cycle.secondLink.completedAt = now;
+      cycle.secondLink.proofReference = finalProof;
+      if (slipUrl) cycle.secondLink.slipUrl = slipUrl;
+
+      cycle.status = 'maturation_timer';
+      cycle.timerStartTime = Date.now();
+      cycle.timerExpiryTime = Date.now() + 12 * 3600000;
+
+      if (!dbData.wallets) dbData.wallets = {};
+      if (!dbData.wallets[userId]) {
+        dbData.wallets[userId] = { userId, availableBalance: 0, totalHelpedGiven: 0, totalHelpedReceived: 0 };
+      }
+      dbData.wallets[userId].totalHelpedGiven = (dbData.wallets[userId].totalHelpedGiven || 0) + 100;
+    }
+
+    writeDb(dbData);
+
+    if (serverFirestore && Date.now() >= serverFirestoreQuotaCooldown) {
+      try {
+        const cleanCycle = sanitizeFirestorePayload(cycle);
+        await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+      } catch (fErr) {
+        if (isFirestoreQuotaError(fErr)) {
+          serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000;
+        }
+      }
+    }
+
+    return res.json({ success: true, cycle });
+  } catch (err: any) {
+    console.error('Cycle submit provide error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Dedicated Real-Time Endpoint: Accept Provide Help Link
+app.post('/api/cycle/accept-provide', async (req, res) => {
+  try {
+    const { userId, linkType } = req.body;
+    if (!userId || !linkType) {
+      return res.status(400).json({ success: false, message: 'userId and linkType are required' });
+    }
+
+    const dbData = readDb();
+    if (!dbData.helpCycles) dbData.helpCycles = [];
+
+    const cycle = dbData.helpCycles.find((c: any) => c.userId === userId && c.status !== 'completed');
+    if (!cycle) {
+      return res.status(404).json({ success: false, message: 'Active cycle not found for user' });
+    }
+
+    const now = new Date().toISOString();
+
+    if (linkType === 'verification') {
+      cycle.verificationLink.status = 'completed';
+      cycle.verificationLink.completedAt = now;
+      cycle.status = 'provide_second';
+      if (cycle.secondLink) {
+        cycle.secondLink.status = 'pending';
+        cycle.secondLink.deadlineTime = cycle.secondLink.deadlineTime || Date.now() + 24 * 3600000;
+      }
+    } else if (linkType === 'second') {
+      cycle.secondLink.status = 'completed';
+      cycle.secondLink.completedAt = now;
+      cycle.status = 'maturation_timer';
+      cycle.timerStartTime = Date.now();
+      cycle.timerExpiryTime = Date.now() + 12 * 3600000;
+    }
+
+    writeDb(dbData);
+
+    if (serverFirestore && Date.now() >= serverFirestoreQuotaCooldown) {
+      try {
+        const cleanCycle = sanitizeFirestorePayload(cycle);
+        await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+      } catch (fErr) {
+        if (isFirestoreQuotaError(fErr)) {
+          serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000;
+        }
+      }
+    }
+
+    return res.json({ success: true, cycle });
+  } catch (err: any) {
+    console.error('Cycle accept provide error:', err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 

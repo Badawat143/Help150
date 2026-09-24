@@ -21,6 +21,7 @@ import {
   CycleLinkDetails,
   DispatchedProvideHelpLink,
 } from '../types';
+import { firestoreSync } from './firestoreSync';
 
 const STORAGE_KEY = 'HELP150_PLATFORM_DB_V1';
 
@@ -1553,6 +1554,14 @@ class DatabaseManager {
         }
       }
 
+      // 2.5 Auto-transition submitted verification link to completed so ₹50 box disappears and ₹100 box appears
+      if (activeCycle.verificationLink?.status === 'submitted') {
+        activeCycle.verificationLink.status = 'completed';
+        activeCycle.verificationLink.completedAt = activeCycle.verificationLink.completedAt || new Date().toISOString();
+        activeCycle.status = 'provide_second';
+        changed = true;
+      }
+
       // 3. If Step 1 (₹50 verification) is completed, ALWAYS ensure Step 2 (₹100) is ready and active
       if (activeCycle.verificationLink?.status === 'completed' && activeCycle.secondLink?.status !== 'completed') {
         if (activeCycle.status !== 'provide_second') {
@@ -1699,47 +1708,194 @@ class DatabaseManager {
       return raw;
     };
 
+    const wallet = this.getOrCreateWallet(userId);
+
+    const adminReceiver = {
+      id: 'H150-ADMIN01',
+      fullName: 'Yenkanna Badawat (Admin Treasury)',
+      mobile: '7066463676',
+      email: 'admin@help150.org',
+      upi: '7066463676@naviaxis',
+      bankDetails: {
+        bankName: 'State Bank of India',
+        accountHolderName: 'Yenkanna Badawat',
+        accountNumber: '32103707641',
+        ifscCode: 'SBIN0003078',
+      },
+    };
+
     if (linkType === 'verification') {
-      cycle.verificationLink.status = 'submitted';
+      // Step 1 (₹50) is paid & accepted: ₹50 box disappears and ₹100 box appears immediately
+      cycle.verificationLink.status = 'completed';
+      cycle.verificationLink.completedAt = now;
       cycle.verificationLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
       cycle.verificationLink.slipUrl = cleanSlip(slipUrl, 50);
       cycle.verificationLink.submittedAt = now;
       delete cycle.verificationLink.rejectionReason;
       delete cycle.verificationLink.rejectedAt;
-      // Note: cycle.status remains 'provide_verification' until receiver accepts or rejects!
-      // This ensures the Provide Help link box does not disappear prematurely.
+      cycle.status = 'provide_second';
+
+      // Ensure Step 2 (₹100) is ready and active for the user
+      if (!cycle.secondLink) {
+        cycle.secondLink = {
+          requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+          amount: 100,
+          title: 'Second Link (₹100)',
+          status: 'pending',
+          matchedWithUserId: adminReceiver.id,
+          matchedWithUserName: adminReceiver.fullName,
+          matchedWithUpi: adminReceiver.upi,
+          matchedWithMobile: adminReceiver.mobile,
+          matchedWithEmail: adminReceiver.email,
+          matchedWithBankDetails: adminReceiver.bankDetails,
+          deadlineTime: Date.now() + 24 * 3600000,
+        };
+      } else {
+        if (!cycle.secondLink.matchedWithUserId) {
+          cycle.secondLink.matchedWithUserId = adminReceiver.id;
+          cycle.secondLink.matchedWithUserName = adminReceiver.fullName;
+          cycle.secondLink.matchedWithUpi = adminReceiver.upi;
+          cycle.secondLink.matchedWithMobile = adminReceiver.mobile;
+          cycle.secondLink.matchedWithEmail = adminReceiver.email;
+          cycle.secondLink.matchedWithBankDetails = adminReceiver.bankDetails;
+        }
+        if (!cycle.secondLink.requestId) {
+          cycle.secondLink.requestId = `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`;
+        }
+        cycle.secondLink.deadlineTime = cycle.secondLink.deadlineTime || Date.now() + 24 * 3600000;
+        if (cycle.secondLink.status !== 'completed') {
+          cycle.secondLink.status = 'pending';
+        }
+      }
+
+      // Update provider wallet
+      wallet.totalHelpedGiven += 50;
+      wallet.lastUpdated = now;
+
+      // Credit receiver
+      const receiverId = cycle.verificationLink.matchedWithUserId || 'H150-ADMIN01';
+      if (receiverId && receiverId !== 'H150-ADMIN01') {
+        const receiverWallet = this.getOrCreateWallet(receiverId);
+        receiverWallet.availableBalance += 50;
+        receiverWallet.totalHelpedReceived += 50;
+        receiverWallet.lastUpdated = now;
+      }
+
+      // Record transaction
+      this.state.transactions.unshift({
+        id: `TXN-PROV-50-${Date.now().toString().slice(-6)}`,
+        userId,
+        type: 'help_given',
+        amount: 50,
+        balanceAfter: wallet.availableBalance,
+        status: 'completed',
+        referenceId: cycle.verificationLink.requestId,
+        remarks: `₹50 Provide Help verified & accepted (Ref: ${proofRef || 'VERIFIED'})`,
+        senderUserId: userId,
+        receiverUserId: receiverId,
+        senderName: this.state.users.find((u) => u.id === userId)?.fullName || 'Member',
+        receiverName: cycle.verificationLink.matchedWithUserName || 'Receiver',
+        createdAt: now,
+      });
+
+      // Sync corresponding helpRequest status
+      const matchingReq = this.state.helpRequests.find(
+        (r) => r.userId === userId && r.amount === 50 && r.status !== 'COMPLETED'
+      );
+      if (matchingReq) {
+        matchingReq.status = 'COMPLETED';
+        matchingReq.completedAt = now;
+        matchingReq.adminApproved = true;
+      }
 
       this.state.notifications.unshift({
         id: `NOTIF-PROV-${Date.now().toString().slice(-6)}`,
         userId,
-        title: `Step 1 (₹50) Payment Slip Submitted`,
-        message: `Slip & UTR ${proofRef} submitted. Verification pending by receiver. The link box will remain until confirmed.`,
-        type: 'info',
+        title: `Step 1 (₹50) स्वीकृत व संपन्न!`,
+        message: `₹50 प्रोवाइड हेल्प स्वीकार हो गया है। अब ₹100 का हरा प्रोवाइड हेल्प लिंक बॉक्स सक्रिय हो चुका है।`,
+        type: 'success',
         isRead: false,
         createdAt: now,
       });
     } else if (linkType === 'second') {
-      cycle.secondLink.status = 'submitted';
+      // Step 2 (₹100) is paid & accepted: ₹100 box disappears and 12h timer starts
+      cycle.secondLink.status = 'completed';
+      cycle.secondLink.completedAt = now;
       cycle.secondLink.proofReference = proofRef || `UTR-${Date.now().toString().slice(-8)}`;
       cycle.secondLink.slipUrl = cleanSlip(slipUrl, 100);
       cycle.secondLink.submittedAt = now;
       delete cycle.secondLink.rejectionReason;
       delete cycle.secondLink.rejectedAt;
-      // Note: cycle.status remains 'provide_second' until receiver accepts or rejects!
-      // This ensures the Provide Help link box does not disappear prematurely.
+
+      // Both links completed -> 12-Hour Maturation Timer!
+      cycle.status = 'maturation_timer';
+      cycle.timerStartTime = Date.now();
+      cycle.timerExpiryTime = Date.now() + (cycle.timerDurationHours || 12) * 3600000;
+
+      // Update provider wallet
+      wallet.totalHelpedGiven += 100;
+      wallet.lastUpdated = now;
+
+      // Credit receiver
+      const receiverId = cycle.secondLink.matchedWithUserId || 'H150-ADMIN01';
+      if (receiverId && receiverId !== 'H150-ADMIN01') {
+        const receiverWallet = this.getOrCreateWallet(receiverId);
+        receiverWallet.availableBalance += 100;
+        receiverWallet.totalHelpedReceived += 100;
+        receiverWallet.lastUpdated = now;
+      }
+
+      // Record transaction
+      this.state.transactions.unshift({
+        id: `TXN-PROV-100-${Date.now().toString().slice(-6)}`,
+        userId,
+        type: 'help_given',
+        amount: 100,
+        balanceAfter: wallet.availableBalance,
+        status: 'completed',
+        referenceId: cycle.secondLink.requestId,
+        remarks: `₹100 Provide Help verified & accepted (Ref: ${proofRef || 'VERIFIED'})`,
+        senderUserId: userId,
+        receiverUserId: receiverId,
+        senderName: this.state.users.find((u) => u.id === userId)?.fullName || 'Member',
+        receiverName: cycle.secondLink.matchedWithUserName || 'Receiver',
+        createdAt: now,
+      });
+
+      // Sync corresponding helpRequest status
+      const matchingReq = this.state.helpRequests.find(
+        (r) => r.userId === userId && r.amount === 100 && r.status !== 'COMPLETED'
+      );
+      if (matchingReq) {
+        matchingReq.status = 'COMPLETED';
+        matchingReq.completedAt = now;
+        matchingReq.adminApproved = true;
+      }
 
       this.state.notifications.unshift({
         id: `NOTIF-PROV-${Date.now().toString().slice(-6)}`,
         userId,
-        title: `Step 2 (₹100) Payment Slip Submitted`,
-        message: `Slip & UTR ${proofRef} submitted. Verification pending by receiver. The link box will remain until confirmed.`,
-        type: 'info',
+        title: `Step 2 (₹100) स्वीकृत व संपन्न!`,
+        message: `₹100 प्रोवाइड हेल्प स्वीकार हो गया। 12-घंटे का टाइमर शुरू हो गया है।`,
+        type: 'success',
         isRead: false,
         createdAt: now,
       });
     }
 
     this.saveToStorage(this.state);
+    this.schedulePushToServer(true);
+
+    // Dedicated backend call for instant multi-device synchronization
+    if (typeof window !== 'undefined') {
+      fetch('/api/cycle/submit-provide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, linkType, proofRef, slipUrl }),
+      }).catch(() => {});
+    }
+
+    firestoreSync.syncHelpCycle(cycle);
     this.notifySubscribers();
     return cycle;
   }
@@ -1969,6 +2125,16 @@ class DatabaseManager {
 
     this.saveToStorage(this.state);
     this.schedulePushToServer(true);
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/cycle/accept-provide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, linkType }),
+      }).catch(() => {});
+    }
+
+    firestoreSync.syncHelpCycle(cycle);
     this.notifySubscribers();
     return cycle;
   }

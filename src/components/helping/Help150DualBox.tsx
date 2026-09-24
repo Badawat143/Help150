@@ -379,12 +379,12 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       if (type === 'verification') {
         setFeedback({
           type: 'success',
-          message: 'Step 1 (₹50) स्लिप व यूटीआर सबमिट हो गया! सत्यापन प्रतीक्षारत है। जब तक रिसीवर एक्सेप्ट या रिजेक्ट नहीं करता, लिंक बॉक्स सुरक्षित रहेगा।',
+          message: '✅ ₹50 प्रोवाइड हेल्प स्वीकार हो गया! 50/- का बॉक्स हट गया है और अब 100/- का हरा प्रोवाइड हेल्प लिंक बॉक्स सक्रिय हो गया है।',
         });
       } else {
         setFeedback({
           type: 'success',
-          message: 'Step 2 (₹100) स्लिप व यूटीआर सबमिट हो गया! सत्यापन प्रतीक्षारत है। जब तक रिसीवर एक्सेप्ट या रिजेक्ट नहीं करता, लिंक बॉक्स सुरक्षित रहेगा।',
+          message: '✅ ₹100 प्रोवाइड हेल्प स्वीकार हो गया! 100/- का बॉक्स हट गया है और 12-घंटे का टाइमर शुरू हो गया है।',
         });
       }
     } catch (err: any) {
@@ -584,17 +584,17 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
   // Receive link details
   const receiveLink = cycle.receiveLink;
 
-  const isStep1Done = step1?.status === 'completed';
-  const isStep2Done = step2?.status === 'completed';
+  const isStep1Done = step1?.status === 'completed' || step1?.status === 'accepted';
+  const isStep2Done = step2?.status === 'completed' || step2?.status === 'accepted';
 
   // Promotion is OVER. The helping links system is LIVE for all members across all devices.
   const isLinkSystemLive = true;
 
-  // Step 1 (₹50 verification) is active when not yet completed
-  const isStep1Active = !isStep1Done;
+  // Step 1 (₹50 verification) is active ONLY when not yet completed
+  const isStep1Active = !isStep1Done && cycle.status !== 'maturation_timer' && cycle.status !== 'receive_help' && cycle.status !== 'completed';
 
-  // Step 2 (₹100 second link) is active whenever Step 1 (₹50) is completed and Step 2 is pending
-  const isStep2Active = isStep1Done && !isStep2Done;
+  // Step 2 (₹100 second link) is active whenever Step 1 (₹50) is completed and Step 2 is not completed
+  const isStep2Active = (isStep1Done || cycle.status === 'provide_second') && !isStep2Done && cycle.status !== 'maturation_timer' && cycle.status !== 'receive_help' && cycle.status !== 'completed';
   const isTimerActive = cycle.status === 'maturation_timer';
   const isReceiveActive = cycle.status === 'receive_help';
   const isPaused = false;
@@ -608,24 +608,34 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
     upi: '7066463676@naviaxis',
   };
 
-  // Active Provide Beneficiary based on current step
+  // Active Provide Beneficiary based on current step (also check active outgoing helpRequests)
+  const activeOutgoingHelpReq = useMemo(() => {
+    const all = db.getState().helpRequests || [];
+    return all.find(
+      (r) =>
+        r.userId === currentUser.id &&
+        r.type === 'give_help' &&
+        !['COMPLETED', 'completed', 'cancelled', 'EXPIRED'].includes(r.status)
+    );
+  }, [currentUser.id, db.getState().helpRequests]);
+
   const activeProvideBeneficiary = isStep1Active
     ? {
-        name: step1?.matchedWithUserName || adminDefaultBeneficiary.name,
-        id: step1?.matchedWithUserId || adminDefaultBeneficiary.id,
-        mobile: step1?.matchedWithMobile || adminDefaultBeneficiary.mobile,
-        email: step1?.matchedWithEmail || adminDefaultBeneficiary.email,
-        upi: step1?.matchedWithUpi || adminDefaultBeneficiary.upi,
+        name: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount <= 50 ? activeOutgoingHelpReq.matchedWithUserName : null) || step1?.matchedWithUserName || activeOutgoingHelpReq?.matchedWithUserName || adminDefaultBeneficiary.name,
+        id: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount <= 50 ? activeOutgoingHelpReq.matchedWithUserId : null) || step1?.matchedWithUserId || activeOutgoingHelpReq?.matchedWithUserId || adminDefaultBeneficiary.id,
+        mobile: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount <= 50 ? activeOutgoingHelpReq.matchedWithMobile : null) || step1?.matchedWithMobile || activeOutgoingHelpReq?.matchedWithMobile || adminDefaultBeneficiary.mobile,
+        email: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount <= 50 ? activeOutgoingHelpReq.matchedWithEmail : null) || step1?.matchedWithEmail || activeOutgoingHelpReq?.matchedWithEmail || adminDefaultBeneficiary.email,
+        upi: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount <= 50 ? activeOutgoingHelpReq.matchedWithUpi : null) || step1?.matchedWithUpi || activeOutgoingHelpReq?.matchedWithUpi || adminDefaultBeneficiary.upi,
         amount: 50,
         title: 'Step 1: ₹50 First Help Link (Verification)',
         type: 'verification' as const,
       }
     : {
-        name: step2?.matchedWithUserName || adminDefaultBeneficiary.name,
-        id: step2?.matchedWithUserId || adminDefaultBeneficiary.id,
-        mobile: step2?.matchedWithMobile || adminDefaultBeneficiary.mobile,
-        email: step2?.matchedWithEmail || adminDefaultBeneficiary.email,
-        upi: step2?.matchedWithUpi || adminDefaultBeneficiary.upi,
+        name: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount > 50 ? activeOutgoingHelpReq.matchedWithUserName : null) || step2?.matchedWithUserName || activeOutgoingHelpReq?.matchedWithUserName || adminDefaultBeneficiary.name,
+        id: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount > 50 ? activeOutgoingHelpReq.matchedWithUserId : null) || step2?.matchedWithUserId || activeOutgoingHelpReq?.matchedWithUserId || adminDefaultBeneficiary.id,
+        mobile: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount > 50 ? activeOutgoingHelpReq.matchedWithMobile : null) || step2?.matchedWithMobile || activeOutgoingHelpReq?.matchedWithMobile || adminDefaultBeneficiary.mobile,
+        email: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount > 50 ? activeOutgoingHelpReq.matchedWithEmail : null) || step2?.matchedWithEmail || activeOutgoingHelpReq?.matchedWithEmail || adminDefaultBeneficiary.email,
+        upi: (activeOutgoingHelpReq?.amount && activeOutgoingHelpReq.amount > 50 ? activeOutgoingHelpReq.matchedWithUpi : null) || step2?.matchedWithUpi || activeOutgoingHelpReq?.matchedWithUpi || adminDefaultBeneficiary.upi,
         amount: 100,
         title: 'Step 2: ₹100 Second Help Link',
         type: 'second' as const,
@@ -875,27 +885,43 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
       {/* THE TWO MAIN BOXES GRID (ALWAYS DISPLAYED ON DASHBOARD) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start">
         {/* ========================================================================= */}
-        {/* 🟣 PROVIDE HELP BOX (EXACT MATCH TO TIMER MINUTE BOX: FUCHSIA/PURPLE)     */}
+        {/* 🟣/🟢 PROVIDE HELP BOX (Step 1: Fuchsia/Purple | Step 2 ₹100: VIBRANT GREEN) */}
         {/* ========================================================================= */}
         <div
           id="box-provide-help"
-          className="rounded-2xl bg-gradient-to-b from-fuchsia-600 via-purple-600 to-purple-950 border-2 border-fuchsia-400/90 shadow-xl shadow-purple-950/40 p-3.5 sm:p-4 h-fit relative overflow-hidden group hover:border-fuchsia-300 transition-all text-white"
+          className={`rounded-2xl border-2 p-3.5 sm:p-4 h-fit relative overflow-hidden group transition-all text-white ${
+            isStep2Active
+              ? 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-950 border-emerald-400 shadow-2xl shadow-emerald-950/60 hover:border-emerald-300 ring-2 ring-emerald-400/50'
+              : 'bg-gradient-to-b from-fuchsia-600 via-purple-600 to-purple-950 border-fuchsia-400/90 shadow-xl shadow-purple-950/40 hover:border-fuchsia-300'
+          }`}
         >
           {/* Decorative glowing ambient */}
-          <div className="absolute top-0 right-0 h-28 w-28 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className={`absolute top-0 right-0 h-28 w-28 rounded-full blur-2xl pointer-events-none ${
+            isStep2Active ? 'bg-emerald-400/20' : 'bg-white/10'
+          }`} />
 
           <div className="relative z-10 space-y-2.5">
-            {/* Header: 🔥 PROVIDE HELP (Exact Minute Timer Match) */}
-            <div className="flex flex-wrap items-center justify-between border-b border-fuchsia-400/30 pb-2 gap-2">
+            {/* Header: PROVIDE HELP (Step 1 vs Step 2 ₹100 Green Link) */}
+            <div className={`flex flex-wrap items-center justify-between border-b pb-2 gap-2 ${
+              isStep2Active ? 'border-emerald-400/30' : 'border-fuchsia-400/30'
+            }`}>
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 border-2 border-white shadow-md shadow-purple-900/50">
+                <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border-2 border-white shadow-md ${
+                  isStep2Active
+                    ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-green-700 shadow-emerald-900/50'
+                    : 'bg-gradient-to-r from-fuchsia-500 via-purple-600 to-purple-700 shadow-purple-900/50'
+                }`}>
                   <span className="text-sm">🔥</span>
                   <h3 className="text-xs sm:text-sm font-black text-white font-heading uppercase tracking-wider">
-                    PROVIDE HELP
+                    {isStep2Active ? 'PROVIDE HELP (₹100)' : 'PROVIDE HELP'}
                   </h3>
                 </div>
-                <span className="text-[11px] font-black text-fuchsia-200">
-                  {isStep1Active ? 'Step 1' : isStep2Active ? 'Step 2' : ''}
+                <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${
+                  isStep2Active
+                    ? 'text-emerald-100 bg-emerald-900/90 border-emerald-300'
+                    : 'text-fuchsia-200 bg-purple-950/80 border-fuchsia-400/50'
+                }`}>
+                  {isStep2Active ? 'Step 2: ₹100 सेकंड लिंक (हरा बॉक्स)' : isStep1Active ? 'Step 1: ₹50' : ''}
                 </span>
 
                 {/* 🚦 Signal for current active link (₹50 or ₹100) */}
@@ -906,7 +932,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
               <div className="flex items-center gap-2">
                 {/* Live Countdown Timer Badge */}
                 {(isStep1Active || isStep2Active) && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/80 border border-fuchsia-400/60 text-amber-300 font-mono font-bold text-[10px] shadow-sm">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-mono font-bold text-[10px] shadow-sm ${
+                    isStep2Active
+                      ? 'bg-emerald-950/90 border-emerald-400/60 text-emerald-200'
+                      : 'bg-purple-950/80 border-fuchsia-400/60 text-amber-300'
+                  }`}>
                     <Clock className="h-3 w-3 animate-pulse text-amber-400" />
                     <span>{isStep1Active ? timerStep1String : '11:59:59'}</span>
                   </span>
@@ -914,12 +944,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase font-mono shadow-sm border ${
                   isReceiveActive
                     ? 'bg-amber-400 text-slate-950 border-amber-300'
+                    : isStep2Active
+                    ? 'bg-emerald-300 text-slate-950 border-white font-black'
                     : 'bg-emerald-400 text-slate-950 border-emerald-300 font-black'
                 }`}>
                   {isStep1Active
                     ? '₹50'
                     : isStep2Active
-                    ? '₹100'
+                    ? '₹100 (हरा बॉक्स)'
                     : isTimerActive
                     ? '12h'
                     : '🔒 ₹50'}
@@ -928,7 +960,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
             </div>
 
             {/* 💡 Provide Help Rule Summary: Kitna Provide Help Karna Hai */}
-            <div className="flex items-center justify-between p-2 rounded-xl bg-purple-950/90 border border-fuchsia-400/50 text-[11px] font-semibold text-fuchsia-100 shadow-sm">
+            <div className={`flex items-center justify-between p-2 rounded-xl text-[11px] font-semibold shadow-sm border ${
+              isStep2Active
+                ? 'bg-emerald-950/90 border-emerald-400/50 text-emerald-100'
+                : 'bg-purple-950/90 border-fuchsia-400/50 text-fuchsia-100'
+            }`}>
               <div className="flex items-center gap-1.5">
                 <span className="text-amber-300 font-bold text-xs">📢 प्रोवाइड हेल्प:</span>
                 <span>कुल <strong>₹150</strong> देना है</span>
@@ -941,36 +977,64 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                     ? 'text-amber-300 border-amber-400/50 bg-purple-900/80 font-bold animate-pulse'
                     : 'text-slate-400 border-slate-700 bg-black/40'
                 }`}>
-                  1. ₹50 {isStep1Done ? '✅' : '⏳'}
+                  1. ₹50 {isStep1Done ? '✅ (Done)' : '⏳'}
                 </span>
                 <span className="text-slate-400">•</span>
                 <span className={`px-1.5 py-0.5 rounded border ${
                   isStep2Done
                     ? 'text-emerald-300 border-emerald-400/40 bg-emerald-950/60 font-bold'
                     : isStep2Active
-                    ? 'text-amber-300 border-amber-400/50 bg-purple-900/80 font-bold animate-pulse'
+                    ? 'text-emerald-300 border-emerald-300 bg-emerald-900 font-black animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                     : 'text-slate-400 border-slate-700 bg-black/40'
                 }`}>
-                  2. ₹100 {isStep2Done ? '✅' : isStep2Active ? '⏳' : '🔒'}
+                  2. ₹100 {isStep2Done ? '✅' : isStep2Active ? '⏳ (सक्रिय हरा बॉक्स)' : '🔒'}
                 </span>
               </div>
             </div>
 
+            {/* 🔔 VIBRANT LINK ARRIVAL SIGNAL BANNER */}
+            {(isStep1Active || isStep2Active) && (
+              <div className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 px-3 py-2 rounded-xl shadow-lg flex items-center justify-between gap-2 border border-yellow-200 animate-pulse font-bold text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="flex h-2.5 w-2.5 relative shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                  </span>
+                  <span>🔔 लिंक आ चुका है! तुरंत ₹{activeProvideBeneficiary.amount} का भुगतान करें</span>
+                </div>
+                <span className="bg-slate-950 text-amber-300 font-mono text-[10px] px-2 py-0.5 rounded font-black shrink-0">
+                  {timerStep1String}
+                </span>
+              </div>
+            )}
+
             {/* A. SCENARIO 1: STEP 1 (₹50) OR STEP 2 (₹100) ACTIVE (TIGHT TO SLIP UPLOAD BUTTON) */}
             {(isStep1Active || isStep2Active) && (
-              <div className="bg-purple-950/60 border border-fuchsia-400/40 rounded-xl p-2.5 space-y-2 shadow-inner backdrop-blur-xs">
+              <div className={`rounded-xl p-2.5 space-y-2 shadow-inner backdrop-blur-xs border ${
+                isStep2Active
+                  ? 'bg-emerald-950/70 border-emerald-400/50 shadow-emerald-950/60'
+                  : 'bg-purple-950/60 border-fuchsia-400/40'
+              }`}>
                 {/* Row 1: Beneficiary Name & ID + Amount */}
-                <div className="flex items-center justify-between text-xs pb-1 border-b border-fuchsia-400/30">
+                <div className={`flex items-center justify-between text-xs pb-1 border-b ${
+                  isStep2Active ? 'border-emerald-400/30' : 'border-fuchsia-400/30'
+                }`}>
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="font-bold text-white text-xs sm:text-sm truncate">
                       {activeProvideBeneficiary.name}
                     </span>
-                    <span className="font-mono text-[9px] text-fuchsia-200 bg-purple-900/80 px-1.5 py-0.5 rounded font-bold shrink-0 border border-fuchsia-400/50">
+                    <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 border ${
+                      isStep2Active
+                        ? 'text-emerald-200 bg-emerald-900/80 border-emerald-400/50'
+                        : 'text-fuchsia-200 bg-purple-900/80 border-fuchsia-400/50'
+                    }`}>
                       {activeProvideBeneficiary.id}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-emerald-300 font-bold uppercase">Amount:</span>
+                    <span className="text-[10px] text-emerald-300 font-bold uppercase">
+                      {isStep2Active ? '₹100 हरा लिंक:' : 'Amount:'}
+                    </span>
                     <span className="font-mono font-black text-xs sm:text-sm text-emerald-300 bg-black/50 px-2 py-0.5 rounded border border-emerald-400/60">
                       ₹{activeProvideBeneficiary.amount}
                     </span>
@@ -980,14 +1044,22 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                 {/* Row 2: Mobile & UPI with 1-click Copy and QR */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
                   {/* Mobile with Copy */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-900/50 border border-purple-400/40">
-                    <div className="flex items-center gap-1 text-purple-200 truncate">
-                      <Phone className="h-3 w-3 text-purple-300 shrink-0" />
+                  <div className={`flex items-center justify-between p-1.5 rounded-lg border ${
+                    isStep2Active
+                      ? 'bg-emerald-900/50 border-emerald-400/40'
+                      : 'bg-purple-900/50 border-purple-400/40'
+                  }`}>
+                    <div className={`flex items-center gap-1 truncate ${
+                      isStep2Active ? 'text-emerald-200' : 'text-purple-200'
+                    }`}>
+                      <Phone className={`h-3 w-3 shrink-0 ${isStep2Active ? 'text-emerald-300' : 'text-purple-300'}`} />
                       <span className="font-mono font-bold text-white truncate text-[11px]">{activeProvideBeneficiary.mobile}</span>
                     </div>
                     <button
                       onClick={() => handleCopyText(activeProvideBeneficiary.mobile, 'mobile', 'Mobile')}
-                      className="p-1 rounded bg-purple-700 hover:bg-purple-600 text-white transition cursor-pointer text-[10px]"
+                      className={`p-1 rounded text-white transition cursor-pointer text-[10px] ${
+                        isStep2Active ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-purple-700 hover:bg-purple-600'
+                      }`}
                       title="Copy Mobile"
                     >
                       {copiedKey === 'mobile' ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
@@ -995,15 +1067,25 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                   </div>
 
                   {/* UPI ID with Copy & QR */}
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-purple-900/50 border border-purple-400/40">
-                    <div className="flex items-center gap-1 text-purple-200 truncate">
-                      <CreditCard className="h-3 w-3 text-purple-300 shrink-0" />
+                  <div className={`flex items-center justify-between p-1.5 rounded-lg border ${
+                    isStep2Active
+                      ? 'bg-emerald-900/50 border-emerald-400/40'
+                      : 'bg-purple-900/50 border-purple-400/40'
+                  }`}>
+                    <div className={`flex items-center gap-1 truncate ${
+                      isStep2Active ? 'text-emerald-200' : 'text-purple-200'
+                    }`}>
+                      <CreditCard className={`h-3 w-3 shrink-0 ${isStep2Active ? 'text-emerald-300' : 'text-purple-300'}`} />
                       <span className="font-mono font-bold text-white truncate text-[11px]">{activeProvideBeneficiary.upi}</span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleCopyText(activeProvideBeneficiary.upi, 'upi', 'UPI ID')}
-                        className="px-1.5 py-0.5 rounded bg-white text-purple-950 font-black text-[9px] cursor-pointer hover:bg-purple-100"
+                        className={`px-1.5 py-0.5 rounded font-black text-[9px] cursor-pointer ${
+                          isStep2Active
+                            ? 'bg-white text-emerald-950 hover:bg-emerald-100'
+                            : 'bg-white text-purple-950 hover:bg-purple-100'
+                        }`}
                         title="Copy UPI"
                       >
                         {copiedKey === 'upi' ? '✓' : 'Copy'}
@@ -1015,7 +1097,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                           amount: activeProvideBeneficiary.amount,
                           title: activeProvideBeneficiary.title,
                         })}
-                        className="p-1 rounded bg-purple-900 hover:bg-purple-800 text-fuchsia-200 border border-fuchsia-400/50 cursor-pointer"
+                        className={`p-1 rounded cursor-pointer border ${
+                          isStep2Active
+                            ? 'bg-emerald-900 hover:bg-emerald-800 text-emerald-200 border-emerald-400/50'
+                            : 'bg-purple-900 hover:bg-purple-800 text-fuchsia-200 border-fuchsia-400/50'
+                        }`}
                         title="Scan QR Code"
                       >
                         <QrCode className="h-3 w-3" />
@@ -1182,12 +1268,14 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         className={`flex-1 py-1.5 px-2 rounded-lg font-black text-xs shadow transition flex items-center justify-center gap-1.5 cursor-pointer ${
                           isCurrentLinkSlipUploaded
                             ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400'
+                            : isStep2Active
+                            ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black border border-white shadow-[0_0_12px_rgba(16,185,129,0.6)]'
                             : 'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-purple-800 hover:from-fuchsia-500 hover:to-purple-700 text-white'
                         }`}
                         title="स्लिप अपलोड मोडल खोलें"
                       >
                         <UploadCloud className="h-3.5 w-3.5" />
-                        <span>Upload Slip (₹{activeProvideBeneficiary.amount})</span>
+                        <span>Upload Slip ({isStep2Active ? '₹100 हरा लिंक' : `₹${activeProvideBeneficiary.amount}`})</span>
                         <span
                           className={`h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-black border ${
                             isCurrentLinkSlipUploaded
@@ -1201,7 +1289,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                       </button>
                       <button
                         onClick={() => inlineFileInputRef.current?.click()}
-                        className="py-1.5 px-2 rounded-lg bg-purple-900/80 hover:bg-purple-800 text-emerald-300 border border-emerald-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        className={`py-1.5 px-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer border ${
+                          isStep2Active
+                            ? 'bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 border-emerald-400/50'
+                            : 'bg-purple-900/80 hover:bg-purple-800 text-emerald-300 border border-emerald-500/50'
+                        }`}
                         title="सीधे डिवाइस से स्लिप चुनें"
                       >
                         <Paperclip className="h-3.5 w-3.5" />
@@ -1216,7 +1308,11 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                             title: activeProvideBeneficiary.title,
                           })
                         }
-                        className="py-1.5 px-2 rounded-lg bg-purple-900/80 hover:bg-purple-800 text-amber-300 border border-fuchsia-500/50 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        className={`py-1.5 px-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer border ${
+                          isStep2Active
+                            ? 'bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 border-emerald-400/50'
+                            : 'bg-purple-900/80 hover:bg-purple-800 text-amber-300 border border-fuchsia-500/50'
+                        }`}
                       >
                         <QrCode className="h-3.5 w-3.5" />
                         <span>Pay QR</span>
@@ -1229,15 +1325,23 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
                         type="text"
                         value={inlineUtr}
                         onChange={(e) => setInlineUtr(e.target.value)}
-                        placeholder="Enter 12-digit UPI UTR"
-                        className="flex-1 px-2.5 py-1 rounded-lg bg-purple-950 border border-fuchsia-400/50 text-white text-[11px] font-mono placeholder:text-purple-300/40 focus:outline-none focus:border-fuchsia-300"
+                        placeholder={isStep2Active ? "Enter 12-digit UTR for ₹100" : "Enter 12-digit UPI UTR"}
+                        className={`flex-1 px-2.5 py-1 rounded-lg text-white text-[11px] font-mono focus:outline-none border ${
+                          isStep2Active
+                            ? 'bg-emerald-950 border-emerald-400/60 placeholder:text-emerald-300/40 focus:border-emerald-300'
+                            : 'bg-purple-950 border-fuchsia-400/50 placeholder:text-purple-300/40 focus:border-fuchsia-300'
+                        }`}
                       />
                       <button
                         onClick={() => handleSubmitProvide(activeProvideBeneficiary.type, inlineUtr)}
                         disabled={isSubmittingUtr || (!inlineUtr.trim() && !inlineAttachedSlip.previewUrl)}
-                        className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-[11px] cursor-pointer shadow disabled:opacity-50 flex items-center gap-1"
+                        className={`px-3 py-1 rounded-lg font-black text-[11px] cursor-pointer shadow disabled:opacity-50 flex items-center gap-1 ${
+                          isStep2Active
+                            ? 'bg-gradient-to-r from-emerald-300 to-green-400 hover:from-emerald-200 hover:to-green-300 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                            : 'bg-emerald-400 hover:bg-emerald-300 text-slate-950'
+                        }`}
                       >
-                        <span>{isSubmittingUtr ? '...' : 'Submit UTR'}</span>
+                        <span>{isSubmittingUtr ? '...' : isStep2Active ? '₹100 सबमिट करें ➔' : 'Submit UTR'}</span>
                         {inlineAttachedSlip.previewUrl && <span className="text-[10px]">📎</span>}
                       </button>
                     </div>

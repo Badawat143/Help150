@@ -67,6 +67,7 @@ import { ProfileModal } from './ProfileModal';
 import { DirectReferralsSection } from './DirectReferralsSection';
 import { DirectReferralsModal } from './DirectReferralsModal';
 import { Help150DualBox } from '../helping/Help150DualBox';
+import { ActiveLinkArrivalNotification } from '../helping/ActiveLinkArrivalNotification';
 import { PromotionNoticeBanner } from './PromotionNoticeBanner';
 import { TotalIncomeReceivedTracker } from './TotalIncomeReceivedTracker';
 
@@ -799,6 +800,20 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
               </span>
             </div>
           </div>
+
+          {/* 🔔 1-CLICK NOTICE: लिंक बॉक्स आया है (Direct Link Box Arrival Alert) */}
+          <ActiveLinkArrivalNotification
+            onGoToLinkBox={() => {
+              const el = document.getElementById('box-provide-help');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('ring-4', 'ring-amber-400', 'animate-pulse');
+                setTimeout(() => {
+                  el.classList.remove('ring-4', 'ring-amber-400', 'animate-pulse');
+                }, 3500);
+              }
+            }}
+          />
 
           {/* ======================================================================= */}
           {/* 🔴 PROVIDE HELP BOX (Red) & 🔵 RECEIVE HELP BOX (Sky Blue)               */}
