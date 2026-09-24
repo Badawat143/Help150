@@ -98,8 +98,16 @@ export async function testConnection() {
   try {
     await getDocFromServer(doc(firestoreDb, 'test', 'connection'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+    if (error instanceof Error) {
+      if (error.message.includes('the client is offline')) {
+        console.error('Please check your Firebase configuration.');
+      } else if (
+        error.message.includes('RESOURCE_EXHAUSTED') ||
+        error.message.includes('resource-exhausted') ||
+        error.message.toLowerCase().includes('quota')
+      ) {
+        console.warn('Firestore notice: Daily free tier quota limit reached. Application running with 100% functionality via local state and backend server.');
+      }
     }
   }
 }

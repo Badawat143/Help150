@@ -39,7 +39,7 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [lastPingMs, setLastPingMs] = useState<number | null>(null);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>('success');
+  const [testResult, setTestResult] = useState<'success' | 'error' | 'quota_exhausted' | null>('success');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [stats, setStats] = useState({
     usersCount: 0,
@@ -59,6 +59,8 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
         helpRequestsCount: state.helpRequests.length,
         transactionsCount: state.transactions.length,
       });
+
+      if (firestoreSync.isQuotaCoolingDown()) return;
 
       // Also query live cloud snapshot counts
       const uSnap = await getDocs(collection(firestoreDb, 'users'));
@@ -94,6 +96,12 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
     setTesting(true);
     const start = performance.now();
     try {
+      if (firestoreSync.isQuotaCoolingDown()) {
+        setTestResult('quota_exhausted');
+        setTesting(false);
+        return;
+      }
+
       const testDocRef = doc(firestoreDb, 'test', 'ping');
       await setDoc(testDocRef, {
         clientTimestamp: new Date().toISOString(),
@@ -107,9 +115,14 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
       } else {
         setTestResult('error');
       }
-    } catch (err) {
-      console.warn('Ping test error:', err);
-      setTestResult('error');
+    } catch (err: any) {
+      if (firestoreSync.isQuotaExhaustedError(err)) {
+        firestoreSync.handleQuotaExceeded(err);
+        setTestResult('quota_exhausted');
+      } else {
+        console.warn('Ping test error:', err);
+        setTestResult('error');
+      }
     } finally {
       setTesting(false);
     }
@@ -173,30 +186,41 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
 
         <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
           {/* Connection Status Card */}
-          <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 relative overflow-hidden">
+          <div className={`rounded-2xl p-4 relative overflow-hidden border ${
+            testResult === 'quota_exhausted' || firestoreSync.isQuotaCoolingDown()
+              ? 'bg-amber-950/40 border-amber-500/40'
+              : 'bg-slate-950/80 border-emerald-500/30'
+          }`}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+                  testResult === 'quota_exhausted' || firestoreSync.isQuotaCoolingDown()
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                }`}>
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-white flex items-center gap-2">
                     <span>Database Status:</span>
-                    <span className="text-emerald-400 font-extrabold">Connected & Active</span>
+                    {testResult === 'quota_exhausted' || firestoreSync.isQuotaCoolingDown() ? (
+                      <span className="text-amber-300 font-extrabold">Free Daily Quota Limit (Local Mode Active)</span>
+                    ) : (
+                      <span className="text-emerald-400 font-extrabold">Connected & Active</span>
+                    )}
                   </div>
                   <div className="text-xs text-slate-400 flex items-center gap-3 mt-1">
-                    <span>Protocol: WebSocket + gRPC</span>
+                    <span>Protocol: WebSocket + Local State</span>
                     <span>•</span>
                     <span className="text-amber-300 font-medium">
-                      Latency:{' '}
-                      {testing ? (
-                        'Testing...'
-                      ) : lastPingMs !== null ? (
-                        `${lastPingMs} ms`
-                      ) : (
-                        '< 200 ms'
-                      )}
+                      {testResult === 'quota_exhausted' || firestoreSync.isQuotaCoolingDown()
+                        ? 'Resets Daily at Midnight'
+                        : testing
+                        ? 'Testing...'
+                        : lastPingMs !== null
+                        ? `Latency: ${lastPingMs} ms`
+                        : 'Latency: < 200 ms'}
                     </span>
                   </div>
                 </div>
@@ -211,6 +235,24 @@ export const FirebaseConnectionModal: React.FC<FirebaseConnectionModalProps> = (
                 <span>{testing ? 'Testing...' : 'Test Ping'}</span>
               </button>
             </div>
+
+            {(testResult === 'quota_exhausted' || firestoreSync.isQuotaCoolingDown()) && (
+              <div className="mt-3 pt-3 border-t border-amber-500/20 text-xs text-amber-200/90 space-y-1">
+                <p>
+                  क्लाउड डेटाबेस (Firestore Free Tier) की दैनिक 20,000 राइट्स कोटा सीमा पूरी हो चुकी है। ऐप आपके लोकल डेटा और एक्सप्रेस बैकएंड के साथ 100% सही तरीके से काम कर रहा है।
+                </p>
+                <div className="pt-1">
+                  <a
+                    href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/databases/${firebaseConfig.firestoreDatabaseId}/data?openUpgradeDialog=true`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 underline hover:text-amber-200"
+                  >
+                    <span>Firebase Console में कोटा देखें या अपग्रेड करें &rarr;</span>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Database Credentials & Config */}

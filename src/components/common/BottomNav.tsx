@@ -15,15 +15,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenAdJunction }) => {
     const cycle = db.getUserHelpCycle(currentUser.id);
     const step1 = cycle?.verificationLink;
     const step2 = cycle?.secondLink;
-    const isStep1Done = step1?.status === 'completed' || step1?.status === 'accepted';
-    const isStep2Done = step2?.status === 'completed' || step2?.status === 'accepted';
+    const isStep1Done = (step1?.status as string) === 'completed' || (step1?.status as string) === 'accepted';
+    const isStep2Done = (step2?.status as string) === 'completed' || (step2?.status as string) === 'accepted';
     const isStep1Active =
       !isStep1Done &&
       cycle?.status !== 'maturation_timer' &&
       cycle?.status !== 'receive_help' &&
       cycle?.status !== 'completed';
     const isStep2Active =
-      (isStep1Done || cycle?.status === 'provide_second') &&
+      isStep1Done &&
       !isStep2Done &&
       cycle?.status !== 'maturation_timer' &&
       cycle?.status !== 'receive_help' &&

@@ -804,7 +804,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           {/* 🔔 1-CLICK NOTICE: लिंक बॉक्स आया है (Direct Link Box Arrival Alert) */}
           <ActiveLinkArrivalNotification
             onGoToLinkBox={() => {
-              const el = document.getElementById('box-provide-help');
+              const el =
+                document.getElementById('box-provide-help') ||
+                document.getElementById('box-receive-help') ||
+                document.getElementById('box-maturation-timer');
               if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 el.classList.add('ring-4', 'ring-amber-400', 'animate-pulse');

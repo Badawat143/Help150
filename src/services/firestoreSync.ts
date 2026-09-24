@@ -17,11 +17,46 @@ import {
 import { db } from './db';
 import { HelpRequest, KycRecord, NotificationItem, Transaction, User, Wallet, WithdrawalRequest } from '../types';
 
+const STORAGE_KEY_COOLDOWN = 'help150_firestore_quota_cooldown';
+
 class FirestoreSyncService {
   private isInitialized = false;
   private unsubscribeListeners: (() => void)[] = [];
   private pollInterval: any = null;
   private quotaCooldownUntil = 0;
+
+  constructor() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_COOLDOWN);
+      if (stored) {
+        const val = parseInt(stored, 10);
+        if (val > Date.now()) {
+          this.quotaCooldownUntil = val;
+        } else {
+          localStorage.removeItem(STORAGE_KEY_COOLDOWN);
+        }
+      }
+    } catch {
+      // ignore localStorage errors in restricted environments
+    }
+  }
+
+  public isQuotaCoolingDown(): boolean {
+    if (this.quotaCooldownUntil > Date.now()) return true;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_COOLDOWN);
+      if (stored) {
+        const val = parseInt(stored, 10);
+        if (val > Date.now()) {
+          this.quotaCooldownUntil = val;
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
 
   public isQuotaExhaustedError(err: any): boolean {
     const msg = String(err?.message || err?.code || err || '').toLowerCase();
@@ -31,19 +66,43 @@ class FirestoreSyncService {
       msg.includes('quota limit exceeded') ||
       msg.includes('quota exceeded') ||
       msg.includes('free daily write units') ||
-      msg.includes('free daily read units')
+      msg.includes('free daily read units') ||
+      msg.includes('code: 8')
     );
   }
 
-  private handleQuotaExceeded(err: any): boolean {
+  public handleQuotaExceeded(err: any): boolean {
     if (this.isQuotaExhaustedError(err)) {
-      this.quotaCooldownUntil = Date.now() + 30 * 60 * 1000; // 30-min backoff
+      // Daily quota reset cooldown (12 hours) to avoid triggering gRPC stream errors
+      const cooldownMs = 12 * 60 * 60 * 1000;
+      this.quotaCooldownUntil = Date.now() + cooldownMs;
+      try {
+        localStorage.setItem(STORAGE_KEY_COOLDOWN, String(this.quotaCooldownUntil));
+      } catch {
+        // ignore
+      }
       console.warn(
-        '⚠️ [Cloud Firestore] Daily write units quota limit reached for free tier. Pausing cloud writes. The application will continue operating smoothly via local state & full-stack server.'
+        '⚠️ [Cloud Firestore] Daily write units quota limit reached for free tier. Cloud writes are safely paused. The application continues running smoothly via local & server state.'
       );
       return true;
     }
     return false;
+  }
+
+  public getQuotaStatus(): { isExhausted: boolean; cooldownUntil: number } {
+    return {
+      isExhausted: this.isQuotaCoolingDown(),
+      cooldownUntil: this.quotaCooldownUntil,
+    };
+  }
+
+  public resetQuotaCooldown(): void {
+    this.quotaCooldownUntil = 0;
+    try {
+      localStorage.removeItem(STORAGE_KEY_COOLDOWN);
+    } catch {
+      // ignore
+    }
   }
 
   /**
@@ -64,7 +123,7 @@ class FirestoreSyncService {
           db.updateState((draft) => {
             draft.settings = { ...draft.settings, ...(snap.data() as any) };
           });
-        } else if (Date.now() >= this.quotaCooldownUntil) {
+        } else if (!this.isQuotaCoolingDown()) {
           await setDoc(settingsDocRef, db.getState().settings);
         }
       } catch (err) {
@@ -281,7 +340,7 @@ class FirestoreSyncService {
 
       // 9. Periodic Fetch Fallback (every 5 minutes to prevent excessive read quota usage while maintaining sync)
       this.pollInterval = setInterval(() => {
-        if (Date.now() >= this.quotaCooldownUntil) {
+        if (!this.isQuotaCoolingDown()) {
           this.fetchAllFromCloud();
         }
       }, 300000);
@@ -295,7 +354,7 @@ class FirestoreSyncService {
    * One-time fetch of all users and records from Firestore
    */
   public async fetchAllFromCloud(): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const usersSnap = await getDocs(collection(firestoreDb, 'users'));
       if (!usersSnap.empty) {
@@ -476,7 +535,7 @@ class FirestoreSyncService {
    * Save a Help Request to Firestore
    */
   public async syncHelpRequest(request: HelpRequest): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'helpRequests', request.id);
       const sanitized = this.sanitizeFirestorePayload(request);
@@ -492,7 +551,7 @@ class FirestoreSyncService {
    * Save a Transaction to Firestore
    */
   public async syncTransaction(transaction: Transaction): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'transactions', transaction.id);
       await setDoc(docRef, transaction, { merge: true });
@@ -507,7 +566,7 @@ class FirestoreSyncService {
    * Save a User Profile to Firestore
    */
   public async syncUser(user: User): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'users', user.id);
       await setDoc(docRef, user, { merge: true });
@@ -522,7 +581,7 @@ class FirestoreSyncService {
    * Save Wallet to Firestore
    */
   public async syncWallet(wallet: Wallet): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'wallets', wallet.userId);
       await setDoc(docRef, wallet, { merge: true });
@@ -537,7 +596,7 @@ class FirestoreSyncService {
    * Save KYC Record to Firestore
    */
   public async syncKycRecord(kyc: KycRecord): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'kycRecords', kyc.id);
       const sanitized = this.sanitizeFirestorePayload(kyc);
@@ -553,7 +612,7 @@ class FirestoreSyncService {
    * Save Withdrawal Request to Firestore
    */
   public async syncWithdrawal(withdrawal: WithdrawalRequest): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'withdrawals', withdrawal.id);
       await setDoc(docRef, withdrawal, { merge: true });
@@ -568,7 +627,7 @@ class FirestoreSyncService {
    * Save Notification to Firestore
    */
   public async syncNotification(notification: NotificationItem): Promise<void> {
-    if (Date.now() < this.quotaCooldownUntil) return;
+    if (this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'notifications', notification.id);
       await setDoc(docRef, notification, { merge: true });
@@ -583,7 +642,7 @@ class FirestoreSyncService {
    * Save a User Help Cycle to Firestore
    */
   public async syncHelpCycle(cycle: any): Promise<void> {
-    if (!cycle || !cycle.id || Date.now() < this.quotaCooldownUntil) return;
+    if (!cycle || !cycle.id || this.isQuotaCoolingDown()) return;
     try {
       const docRef = doc(firestoreDb, 'helpCycles', cycle.id);
       const sanitized = this.sanitizeFirestorePayload(cycle);

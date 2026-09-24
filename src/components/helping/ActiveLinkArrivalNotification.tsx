@@ -62,14 +62,16 @@ export const ActiveLinkArrivalNotification: React.FC<ActiveLinkArrivalNotificati
   const isStep1Done = step1?.status === 'completed' || step1?.status === 'accepted';
   const isStep2Done = step2?.status === 'completed' || step2?.status === 'accepted';
 
+  // Step 1 is active ONLY when not yet completed/accepted
   const isStep1Active =
     !isStep1Done &&
     cycle?.status !== 'maturation_timer' &&
     cycle?.status !== 'receive_help' &&
     cycle?.status !== 'completed';
 
+  // Step 2 is active ONLY AFTER Step 1 is completed/accepted AND Step 2 is not completed
   const isStep2Active =
-    (isStep1Done || cycle?.status === 'provide_second') &&
+    isStep1Done &&
     !isStep2Done &&
     cycle?.status !== 'maturation_timer' &&
     cycle?.status !== 'receive_help' &&
@@ -91,10 +93,10 @@ export const ActiveLinkArrivalNotification: React.FC<ActiveLinkArrivalNotificati
         amount: 50,
         stepName: 'Step 1: ₹50 वेरिफिकेशन लिंक',
         stepType: 'verification',
-        name: activeOutgoingRequest?.matchedWithUserName || step1?.matchedWithUserName || adminDefault.name,
-        id: activeOutgoingRequest?.matchedWithUserId || step1?.matchedWithUserId || adminDefault.id,
-        upi: activeOutgoingRequest?.matchedWithUpi || step1?.matchedWithUpi || adminDefault.upi,
-        mobile: activeOutgoingRequest?.matchedWithMobile || step1?.matchedWithMobile || adminDefault.mobile,
+        name: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount <= 50 ? activeOutgoingRequest.matchedWithUserName : null) || step1?.matchedWithUserName || adminDefault.name,
+        id: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount <= 50 ? activeOutgoingRequest.matchedWithUserId : null) || step1?.matchedWithUserId || adminDefault.id,
+        upi: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount <= 50 ? activeOutgoingRequest.matchedWithUpi : null) || step1?.matchedWithUpi || adminDefault.upi,
+        mobile: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount <= 50 ? activeOutgoingRequest.matchedWithMobile : null) || step1?.matchedWithMobile || adminDefault.mobile,
         status: step1?.status || activeOutgoingRequest?.status || 'pending',
         isSlipUploaded: Boolean(step1?.slipUrl || step1?.proofReference || activeOutgoingRequest?.paymentSlipUrl),
       };
@@ -103,12 +105,12 @@ export const ActiveLinkArrivalNotification: React.FC<ActiveLinkArrivalNotificati
     if (isStep2Active) {
       return {
         amount: 100,
-        stepName: 'Step 2: ₹100 सेकंड हेल्प लिंक',
+        stepName: 'Step 2: ₹100 सेकंड हेल्प लिंक (हल्का हरा)',
         stepType: 'second',
-        name: activeOutgoingRequest?.matchedWithUserName || step2?.matchedWithUserName || adminDefault.name,
-        id: activeOutgoingRequest?.matchedWithUserId || step2?.matchedWithUserId || adminDefault.id,
-        upi: activeOutgoingRequest?.matchedWithUpi || step2?.matchedWithUpi || adminDefault.upi,
-        mobile: activeOutgoingRequest?.matchedWithMobile || step2?.matchedWithMobile || adminDefault.mobile,
+        name: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount > 50 ? activeOutgoingRequest.matchedWithUserName : null) || step2?.matchedWithUserName || adminDefault.name,
+        id: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount > 50 ? activeOutgoingRequest.matchedWithUserId : null) || step2?.matchedWithUserId || adminDefault.id,
+        upi: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount > 50 ? activeOutgoingRequest.matchedWithUpi : null) || step2?.matchedWithUpi || adminDefault.upi,
+        mobile: (activeOutgoingRequest?.amount && activeOutgoingRequest.amount > 50 ? activeOutgoingRequest.matchedWithMobile : null) || step2?.matchedWithMobile || adminDefault.mobile,
         status: step2?.status || activeOutgoingRequest?.status || 'pending',
         isSlipUploaded: Boolean(step2?.slipUrl || step2?.proofReference || activeOutgoingRequest?.paymentSlipUrl),
       };
@@ -209,7 +211,11 @@ export const ActiveLinkArrivalNotification: React.FC<ActiveLinkArrivalNotificati
       {/* ========================================================================= */}
       <div
         id="link-box-arrival-banner"
-        className="w-full rounded-2xl bg-gradient-to-r from-amber-500 via-rose-600 to-indigo-900 p-4 sm:p-5 text-white shadow-2xl border-2 border-amber-300 relative overflow-hidden animate-fadeIn"
+        className={`w-full rounded-2xl p-4 sm:p-5 text-white shadow-2xl border-2 relative overflow-hidden animate-fadeIn ${
+          isStep2Active
+            ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-green-800 border-emerald-300'
+            : 'bg-gradient-to-r from-amber-500 via-rose-600 to-indigo-900 border-amber-300'
+        }`}
       >
         {/* Glow ambient */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
@@ -308,16 +314,26 @@ export const ActiveLinkArrivalNotification: React.FC<ActiveLinkArrivalNotificati
       {/* ========================================================================= */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-md w-full p-5 sm:p-6 text-white shadow-2xl relative animate-scaleUp space-y-4">
+          <div className={`bg-slate-900 border-2 rounded-3xl max-w-md w-full p-5 sm:p-6 text-white shadow-2xl relative animate-scaleUp space-y-4 ${
+            isStep2Active ? 'border-emerald-300 shadow-emerald-950/80 ring-2 ring-emerald-300/40' : 'border-amber-400'
+          }`}>
             {/* Header */}
             <div className="text-center space-y-2">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 animate-bounce">
+              <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl font-black shadow-lg animate-bounce ${
+                isStep2Active
+                  ? 'bg-gradient-to-tr from-emerald-400 to-green-500 text-slate-950 shadow-emerald-500/30'
+                  : 'bg-gradient-to-tr from-amber-400 to-rose-500 text-slate-950 shadow-amber-500/30'
+              }`}>
                 <Bell className="h-8 w-8" />
               </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-black uppercase">
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase border ${
+                isStep2Active
+                  ? 'bg-emerald-400/20 text-emerald-200 border-emerald-400/40'
+                  : 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+              }`}>
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>नया लिंक बॉक्स आ गया है!</span>
+                <span>{isStep2Active ? 'Step 2: हल्का हरा लिंक बॉक्स आ गया है!' : 'नया लिंक बॉक्स आ गया है!'}</span>
               </div>
 
               <h3 className="text-xl font-black text-white font-heading">
