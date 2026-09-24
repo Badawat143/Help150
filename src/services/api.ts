@@ -5,6 +5,7 @@
 
 import { db, DatabaseState } from './db';
 import { firestoreSync } from './firestoreSync';
+import { broadcastLinkDispatched } from './linkArrivalEvents';
 import {
   User,
   KycRecord,
@@ -243,12 +244,13 @@ export const api = {
       createdAt: now,
     };
 
+    const isLinksActive = db.getState().settings.linkSystemEnabled !== false;
+
     db.updateState((draft) => {
       draft.users.push(newUser);
       draft.wallets[newUserId] = initialWallet;
 
       // Check if auto-dispatch is enabled AND link system is turned ON
-      const isLinksActive = draft.settings.linkSystemEnabled !== false;
       if (isLinksActive && (draft.settings.autoDispatchOnRegistration || draft.settings.autoDispatchMode)) {
         const timerHours = draft.settings.timerDurationHours || 24;
         const expiryEpoch = Date.now() + timerHours * 60 * 60 * 1000;
@@ -336,6 +338,21 @@ export const api = {
     firestoreSync.syncUser(newUser);
     firestoreSync.syncWallet(initialWallet);
     firestoreSync.syncHelpRequest(initialProvideHelpRequest);
+
+    // Broadcast instant Link Box Arrival to user's dashboard if links are active
+    if (isLinksActive) {
+      broadcastLinkDispatched({
+        userId: newUserId,
+        type: 'provide',
+        amount: 50,
+        stepName: 'Step 1: ₹50 वेरिफिकेशन लिंक',
+        linkId: initialProvideHelpRequest.id,
+        matchedWithUserId: initialProvideHelpRequest.matchedWithUserId,
+        matchedWithUserName: initialProvideHelpRequest.matchedWithUserName,
+        upi: initialProvideHelpRequest.matchedWithUpi,
+        mobile: initialProvideHelpRequest.matchedWithMobile,
+      });
+    }
 
     logAudit(
       { id: newUserId, name: newUser.fullName, role: 'user' },
@@ -1533,6 +1550,33 @@ export const api = {
       timerStatus: 'active',
       createdAt: nowISO,
     };
+
+    // Broadcast instant Link Box Arrival to Sender's Dashboard
+    broadcastLinkDispatched({
+      userId: sender.id,
+      type: 'provide',
+      amount,
+      stepName: amount <= 50 ? 'Step 1: ₹50 वेरिफिकेशन लिंक' : 'Step 2: ₹100 सेकंड हेल्प लिंक (हल्का हरा)',
+      linkId: activeReq.id,
+      matchedWithUserId: params.receiverUserId,
+      matchedWithUserName: receiverName,
+      upi: receiverUpi,
+      mobile: receiverMobile,
+    });
+
+    // If receiver is a regular community user, broadcast instant Receive Help Link Arrival to Receiver's Dashboard
+    if (params.receiverUserId !== 'ADMIN_TREASURY' && receiver) {
+      broadcastLinkDispatched({
+        userId: receiver.id,
+        type: 'receive',
+        amount,
+        stepName: `रिसीव लिंक (₹${amount})`,
+        linkId: activeReq.id,
+        matchedWithUserId: sender.id,
+        matchedWithUserName: sender.fullName,
+        mobile: sender.mobile,
+      });
+    }
 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://help150.org';
     const shareUrl = `${origin}/?action=member_help_link&req=${activeReq.id}&from=${sender.id}&to=${params.receiverUserId}&amt=${amount}`;

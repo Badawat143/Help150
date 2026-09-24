@@ -827,17 +827,19 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
 
           {/* 🔔 1-CLICK NOTICE: लिंक बॉक्स आया है (Direct Link Box Arrival Alert) */}
           <ActiveLinkArrivalNotification
-            onGoToLinkBox={() => {
-              const el =
-                document.getElementById('box-provide-help') ||
-                document.getElementById('box-receive-help') ||
-                document.getElementById('box-maturation-timer');
+            onGoToLinkBox={(targetType) => {
+              const targetId =
+                targetType === 'receive'
+                  ? 'box-receive-help'
+                  : 'box-provide-help';
+              const el = document.getElementById(targetId) || document.getElementById('box-maturation-timer');
               if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.add('ring-4', 'ring-amber-400', 'animate-pulse');
+                const ringClass = targetType === 'receive' ? 'ring-cyan-400' : 'ring-amber-400';
+                el.classList.add('ring-4', ringClass, 'animate-pulse');
                 setTimeout(() => {
-                  el.classList.remove('ring-4', 'ring-amber-400', 'animate-pulse');
-                }, 3500);
+                  el.classList.remove('ring-4', ringClass, 'animate-pulse');
+                }, 4000);
               }
             }}
           />

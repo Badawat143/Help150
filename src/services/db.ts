@@ -23,6 +23,7 @@ import {
   HelpHistoryItem,
 } from '../types';
 import { firestoreSync } from './firestoreSync';
+import { broadcastLinkDispatched } from './linkArrivalEvents';
 
 const STORAGE_KEY = 'HELP150_PLATFORM_DB_V1';
 
@@ -2282,6 +2283,19 @@ class DatabaseManager {
         isRead: false,
         createdAt: now,
       });
+
+      // Broadcast instant Step 2 Link Arrival to user's dashboard
+      broadcastLinkDispatched({
+        userId,
+        type: 'provide',
+        amount: 100,
+        stepName: 'Step 2: ₹100 सेकंड हेल्प लिंक (हल्का हरा)',
+        linkId: cycle.secondLink.requestId || `${cycle.id}-sec`,
+        matchedWithUserId: cycle.secondLink.matchedWithUserId,
+        matchedWithUserName: cycle.secondLink.matchedWithUserName,
+        upi: cycle.secondLink.matchedWithUpi,
+        mobile: cycle.secondLink.matchedWithMobile,
+      });
     } else if (linkType === 'second') {
       cycle.secondLink.status = 'completed';
       cycle.secondLink.completedAt = now;
@@ -2560,6 +2574,18 @@ class DatabaseManager {
       isRead: false,
       createdAt: now,
     });
+
+    // Broadcast instant Receive Help Link Arrival to user's dashboard
+    broadcastLinkDispatched({
+      userId: cycle.userId,
+      type: 'receive',
+      amount: 200,
+      stepName: 'Step 4: ₹200 रिसीव हेल्प लिंक',
+      linkId: cycle.receiveLink.requestId || `${cycle.id}-rec`,
+      matchedWithUserId: balanced.links[0]?.matchedWithUserId,
+      matchedWithUserName: balanced.links.map((l) => `${l.matchedWithUserName} (₹${l.amount})`).join(', '),
+      mobile: balanced.links[0]?.matchedWithMobile,
+    });
   }
 
   public confirmCycleReceiveLink(userId: string): { completedCycle: UserHelpCycle; newCycle: UserHelpCycle } {
@@ -2624,6 +2650,19 @@ class DatabaseManager {
       type: 'success',
       isRead: false,
       createdAt: now,
+    });
+
+    // Broadcast instant Step 1 Link Arrival of Next Revolving Cycle
+    broadcastLinkDispatched({
+      userId,
+      type: 'provide',
+      amount: 50,
+      stepName: `Cycle #${nextCycleNum} - Step 1: ₹50 वेरिफिकेशन लिंक`,
+      linkId: nextCycle.verificationLink.requestId || `${nextCycle.id}-ver`,
+      matchedWithUserId: nextCycle.verificationLink.matchedWithUserId,
+      matchedWithUserName: nextCycle.verificationLink.matchedWithUserName,
+      upi: nextCycle.verificationLink.matchedWithUpi,
+      mobile: nextCycle.verificationLink.matchedWithMobile,
     });
 
     this.saveToStorage(this.state);

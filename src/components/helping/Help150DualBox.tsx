@@ -38,6 +38,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
 import { UserHelpCycle } from '../../types';
+import { subscribeToLinkArrival } from '../../services/linkArrivalEvents';
 import { compressImageFile } from '../../utils/imageCompress';
 import { PaymentSlipUploadModal } from './PaymentSlipUploadModal';
 import { CoinTransferAnimation } from './CoinTransferAnimation';
@@ -148,10 +149,16 @@ export const Help150DualBox: React.FC<Help150DualBoxProps> = ({ onNavigateTab })
 
   useEffect(() => {
     syncCycle();
-    const unsub = db.subscribe(() => {
+    const unsubDb = db.subscribe(() => {
       syncCycle();
     });
-    return () => unsub();
+    const unsubArrival = subscribeToLinkArrival(currentUser?.id, () => {
+      syncCycle();
+    });
+    return () => {
+      unsubDb();
+      unsubArrival();
+    };
   }, [currentUser?.id]);
 
   // Step 1: 24-Hour Provide Help Deadline Timer & Deletion Timer

@@ -219,6 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
 
             if (hasAnyUpdate && isMounted) {
+              db.notifySubscribers();
               refreshUserData();
             }
           }
@@ -229,7 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     syncWithServer();
-    const interval = setInterval(syncWithServer, 2000);
+    const interval = setInterval(syncWithServer, 1000);
 
     const handleFocusOrVisible = () => {
       syncWithServer();
