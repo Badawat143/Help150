@@ -442,3 +442,30 @@ export interface DispatchedProvideHelpLink {
   rejectionReason?: string;
   createdAt: string;
 }
+
+export interface HelpHistoryItem {
+  id: string;
+  userId: string;
+  type: 'help_given' | 'help_received';
+  amount: number;
+  status: 'completed';
+  referenceId: string;
+  remarks: string;
+  senderUserId?: string;
+  senderName?: string;
+  receiverUserId?: string;
+  receiverName?: string;
+  receiverUpi?: string;
+  receiverMobile?: string;
+  senderUpi?: string;
+  senderMobile?: string;
+  proofUrl?: string;
+  proofReference?: string;
+  createdAt: string;
+  completedAt: string;
+  cycleNumber?: number;
+  cycleId?: string;
+  stepTitle?: string;
+  mode?: string;
+}
+

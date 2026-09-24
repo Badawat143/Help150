@@ -62,6 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await fetch('/api/sync');
         if (res.ok && isMounted) {
           const data = await res.json();
+          if (data?.firestoreQuotaExhausted) {
+            firestoreSync.setQuotaCooldown();
+          }
           if (data && Array.isArray(data.users)) {
             let hasAnyUpdate = false;
             db.updateState((draft) => {

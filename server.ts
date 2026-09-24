@@ -4,7 +4,12 @@ import fs from 'fs';
 import nodemailer from 'nodemailer';
 import { createServer as createViteServer } from 'vite';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, setLogLevel } from 'firebase/firestore';
+
+// Suppress internal gRPC stream error dumps when free daily write quota is reached
+try {
+  setLogLevel('silent');
+} catch {}
 
 const app = express();
 const PORT = 3000;
@@ -25,7 +30,52 @@ try {
   console.warn('[SERVER] Could not initialize Firestore:', e);
 }
 
+// Ensure server data directory exists
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+const QUOTA_FILE = path.join(DATA_DIR, 'firestore-quota.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 let serverFirestoreQuotaCooldown = 0;
+try {
+  if (fs.existsSync(QUOTA_FILE)) {
+    const q = JSON.parse(fs.readFileSync(QUOTA_FILE, 'utf-8'));
+    if (q.cooldownUntil && q.cooldownUntil > Date.now()) {
+      serverFirestoreQuotaCooldown = q.cooldownUntil;
+    }
+  }
+} catch {}
+
+function isServerQuotaCoolingDown(): boolean {
+  if (serverFirestoreQuotaCooldown > Date.now()) return true;
+  try {
+    if (fs.existsSync(QUOTA_FILE)) {
+      const q = JSON.parse(fs.readFileSync(QUOTA_FILE, 'utf-8'));
+      if (q.cooldownUntil && q.cooldownUntil > Date.now()) {
+        serverFirestoreQuotaCooldown = q.cooldownUntil;
+        return true;
+      }
+    }
+  } catch {}
+  return false;
+}
+
+function setServerQuotaCooldown(hours = 24) {
+  serverFirestoreQuotaCooldown = Date.now() + hours * 3600 * 1000;
+  try {
+    fs.writeFileSync(
+      QUOTA_FILE,
+      JSON.stringify({
+        cooldownUntil: serverFirestoreQuotaCooldown,
+        reason: 'Free daily write units per project (free tier database) limit reached',
+        updatedAt: new Date().toISOString(),
+      })
+    );
+  } catch {}
+}
 
 function isFirestoreQuotaError(err: any): boolean {
   const msg = String(err?.message || err?.code || err || '').toLowerCase();
@@ -34,16 +84,23 @@ function isFirestoreQuotaError(err: any): boolean {
     msg.includes('resource-exhausted') ||
     msg.includes('quota limit exceeded') ||
     msg.includes('quota exceeded') ||
-    msg.includes('free daily write units')
+    msg.includes('free daily write units') ||
+    msg.includes('code: 8')
   );
 }
 
-// Ensure server data directory exists
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+async function safeServerFirestoreWrite(fn: () => Promise<void>, label = 'operation') {
+  if (!serverFirestore || isServerQuotaCoolingDown()) return;
+  try {
+    await fn();
+  } catch (err: any) {
+    if (isFirestoreQuotaError(err)) {
+      setServerQuotaCooldown(24);
+      console.warn(`[SERVER FIRESTORE] Daily free write quota reached during ${label}. Paused cloud writes for 24h. Local JSON database is active.`);
+    } else {
+      console.warn(`[SERVER FIRESTORE] Write notice (${label}):`, err?.message || err);
+    }
+  }
 }
 
 // Initial seed data if db.json doesn't exist
@@ -510,6 +567,7 @@ app.get('/api/sync', (req, res) => {
     kycRecords: dbData.kycRecords || [],
     notifications: dbData.notifications || [],
     settings: dbData.settings || {},
+    firestoreQuotaExhausted: isServerQuotaCoolingDown(),
   });
 });
 
@@ -697,16 +755,12 @@ app.post('/api/register', async (req, res) => {
     writeDb(dbData);
 
     // Sync directly to Cloud Firestore so all other devices receive onSnapshot notification immediately
-    if (serverFirestore) {
-      try {
-        await setDoc(doc(serverFirestore, 'users', newUser.id), newUser);
-        await setDoc(doc(serverFirestore, 'wallets', newUserId), initialWallet);
-        await setDoc(doc(serverFirestore, 'helpRequests', initialHelpRequestId), initialProvideHelpRequest);
-        console.log(`[SERVER CLOUD FIRESTORE] Synced new user ${newUser.id} & wallet to Firestore!`);
-      } catch (fErr) {
-        console.warn('[SERVER CLOUD FIRESTORE] Sync warning:', fErr);
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      await setDoc(doc(serverFirestore, 'users', newUser.id), newUser);
+      await setDoc(doc(serverFirestore, 'wallets', newUserId), initialWallet);
+      await setDoc(doc(serverFirestore, 'helpRequests', initialHelpRequestId), initialProvideHelpRequest);
+      console.log(`[SERVER CLOUD FIRESTORE] Synced new user ${newUser.id} & wallet to Firestore!`);
+    }, 'new user registration');
 
     console.log(`[SERVER REGISTRATION] New user registered: ${newUser.id} (${newUser.fullName}), Sponsor: ${validSponsorId || 'None'}`);
 
@@ -842,13 +896,9 @@ app.post('/api/admin/user/status', async (req, res) => {
       delete user.autoDeleteAt;
     }
     writeDb(dbData);
-    if (serverFirestore) {
-      try {
-        await setDoc(doc(serverFirestore, 'users', user.id), user);
-      } catch (fErr) {
-        console.warn('Server firestore status sync warning:', fErr);
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      await setDoc(doc(serverFirestore, 'users', user.id), user);
+    }, 'user status update');
     return res.json({ success: true, user });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -870,13 +920,9 @@ app.post('/api/admin/user/password', async (req, res) => {
     user.password = password;
     user.passwordHash = Buffer.from(String(password)).toString('base64');
     writeDb(dbData);
-    if (serverFirestore) {
-      try {
-        await setDoc(doc(serverFirestore, 'users', user.id), user);
-      } catch (fErr) {
-        console.warn('Server firestore password sync warning:', fErr);
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      await setDoc(doc(serverFirestore, 'users', user.id), user);
+    }, 'user password update');
     return res.json({ success: true, user });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -951,13 +997,9 @@ app.post('/api/admin/user/update-details', async (req, res) => {
 
     writeDb(dbData);
 
-    if (serverFirestore) {
-      try {
-        await setDoc(doc(serverFirestore, 'users', user.id), user);
-      } catch (fErr) {
-        console.warn('Server firestore update-details sync warning:', fErr);
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      await setDoc(doc(serverFirestore, 'users', user.id), user);
+    }, 'user details update');
 
     return res.json({ success: true, user });
   } catch (err: any) {
@@ -1074,47 +1116,34 @@ app.post('/api/sync/push', async (req, res) => {
 
     writeDb(dbData);
 
-    if (serverFirestore) {
-      if (Date.now() < serverFirestoreQuotaCooldown) {
-        // Quota is exhausted, skip cloud push during cooldown; local server db.json is operational
-      } else {
-        try {
-          if (Array.isArray(users)) {
-            for (const u of users) {
-              await setDoc(doc(serverFirestore, 'users', u.id), u, { merge: true });
-            }
-          }
-          if (wallets && typeof wallets === 'object') {
-            for (const uid of Object.keys(wallets)) {
-              await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
-            }
-          }
-          if (Array.isArray(helpRequests)) {
-            for (const hr of helpRequests) {
-              if (hr && hr.id) {
-                const cleanHr = sanitizeFirestorePayload(hr);
-                await setDoc(doc(serverFirestore, 'helpRequests', hr.id), cleanHr, { merge: true });
-              }
-            }
-          }
-          if (Array.isArray(helpCycles)) {
-            for (const hc of helpCycles) {
-              if (hc && hc.id) {
-                const cleanHc = sanitizeFirestorePayload(hc);
-                await setDoc(doc(serverFirestore, 'helpCycles', hc.id), cleanHc, { merge: true });
-              }
-            }
-          }
-        } catch (fErr) {
-          if (isFirestoreQuotaError(fErr)) {
-            serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000; // 1 hour cooldown
-            console.warn('[SERVER PUSH] Cloud Firestore write quota limit reached. Pausing cloud push for 1 hour. Server JSON database is fully active.');
-          } else {
-            console.warn('[SERVER PUSH] Cloud Firestore sync warning:', fErr);
+    await safeServerFirestoreWrite(async () => {
+      if (Array.isArray(users)) {
+        for (const u of users) {
+          await setDoc(doc(serverFirestore, 'users', u.id), u, { merge: true });
+        }
+      }
+      if (wallets && typeof wallets === 'object') {
+        for (const uid of Object.keys(wallets)) {
+          await setDoc(doc(serverFirestore, 'wallets', uid), wallets[uid], { merge: true });
+        }
+      }
+      if (Array.isArray(helpRequests)) {
+        for (const hr of helpRequests) {
+          if (hr && hr.id) {
+            const cleanHr = sanitizeFirestorePayload(hr);
+            await setDoc(doc(serverFirestore, 'helpRequests', hr.id), cleanHr, { merge: true });
           }
         }
       }
-    }
+      if (Array.isArray(helpCycles)) {
+        for (const hc of helpCycles) {
+          if (hc && hc.id) {
+            const cleanHc = sanitizeFirestorePayload(hc);
+            await setDoc(doc(serverFirestore, 'helpCycles', hc.id), cleanHc, { merge: true });
+          }
+        }
+      }
+    }, 'push sync');
 
     res.json({ success: true });
   } catch (err: any) {
@@ -1191,16 +1220,10 @@ app.post('/api/cycle/submit-provide', async (req, res) => {
 
     writeDb(dbData);
 
-    if (serverFirestore && Date.now() >= serverFirestoreQuotaCooldown) {
-      try {
-        const cleanCycle = sanitizeFirestorePayload(cycle);
-        await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
-      } catch (fErr) {
-        if (isFirestoreQuotaError(fErr)) {
-          serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000;
-        }
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      const cleanCycle = sanitizeFirestorePayload(cycle);
+      await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+    }, 'cycle submit provide');
 
     return res.json({ success: true, cycle });
   } catch (err: any) {
@@ -1245,16 +1268,10 @@ app.post('/api/cycle/accept-provide', async (req, res) => {
 
     writeDb(dbData);
 
-    if (serverFirestore && Date.now() >= serverFirestoreQuotaCooldown) {
-      try {
-        const cleanCycle = sanitizeFirestorePayload(cycle);
-        await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
-      } catch (fErr) {
-        if (isFirestoreQuotaError(fErr)) {
-          serverFirestoreQuotaCooldown = Date.now() + 60 * 60 * 1000;
-        }
-      }
-    }
+    await safeServerFirestoreWrite(async () => {
+      const cleanCycle = sanitizeFirestorePayload(cycle);
+      await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+    }, 'cycle accept provide');
 
     return res.json({ success: true, cycle });
   } catch (err: any) {

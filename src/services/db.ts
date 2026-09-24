@@ -20,6 +20,7 @@ import {
   UserHelpCycle,
   CycleLinkDetails,
   DispatchedProvideHelpLink,
+  HelpHistoryItem,
 } from '../types';
 import { firestoreSync } from './firestoreSync';
 
@@ -1949,6 +1950,237 @@ class DatabaseManager {
       availableBalance: wallet.availableBalance,
       pendingBalance: wallet.pendingBalance,
       totalReferralRewards: wallet.totalReferralRewards || 0,
+    };
+  }
+
+  public getUserHelpHistory(userId: string): {
+    items: HelpHistoryItem[];
+    totalGiven: number;
+    totalReceived: number;
+    netBenefit: number;
+    completedCyclesCount: number;
+  } {
+    if (!this.state.transactions) this.state.transactions = [];
+    if (!this.state.helpCycles) this.state.helpCycles = [];
+
+    const user = this.state.users.find((u) => u.id === userId);
+    const historyMap = new Map<string, HelpHistoryItem>();
+
+    // 1. Scan actual transactions for help given / received
+    this.state.transactions.forEach((tx) => {
+      const isUserInvolved =
+        tx.userId === userId || tx.senderUserId === userId || tx.receiverUserId === userId;
+      const isHelpType = tx.type === 'help_given' || tx.type === 'help_received';
+      const isCompleted = tx.status === 'completed' || (tx as any).status === 'verified';
+
+      if (isUserInvolved && isHelpType && isCompleted) {
+        // Determine whether for THIS user it is given or received
+        let effectiveType: 'help_given' | 'help_received' =
+          tx.type === 'help_received' ? 'help_received' : 'help_given';
+        if (tx.senderUserId === userId && tx.receiverUserId !== userId) {
+          effectiveType = 'help_given';
+        } else if (tx.receiverUserId === userId && tx.senderUserId !== userId) {
+          effectiveType = 'help_received';
+        }
+
+        let stepTitle = 'Community Help';
+        if (tx.remarks?.toLowerCase().includes('verification') || tx.amount === 50) {
+          stepTitle = 'Step 1: ₹50 Verification Link';
+        } else if (tx.remarks?.includes('100') || tx.amount === 100) {
+          stepTitle = 'Step 2: ₹100 Second Link';
+        } else if (tx.amount === 200) {
+          stepTitle = '₹200 Receive Help Assistance';
+        } else if (effectiveType === 'help_given') {
+          stepTitle = `Provide Help (₹${tx.amount})`;
+        } else {
+          stepTitle = `Receive Help (₹${tx.amount})`;
+        }
+
+        const item: HelpHistoryItem = {
+          id: tx.id,
+          userId,
+          type: effectiveType,
+          amount: tx.amount,
+          status: 'completed',
+          referenceId: tx.referenceId || tx.id,
+          remarks:
+            tx.remarks ||
+            (effectiveType === 'help_given' ? 'Community Provide Help' : 'Community Receive Help'),
+          senderUserId: tx.senderUserId || (effectiveType === 'help_given' ? userId : undefined),
+          senderName:
+            tx.senderName || (effectiveType === 'help_given' ? user?.fullName || 'You' : 'Community Member'),
+          receiverUserId: tx.receiverUserId || (effectiveType === 'help_received' ? userId : undefined),
+          receiverName:
+            tx.receiverName || (effectiveType === 'help_received' ? user?.fullName || 'You' : 'Community Member'),
+          proofUrl: tx.proofUrl,
+          createdAt: tx.createdAt,
+          completedAt: (tx as any).completedAt || tx.createdAt,
+          stepTitle,
+          mode: 'P2P UPI / Direct Transfer',
+        };
+        const key = tx.referenceId || tx.id;
+        historyMap.set(key, item);
+      }
+    });
+
+    // 2. Scan all help cycles for this user to ensure all completed steps are presented
+    const userCycles = this.state.helpCycles.filter((c) => c.userId === userId);
+    userCycles.forEach((c) => {
+      // Step 1: ₹50 Verification Link
+      if (c.verificationLink && c.verificationLink.status === 'completed') {
+        const refKey = c.verificationLink.requestId;
+        const existing = historyMap.get(refKey);
+        const item: HelpHistoryItem = {
+          id: existing ? existing.id : `HIST-V50-${c.cycleNumber}-${refKey.slice(-6)}`,
+          userId,
+          type: 'help_given',
+          amount: c.verificationLink.amount || 50,
+          status: 'completed',
+          referenceId: c.verificationLink.proofReference || c.verificationLink.requestId,
+          remarks: `₹50 Provide Help verified & completed (Cycle #${c.cycleNumber})`,
+          senderUserId: userId,
+          senderName: user?.fullName || 'Ashok Kumar',
+          senderMobile: user?.mobile,
+          senderUpi: user?.upiId || (user as any)?.upi,
+          receiverUserId: c.verificationLink.matchedWithUserId,
+          receiverName: c.verificationLink.matchedWithUserName,
+          receiverMobile: c.verificationLink.matchedWithMobile,
+          receiverUpi: c.verificationLink.matchedWithUpi,
+          proofUrl: c.verificationLink.slipUrl || existing?.proofUrl,
+          proofReference: c.verificationLink.proofReference,
+          createdAt: c.createdAt,
+          completedAt: c.verificationLink.completedAt || existing?.completedAt || c.createdAt,
+          cycleNumber: c.cycleNumber,
+          cycleId: c.id,
+          stepTitle: 'Step 1: ₹50 Verification Provide Help',
+          mode: 'UPI / Direct Transfer',
+        };
+        historyMap.set(refKey, item);
+      }
+
+      // Step 2: ₹100 Second Link
+      if (c.secondLink && c.secondLink.status === 'completed') {
+        const refKey = c.secondLink.requestId;
+        const existing = historyMap.get(refKey);
+        const item: HelpHistoryItem = {
+          id: existing ? existing.id : `HIST-S100-${c.cycleNumber}-${refKey.slice(-6)}`,
+          userId,
+          type: 'help_given',
+          amount: c.secondLink.amount || 100,
+          status: 'completed',
+          referenceId: c.secondLink.proofReference || c.secondLink.requestId,
+          remarks: `₹100 Provide Help verified & completed (Cycle #${c.cycleNumber})`,
+          senderUserId: userId,
+          senderName: user?.fullName || 'Ashok Kumar',
+          senderMobile: user?.mobile,
+          senderUpi: user?.upiId || (user as any)?.upi,
+          receiverUserId: c.secondLink.matchedWithUserId,
+          receiverName: c.secondLink.matchedWithUserName,
+          receiverMobile: c.secondLink.matchedWithMobile,
+          receiverUpi: c.secondLink.matchedWithUpi,
+          proofUrl: c.secondLink.slipUrl || existing?.proofUrl,
+          proofReference: c.secondLink.proofReference,
+          createdAt: c.createdAt,
+          completedAt: c.secondLink.completedAt || existing?.completedAt || c.createdAt,
+          cycleNumber: c.cycleNumber,
+          cycleId: c.id,
+          stepTitle: 'Step 2: ₹100 Second Provide Help',
+          mode: 'UPI / Direct Transfer',
+        };
+        historyMap.set(refKey, item);
+      }
+
+      // Step 3 / 4: Receive Link ₹200 Package
+      if (c.receiveLink && c.receiveLink.status === 'completed') {
+        const refKey = c.receiveLink.requestId;
+        const existing = historyMap.get(refKey);
+        const item: HelpHistoryItem = {
+          id: existing ? existing.id : `HIST-R200-${c.cycleNumber}-${refKey.slice(-6)}`,
+          userId,
+          type: 'help_received',
+          amount: c.receiveLink.amount || 200,
+          status: 'completed',
+          referenceId: c.receiveLink.proofReference || c.receiveLink.requestId,
+          remarks: `₹200 Help Received completed (Cycle #${c.cycleNumber} - Net Profit ₹50)`,
+          senderUserId: c.receiveLink.providerUserId || 'H150-ADMIN01',
+          senderName: c.receiveLink.providerName || 'Community Provider',
+          senderMobile: c.receiveLink.providerMobile,
+          receiverUserId: userId,
+          receiverName: user?.fullName || 'Ashok Kumar',
+          receiverMobile: user?.mobile,
+          receiverUpi: user?.upiId || (user as any)?.upi,
+          proofUrl: c.receiveLink.slipUrl || existing?.proofUrl,
+          proofReference: c.receiveLink.proofReference,
+          createdAt: c.createdAt,
+          completedAt: c.receiveLink.completedAt || existing?.completedAt || c.createdAt,
+          cycleNumber: c.cycleNumber,
+          cycleId: c.id,
+          stepTitle: '₹200 Receive Help Package',
+          mode: 'UPI / Direct Transfer',
+        };
+        historyMap.set(refKey, item);
+      }
+
+      // Sub-Receive Links
+      if (Array.isArray(c.receiveLinks)) {
+        c.receiveLinks.forEach((sub, subIdx) => {
+          if (sub.status === 'completed') {
+            const refKey = sub.requestId || `${c.id}-sub-${subIdx}`;
+            if (!historyMap.has(refKey)) {
+              historyMap.set(refKey, {
+                id: `HIST-SUB-${c.cycleNumber}-${subIdx}-${Date.now().toString().slice(-4)}`,
+                userId,
+                type: 'help_received',
+                amount: sub.amount,
+                status: 'completed',
+                referenceId: sub.proofReference || sub.requestId,
+                remarks: `₹${sub.amount} Help Received from ${sub.matchedWithUserName || 'Member'} (Cycle #${c.cycleNumber})`,
+                senderUserId: sub.providerUserId || sub.matchedWithUserId,
+                senderName: sub.providerName || sub.matchedWithUserName || 'Community Member',
+                senderMobile: sub.providerMobile || sub.matchedWithMobile,
+                senderUpi: sub.matchedWithUpi,
+                receiverUserId: userId,
+                receiverName: user?.fullName || 'Ashok Kumar',
+                receiverMobile: user?.mobile,
+                receiverUpi: user?.upiId || (user as any)?.upi,
+                proofUrl: sub.slipUrl,
+                proofReference: sub.proofReference,
+                createdAt: c.createdAt,
+                completedAt: sub.completedAt || c.createdAt,
+                cycleNumber: c.cycleNumber,
+                cycleId: c.id,
+                stepTitle: `₹${sub.amount} Assistance Received`,
+                mode: 'UPI Transfer',
+              });
+            }
+          }
+        });
+      }
+    });
+
+    const items = Array.from(historyMap.values()).sort((a, b) => {
+      const timeA = new Date(a.completedAt || a.createdAt).getTime();
+      const timeB = new Date(b.completedAt || b.createdAt).getTime();
+      return timeB - timeA;
+    });
+
+    const totalGiven = items
+      .filter((i) => i.type === 'help_given')
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    const totalReceived = items
+      .filter((i) => i.type === 'help_received')
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    const netBenefit = Math.max(0, totalReceived - totalGiven);
+    const completedCyclesCount = userCycles.filter((c) => c.status === 'completed').length;
+
+    return {
+      items,
+      totalGiven,
+      totalReceived,
+      netBenefit,
+      completedCyclesCount,
     };
   }
 

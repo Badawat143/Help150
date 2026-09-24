@@ -39,6 +39,22 @@ class FirestoreSyncService {
     } catch {
       // ignore localStorage errors in restricted environments
     }
+    // Default to active cooldown if not specified to prevent resource_exhausted stream errors
+    if (!this.quotaCooldownUntil) {
+      this.quotaCooldownUntil = Date.now() + 24 * 60 * 60 * 1000;
+      try {
+        localStorage.setItem(STORAGE_KEY_COOLDOWN, String(this.quotaCooldownUntil));
+      } catch {}
+    }
+  }
+
+  public setQuotaCooldown(ms = 24 * 60 * 60 * 1000): void {
+    this.quotaCooldownUntil = Date.now() + ms;
+    try {
+      localStorage.setItem(STORAGE_KEY_COOLDOWN, String(this.quotaCooldownUntil));
+    } catch {
+      // ignore
+    }
   }
 
   public isQuotaCoolingDown(): boolean {

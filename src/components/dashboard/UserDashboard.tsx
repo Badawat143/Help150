@@ -55,6 +55,7 @@ import {
   Building,
   Smartphone,
   CreditCard,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -70,6 +71,7 @@ import { Help150DualBox } from '../helping/Help150DualBox';
 import { ActiveLinkArrivalNotification } from '../helping/ActiveLinkArrivalNotification';
 import { PromotionNoticeBanner } from './PromotionNoticeBanner';
 import { TotalIncomeReceivedTracker } from './TotalIncomeReceivedTracker';
+import { HelpHistorySection } from './HelpHistorySection';
 
 interface UserDashboardProps {
   onNavigateTab?: (tab: string) => void;
@@ -584,6 +586,28 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                 <span>Receive Help</span>
               </button>
 
+              {/* 7.5 Help History */}
+              <button
+                onClick={() => {
+                  const el = document.getElementById('help-history-section');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    el.classList.add('ring-4', 'ring-emerald-400', 'transition');
+                    setTimeout(() => el.classList.remove('ring-4', 'ring-emerald-400'), 2500);
+                  }
+                  setIsSidebarOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800/60"
+              >
+                <Receipt className="h-4 w-4 text-emerald-400" />
+                <span className="flex items-center justify-between w-full">
+                  <span>Help History</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+                    Live
+                  </span>
+                </span>
+              </button>
+
               {/* 8. Referral */}
               <button
                 onClick={() => handleNavClick('referral')}
@@ -926,10 +950,19 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                   <span>{userIncomeStats.completedCyclesCount} सफल</span>
                 </div>
                 <button
-                  onClick={() => setActiveTab('help')}
+                  onClick={() => {
+                    const el = document.getElementById('help-history-section');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      el.classList.add('ring-4', 'ring-emerald-400', 'transition');
+                      setTimeout(() => el.classList.remove('ring-4', 'ring-emerald-400'), 2500);
+                    } else {
+                      setActiveTab('help');
+                    }
+                  }}
                   className="mt-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline block cursor-pointer"
                 >
-                  View Income Details ➔
+                  View Help History ➔
                 </button>
               </div>
             </div>
@@ -1182,6 +1215,15 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
           </div>
 
           {/* ======================================================================= */}
+          {/* HELP HISTORY & COMPLETED HELP TRANSACTIONS SECTION                      */}
+          {/* ======================================================================= */}
+          <HelpHistorySection
+            currentUserId={currentUser?.id || 'H150-784920'}
+            onRefresh={refreshUserData}
+            onNavigateTab={setActiveTab}
+          />
+
+          {/* ======================================================================= */}
           {/* DIRECT REFERRALS (LEVEL 1) TABLE & USER IDs LIST                         */}
           {/* ======================================================================= */}
           <DirectReferralsSection
@@ -1206,7 +1248,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                     <span>Recent Transactions</span>
                   </div>
                   <button
-                    onClick={() => setActiveTab('wallet')}
+                    onClick={() => {
+                      const el = document.getElementById('help-history-section');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        setActiveTab('wallet');
+                      }
+                    }}
                     className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                   >
                     View All
@@ -1225,85 +1274,108 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                      {/* Row 1: Provide Help */}
-                      <tr>
-                        <td className="py-2.5 px-1 font-bold text-slate-400">1</td>
-                        <td className="py-2.5 px-2">
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600">
-                              <HeartHandshake className="h-3 w-3" />
-                            </div>
-                            <span className="font-bold">Provide Help</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-2 font-mono font-bold text-red-600">- ₹ 150</td>
-                        <td className="py-2.5 px-2 text-[10px] text-slate-500">12 Aug 2025<br />10:24 AM</td>
-                        <td className="py-2.5 px-1 text-right">
-                          <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded-full">
-                            Completed
-                          </span>
-                        </td>
-                      </tr>
+                      {(() => {
+                        const uid = currentUser?.id || 'H150-784920';
+                        const userTxns = (state.transactions || [])
+                          .filter(
+                            (t) =>
+                              t.userId === uid ||
+                              t.senderUserId === uid ||
+                              t.receiverUserId === uid
+                          )
+                          .slice(0, 5);
 
-                      {/* Row 2: Receive Help */}
-                      <tr>
-                        <td className="py-2.5 px-1 font-bold text-slate-400">2</td>
-                        <td className="py-2.5 px-2">
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                              <Shield className="h-3 w-3" />
-                            </div>
-                            <span className="font-bold">Receive Help</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-2 font-mono font-bold text-emerald-600">+ ₹ 200</td>
-                        <td className="py-2.5 px-2 text-[10px] text-slate-500">10 Aug 2025<br />04:15 PM</td>
-                        <td className="py-2.5 px-1 text-right">
-                          <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded-full">
-                            Completed
-                          </span>
-                        </td>
-                      </tr>
+                        if (userTxns.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={5} className="py-4 text-center text-xs text-slate-400">
+                                No recent transactions recorded yet.
+                              </td>
+                            </tr>
+                          );
+                        }
 
-                      {/* Row 3: Withdrawal */}
-                      <tr>
-                        <td className="py-2.5 px-1 font-bold text-slate-400">3</td>
-                        <td className="py-2.5 px-2">
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                              <ArrowDownCircle className="h-3 w-3" />
-                            </div>
-                            <span className="font-bold">Withdrawal</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-2 font-mono font-bold text-red-600">- ₹ 400</td>
-                        <td className="py-2.5 px-2 text-[10px] text-slate-500">08 Aug 2025<br />01:20 PM</td>
-                        <td className="py-2.5 px-1 text-right">
-                          <span className="bg-amber-100 text-amber-800 font-bold text-[10px] px-2 py-0.5 rounded-full">
-                            Pending
-                          </span>
-                        </td>
-                      </tr>
+                        return userTxns.map((tx, idx) => {
+                          const isGiven =
+                            tx.type === 'help_given' ||
+                            tx.type === 'withdrawal' ||
+                            tx.type === 'admin_debit' ||
+                            tx.senderUserId === uid;
+                          const isIncome = !isGiven && tx.amount > 0;
 
-                      {/* Row 4: Referral Income */}
-                      <tr>
-                        <td className="py-2.5 px-1 font-bold text-slate-400">4</td>
-                        <td className="py-2.5 px-2">
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                              <Users className="h-3 w-3" />
-                            </div>
-                            <span className="font-bold">Referral Income</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-2 font-mono font-bold text-emerald-600">+ ₹ 50</td>
-                        <td className="py-2.5 px-2 text-[10px] text-slate-500">05 Aug 2025<br />09:30 AM</td>
-                        <td className="py-2.5 px-1 text-right">
-                          <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded-full">
-                            Completed
-                          </span>
-                        </td>
-                      </tr>
+                          let formattedDate = 'Recent';
+                          try {
+                            const d = new Date(tx.createdAt);
+                            if (!isNaN(d.getTime())) {
+                              formattedDate = d.toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                              });
+                            }
+                          } catch {}
+
+                          return (
+                            <tr key={tx.id || idx}>
+                              <td className="py-2.5 px-1 font-bold text-slate-400">{idx + 1}</td>
+                              <td className="py-2.5 px-2">
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className={`flex h-5 w-5 items-center justify-center rounded-full shrink-0 ${
+                                      tx.type === 'help_given'
+                                        ? 'bg-red-100 text-red-600'
+                                        : tx.type === 'help_received'
+                                        ? 'bg-blue-100 text-blue-600'
+                                        : tx.type === 'withdrawal'
+                                        ? 'bg-amber-100 text-amber-600'
+                                        : 'bg-emerald-100 text-emerald-600'
+                                    }`}
+                                  >
+                                    {tx.type === 'help_given' ? (
+                                      <HeartHandshake className="h-3 w-3" />
+                                    ) : tx.type === 'help_received' ? (
+                                      <Shield className="h-3 w-3" />
+                                    ) : tx.type === 'withdrawal' ? (
+                                      <ArrowDownCircle className="h-3 w-3" />
+                                    ) : (
+                                      <Users className="h-3 w-3" />
+                                    )}
+                                  </div>
+                                  <span className="font-bold truncate max-w-[110px]">
+                                    {tx.type === 'help_given'
+                                      ? 'Provide Help'
+                                      : tx.type === 'help_received'
+                                      ? 'Receive Help'
+                                      : tx.type === 'withdrawal'
+                                      ? 'Withdrawal'
+                                      : 'Referral Income'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td
+                                className={`py-2.5 px-2 font-mono font-bold ${
+                                  isIncome ? 'text-emerald-600' : 'text-red-600'
+                                }`}
+                              >
+                                {isIncome ? '+' : '-'} ₹ {tx.amount}
+                              </td>
+                              <td className="py-2.5 px-2 text-[10px] text-slate-500 whitespace-nowrap">
+                                {formattedDate}
+                              </td>
+                              <td className="py-2.5 px-1 text-right">
+                                <span
+                                  className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${
+                                    tx.status === 'completed'
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}
+                                >
+                                  {tx.status === 'completed' ? 'Completed' : 'Pending'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

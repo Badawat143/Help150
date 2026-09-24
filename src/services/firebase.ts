@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import {
   getFirestore,
+  setLogLevel,
   doc,
   getDoc,
   getDocFromServer,
@@ -32,6 +33,11 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+// Suppress internal gRPC stream error dumps when free daily write quota is reached
+try {
+  setLogLevel('silent');
+} catch {}
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -96,6 +102,10 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
  */
 export async function testConnection() {
   try {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('help150_firestore_quota_cooldown') : null;
+    if (stored && parseInt(stored, 10) > Date.now()) {
+      return;
+    }
     await getDocFromServer(doc(firestoreDb, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error) {
@@ -106,6 +116,9 @@ export async function testConnection() {
         error.message.includes('resource-exhausted') ||
         error.message.toLowerCase().includes('quota')
       ) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('help150_firestore_quota_cooldown', String(Date.now() + 24 * 3600 * 1000));
+        }
         console.warn('Firestore notice: Daily free tier quota limit reached. Application running with 100% functionality via local state and backend server.');
       }
     }
