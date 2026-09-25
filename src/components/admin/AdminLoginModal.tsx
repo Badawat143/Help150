@@ -224,24 +224,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
             <span>1-Click Instant Admin Access (सीधा 1-क्लिक प्रवेश)</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="space-y-2">
             <button
               type="button"
               id="btn-admin-instant-super"
               onClick={() => handleInstantAdminLogin('H150-ADMIN01', 'Super Admin')}
-              className="p-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-red-400/50"
+              className="w-full p-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-red-400/50"
             >
               <ShieldCheck className="h-4 w-4 text-amber-300" />
               <span>Login as Super Admin</span>
-            </button>
-            <button
-              type="button"
-              id="btn-admin-instant-ashok"
-              onClick={() => handleInstantAdminLogin('H150-784920', 'Ashok Kumar')}
-              className="p-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-amber-400/50"
-            >
-              <User className="h-4 w-4 text-white" />
-              <span>Login as Ashok Kumar</span>
             </button>
           </div>
         </div>

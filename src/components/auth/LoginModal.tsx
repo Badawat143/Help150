@@ -60,11 +60,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleQuickLogin = (id: string) => {
-    loginAs(id);
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-5 sm:p-7 text-slate-200 shadow-2xl relative">
@@ -156,27 +151,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
-
-        {/* Member Quick Sign-In for testing */}
-        <div className="mt-5 pt-3.5 border-t border-slate-800">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">
-            Member Quick Sign-In (Demo Member)
-          </div>
-          <div>
-            <button
-              onClick={() => handleQuickLogin('H150-784920')}
-              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 text-left text-xs transition cursor-pointer flex items-center justify-between"
-            >
-              <div>
-                <div className="font-semibold text-amber-300">Ashok Kumar (Member ID: H150-784920)</div>
-                <div className="text-[10px] text-slate-400">Regular Active Community Member</div>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                Auto-Fill
-              </span>
-            </button>
-          </div>
-        </div>
 
         <div className="mt-4 text-center text-xs text-slate-400">
           New to HELP150?{' '}

@@ -39,16 +39,24 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to Ashok Kumar for immediate preview delight
   const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
-    return localStorage.getItem('HELP150_AUTH_USER_ID') || 'H150-784920';
+    const saved = localStorage.getItem('HELP150_AUTH_USER_ID');
+    // Clear legacy auto-login default if present
+    if (saved === 'H150-784920') {
+      localStorage.removeItem('HELP150_AUTH_USER_ID');
+      return null;
+    }
+    return saved || null;
   });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isFirebaseLoading, setIsFirebaseLoading] = useState<boolean>(true);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const saved = localStorage.getItem('HELP150_AUTH_USER_ID');
+    return (saved && saved !== 'H150-784920') ? 'dashboard' : 'home';
+  });
 
   // Multi-device server & Firestore cloud synchronization
   useEffect(() => {
