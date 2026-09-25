@@ -2586,6 +2586,19 @@ class DatabaseManager {
       matchedWithUserName: balanced.links.map((l) => `${l.matchedWithUserName} (₹${l.amount})`).join(', '),
       mobile: balanced.links[0]?.matchedWithMobile,
     });
+
+    this.saveToStorage(this.state);
+    this.schedulePushToServer(true);
+    firestoreSync.syncHelpCycle(cycle);
+    this.notifySubscribers();
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/cycle/advance-receive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: cycle.userId, cycleId: cycle.id }),
+      }).catch(() => {});
+    }
   }
 
   public confirmCycleReceiveLink(userId: string): { completedCycle: UserHelpCycle; newCycle: UserHelpCycle } {
@@ -2666,7 +2679,18 @@ class DatabaseManager {
     });
 
     this.saveToStorage(this.state);
+    this.schedulePushToServer(true);
+    firestoreSync.syncHelpCycle(cycle);
+    firestoreSync.syncHelpCycle(nextCycle);
     this.notifySubscribers();
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/cycle/confirm-receive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, cycleId: cycle.id }),
+      }).catch(() => {});
+    }
 
     return { completedCycle: cycle, newCycle: nextCycle };
   }
@@ -2773,7 +2797,20 @@ class DatabaseManager {
     }
 
     this.saveToStorage(this.state);
+    this.schedulePushToServer(true);
+    firestoreSync.syncHelpCycle(cycle);
+    if (newCycle) {
+      firestoreSync.syncHelpCycle(newCycle);
+    }
     this.notifySubscribers();
+
+    if (allCompleted && typeof window !== 'undefined') {
+      fetch('/api/cycle/confirm-receive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, cycleId: cycle.id }),
+      }).catch(() => {});
+    }
 
     return { cycle, allCompleted, completedCycle, newCycle };
   }

@@ -130,9 +130,23 @@ export const UserDashboard: React.FC<UserDashboardProps> = () => {
             if (Array.isArray(data.helpCycles)) {
               if (!draft.helpCycles) draft.helpCycles = [];
               data.helpCycles.forEach((hc: any) => {
-                const idx = draft.helpCycles.findIndex((x) => x.id === hc.id);
-                if (idx < 0) draft.helpCycles.unshift(hc);
-                else draft.helpCycles[idx] = { ...draft.helpCycles[idx], ...hc };
+                const idx = draft.helpCycles.findIndex((x) => x.id === hc.id || (hc.userId && x.userId === hc.userId && x.cycleNumber === hc.cycleNumber));
+                if (idx < 0) {
+                  draft.helpCycles.unshift(hc);
+                } else {
+                  const local = draft.helpCycles[idx];
+                  const cycleRank: Record<string, number> = {
+                    provide_verification: 1,
+                    provide_second: 2,
+                    maturation_timer: 3,
+                    receive_help: 4,
+                    completed: 5,
+                  };
+                  const oldRank = cycleRank[local.status] || 1;
+                  const newRank = cycleRank[hc.status] || 1;
+                  const finalStatus = newRank >= oldRank ? hc.status : local.status;
+                  draft.helpCycles[idx] = { ...local, ...hc, status: finalStatus };
+                }
               });
             }
           });

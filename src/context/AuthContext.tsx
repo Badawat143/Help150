@@ -192,9 +192,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     if (needsUpdate) {
                       const verFinalStatus = (serverVerDone || localVerDone) ? 'completed' : (hc.verificationLink?.status || local.verificationLink?.status || 'pending');
                       const secFinalStatus = (serverSecDone || localSecDone) ? 'completed' : (hc.secondLink?.status || local.secondLink?.status || 'pending');
-                      const finalStatus = (verFinalStatus === 'completed' && secFinalStatus !== 'completed')
-                        ? 'provide_second'
-                        : (hc.status || local.status);
+
+                      const cycleRank: Record<string, number> = {
+                        provide_verification: 1,
+                        provide_second: 2,
+                        maturation_timer: 3,
+                        receive_help: 4,
+                        completed: 5,
+                      };
+                      const oldRank = cycleRank[local.status] || 1;
+                      const serverRank = cycleRank[hc.status] || 1;
+                      let finalStatus = serverRank >= oldRank ? hc.status : local.status;
+
+                      if (verFinalStatus === 'completed' && secFinalStatus !== 'completed') {
+                        finalStatus = 'provide_second';
+                      } else if (verFinalStatus === 'completed' && secFinalStatus === 'completed') {
+                        if (cycleRank[finalStatus] < 3) {
+                          finalStatus = 'maturation_timer';
+                        }
+                        const expiry = hc.timerExpiryTime || local.timerExpiryTime;
+                        if (expiry && Date.now() >= expiry && finalStatus === 'maturation_timer') {
+                          finalStatus = 'receive_help';
+                        }
+                      }
 
                       draft.helpCycles[hcIdx] = {
                         ...local,

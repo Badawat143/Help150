@@ -522,6 +522,61 @@ function enforceServerPenalties() {
       }
     }
 
+    // Auto-advance 12-hour maturation timers to receive_help
+    if (Array.isArray(dbData.helpCycles)) {
+      dbData.helpCycles.forEach((c: any) => {
+        if (c.status === 'maturation_timer' && c.timerExpiryTime && now >= c.timerExpiryTime) {
+          c.status = 'receive_help';
+          if (!c.receiveLinks || c.receiveLinks.length === 0) {
+            const candidateUsers = (dbData.users || []).filter((u: any) => u.id !== c.userId && u.role === 'user' && u.status === 'active');
+            const amounts = [100, 100];
+            const nowIso = new Date().toISOString();
+            c.receiveLinks = amounts.map((amt: number, idx: number) => {
+              const uMatch = candidateUsers[idx % Math.max(1, candidateUsers.length)];
+              const pId = uMatch ? uMatch.id : 'H150-PEER01';
+              const pName = uMatch ? uMatch.fullName : 'Community Member';
+              const pMobile = uMatch ? uMatch.mobile : '9876543210';
+              const pUpi = (uMatch as any)?.upiId || 'member@okaxis';
+              const utr = `UTR-${Date.now().toString().slice(-8)}${idx}`;
+              return {
+                requestId: `REC-L${idx + 1}-${amt}-${pId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now().toString().slice(-4)}`,
+                amount: amt,
+                title: `Step 2 Provide Help (₹${amt})`,
+                status: 'submitted',
+                matchedWithUserId: pId,
+                matchedWithUserName: pName,
+                matchedWithMobile: pMobile,
+                matchedWithUpi: pUpi,
+                proofReference: utr,
+                slipUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380"><rect width="600" height="380" fill="%23090d16"/><rect x="16" y="16" width="568" height="348" rx="16" fill="%23131b2e" stroke="%2338bdf8" stroke-width="2"/><text x="40" y="60" fill="%2338bdf8" font-family="sans-serif" font-size="20" font-weight="bold">PAYMENT SLIP ATTACHED</text><text x="40" y="100" fill="%23cbd5e1" font-family="sans-serif" font-size="14">Proof Reference: ${utr}</text><text x="40" y="140" fill="%234ade80" font-family="sans-serif" font-size="16">Amount: ₹${amt} • Status: SUBMITTED</text></svg>`,
+                submittedAt: nowIso,
+                deadlineTime: Date.now() + 24 * 3600000,
+              };
+            });
+            c.receiveCombination = '100+100';
+          }
+          if (!c.receiveLink) {
+            c.receiveLink = {
+              requestId: `REC-200-${Math.floor(100000 + Math.random() * 900000)}`,
+              amount: 200,
+              title: '₹200 Receive Help (₹100 + ₹100)',
+              status: 'submitted',
+              matchedWithUserId: c.receiveLinks[0]?.matchedWithUserId || 'COMMUNITY-PEER',
+              matchedWithUserName: c.receiveLinks.map((l: any) => `${l.matchedWithUserName} (₹${l.amount})`).join(', '),
+              matchedWithMobile: c.receiveLinks[0]?.matchedWithMobile || '9876500000',
+              matchedWithUpi: c.receiveLinks[0]?.matchedWithUpi || 'peer@okaxis',
+              proofReference: c.receiveLinks[0]?.proofReference || `UTR-${Date.now().toString().slice(-8)}`,
+              slipUrl: c.receiveLinks[0]?.slipUrl,
+              submittedAt: new Date().toISOString(),
+              deadlineTime: Date.now() + 24 * 3600000,
+            };
+          }
+          changed = true;
+          console.log(`[CYCLE] 12h Timer completed for ${c.userId}. ₹200 Receive Help link auto-dispatched.`);
+        }
+      });
+    }
+
     if (usersToDelete.length > 0) {
       dbData.users = dbData.users.filter((u: any) => !usersToDelete.includes(u.id));
       usersToDelete.forEach((delId) => {
@@ -1070,10 +1125,33 @@ app.post('/api/sync/push', async (req, res) => {
             ? 'completed'
             : (hc.secondLink?.status || old.secondLink?.status || 'pending');
 
+          const cycleRank: Record<string, number> = {
+            provide_verification: 1,
+            provide_second: 2,
+            maturation_timer: 3,
+            receive_help: 4,
+            completed: 5,
+          };
+          const oldRank = cycleRank[old.status] || 1;
+          const newRank = cycleRank[hc.status] || 1;
+          let calculatedStatus = newRank >= oldRank ? hc.status : old.status;
+
+          if (verStatus === 'completed' && secStatus !== 'completed') {
+            calculatedStatus = 'provide_second';
+          } else if (verStatus === 'completed' && secStatus === 'completed') {
+            if (cycleRank[calculatedStatus] < 3) {
+              calculatedStatus = 'maturation_timer';
+            }
+            const expiry = hc.timerExpiryTime || old.timerExpiryTime;
+            if (expiry && Date.now() >= expiry && calculatedStatus === 'maturation_timer') {
+              calculatedStatus = 'receive_help';
+            }
+          }
+
           dbData.helpCycles[idx] = {
             ...old,
             ...hc,
-            status: (verStatus === 'completed' && secStatus !== 'completed') ? 'provide_second' : (hc.status || old.status),
+            status: calculatedStatus,
             verificationLink: {
               ...(old.verificationLink || {}),
               ...(hc.verificationLink || {}),
@@ -1276,6 +1354,178 @@ app.post('/api/cycle/accept-provide', async (req, res) => {
     return res.json({ success: true, cycle });
   } catch (err: any) {
     console.error('Cycle accept provide error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Dedicated Real-Time Endpoint: Advance Maturation Timer to ₹200 Receive Help
+app.post('/api/cycle/advance-receive', async (req, res) => {
+  try {
+    const { userId, cycleId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+
+    const dbData = readDb();
+    if (!dbData.helpCycles) dbData.helpCycles = [];
+
+    const cycle = dbData.helpCycles.find(
+      (c: any) => c.userId === userId && c.status !== 'completed' && (!cycleId || c.id === cycleId)
+    );
+    if (!cycle) {
+      return res.status(404).json({ success: false, message: 'Active cycle not found for user' });
+    }
+
+    const now = new Date().toISOString();
+    cycle.status = 'receive_help';
+
+    if (!cycle.receiveLinks || cycle.receiveLinks.length === 0) {
+      const candidateUsers = (dbData.users || []).filter(
+        (u: any) => u.id !== userId && u.role === 'user' && u.status === 'active'
+      );
+      const amounts = [100, 100];
+      cycle.receiveLinks = amounts.map((amt: number, idx: number) => {
+        const uMatch = candidateUsers[idx % Math.max(1, candidateUsers.length)];
+        const pId = uMatch ? uMatch.id : 'H150-PEER01';
+        const pName = uMatch ? uMatch.fullName : 'Community Member';
+        const pMobile = uMatch ? uMatch.mobile : '9876543210';
+        const pUpi = (uMatch as any)?.upiId || 'member@okaxis';
+        const utr = `UTR-${Date.now().toString().slice(-8)}${idx}`;
+        return {
+          requestId: `REC-L${idx + 1}-${amt}-${pId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now().toString().slice(-4)}`,
+          amount: amt,
+          title: `Step 2 Provide Help (₹${amt})`,
+          status: 'submitted',
+          matchedWithUserId: pId,
+          matchedWithUserName: pName,
+          matchedWithMobile: pMobile,
+          matchedWithUpi: pUpi,
+          proofReference: utr,
+          slipUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380"><rect width="600" height="380" fill="%23090d16"/><rect x="16" y="16" width="568" height="348" rx="16" fill="%23131b2e" stroke="%2338bdf8" stroke-width="2"/><text x="40" y="60" fill="%2338bdf8" font-family="sans-serif" font-size="20" font-weight="bold">PAYMENT SLIP ATTACHED</text><text x="40" y="100" fill="%23cbd5e1" font-family="sans-serif" font-size="14">Proof Reference: ${utr}</text><text x="40" y="140" fill="%234ade80" font-family="sans-serif" font-size="16">Amount: ₹${amt} • Status: SUBMITTED</text></svg>`,
+          submittedAt: now,
+          deadlineTime: Date.now() + 24 * 3600000,
+        };
+      });
+      cycle.receiveCombination = '100+100';
+    }
+
+    if (!cycle.receiveLink) {
+      cycle.receiveLink = {
+        requestId: `REC-200-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 200,
+        title: '₹200 Receive Help (₹100 + ₹100)',
+        status: 'submitted',
+        matchedWithUserId: cycle.receiveLinks[0]?.matchedWithUserId || 'COMMUNITY-PEER',
+        matchedWithUserName: cycle.receiveLinks.map((l: any) => `${l.matchedWithUserName} (₹${l.amount})`).join(', '),
+        matchedWithMobile: cycle.receiveLinks[0]?.matchedWithMobile || '9876500000',
+        matchedWithUpi: cycle.receiveLinks[0]?.matchedWithUpi || 'peer@okaxis',
+        proofReference: cycle.receiveLinks[0]?.proofReference || `UTR-${Date.now().toString().slice(-8)}`,
+        slipUrl: cycle.receiveLinks[0]?.slipUrl,
+        submittedAt: now,
+        deadlineTime: Date.now() + 24 * 3600000,
+      };
+    }
+
+    writeDb(dbData);
+
+    await safeServerFirestoreWrite(async () => {
+      const cleanCycle = sanitizeFirestorePayload(cycle);
+      await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+    }, 'cycle advance receive');
+
+    return res.json({ success: true, cycle });
+  } catch (err: any) {
+    console.error('Cycle advance receive error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Dedicated Real-Time Endpoint: Confirm ₹200 Receive Help & Restart Next Cycle
+app.post('/api/cycle/confirm-receive', async (req, res) => {
+  try {
+    const { userId, cycleId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+
+    const dbData = readDb();
+    if (!dbData.helpCycles) dbData.helpCycles = [];
+
+    const cycle = dbData.helpCycles.find(
+      (c: any) => c.userId === userId && c.status !== 'completed' && (!cycleId || c.id === cycleId)
+    );
+    if (!cycle) {
+      return res.status(404).json({ success: false, message: 'Active cycle not found' });
+    }
+
+    const now = new Date().toISOString();
+    cycle.status = 'completed';
+    cycle.completedAt = now;
+
+    if (cycle.receiveLink) {
+      cycle.receiveLink.status = 'completed';
+      cycle.receiveLink.completedAt = now;
+    }
+    if (Array.isArray(cycle.receiveLinks)) {
+      cycle.receiveLinks.forEach((l: any) => {
+        l.status = 'completed';
+        l.completedAt = now;
+      });
+    }
+
+    if (!dbData.wallets) dbData.wallets = {};
+    if (!dbData.wallets[userId]) {
+      dbData.wallets[userId] = { userId, availableBalance: 0, totalHelpedGiven: 0, totalHelpedReceived: 0 };
+    }
+    dbData.wallets[userId].availableBalance = (dbData.wallets[userId].availableBalance || 0) + 200;
+    dbData.wallets[userId].totalHelpedReceived = (dbData.wallets[userId].totalHelpedReceived || 0) + 200;
+
+    // Revolving next cycle: Step 1: ₹50 -> Step 2: ₹100 -> 12h Timer -> ₹200 Receive Help
+    const nextCycleNum = (cycle.cycleNumber || 1) + 1;
+    const nextCycle = {
+      id: `CYC-${userId.replace(/[^a-zA-Z0-9]/g, '')}-${nextCycleNum}-${Date.now().toString().slice(-4)}`,
+      userId,
+      cycleNumber: nextCycleNum,
+      status: 'provide_verification',
+      verificationLink: {
+        requestId: `LNK-50-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 50,
+        title: 'Provide Verification Link (₹50)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+        deadlineTime: Date.now() + 24 * 3600000,
+      },
+      secondLink: {
+        requestId: `LNK-100-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: 100,
+        title: 'Second Link (₹100)',
+        status: 'pending',
+        matchedWithUserId: 'H150-ADMIN01',
+        matchedWithUserName: 'Yenkanna Badawat (Admin Treasury)',
+        matchedWithUpi: '7066463676@naviaxis',
+        matchedWithMobile: '7066463676',
+        deadlineTime: Date.now() + 24 * 3600000,
+      },
+      timerDurationHours: 12,
+      createdAt: now,
+    };
+    dbData.helpCycles.unshift(nextCycle);
+
+    writeDb(dbData);
+
+    await safeServerFirestoreWrite(async () => {
+      const cleanCycle = sanitizeFirestorePayload(cycle);
+      const cleanNext = sanitizeFirestorePayload(nextCycle);
+      await setDoc(doc(serverFirestore, 'helpCycles', cycle.id), cleanCycle, { merge: true });
+      await setDoc(doc(serverFirestore, 'helpCycles', nextCycle.id), cleanNext, { merge: true });
+    }, 'cycle confirm receive');
+
+    return res.json({ success: true, completedCycle: cycle, newCycle: nextCycle });
+  } catch (err: any) {
+    console.error('Cycle confirm receive error:', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
